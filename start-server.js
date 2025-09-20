@@ -8,123 +8,36 @@
 const { spawn } = require('child_process');
 const { PrismaClient } = require('@prisma/client');
 
-async function initializeDatabase() {
-  console.log('🔧 Initializing Database...');
+async function verifyDatabase() {
+  console.log('🔍 Verifying Database Connection...');
   
   const prisma = new PrismaClient();
   
   try {
-    // Check if database is initialized
+    // Test database connection
     const userCount = await prisma.user.count();
-    console.log(`📊 Users in database: ${userCount}`);
+    console.log(`📊 Database Status: ${userCount} users found`);
     
     if (userCount === 0) {
-      console.log('🚀 Database is empty, initializing...');
-      
-      // Create superadmin
-      const bcrypt = require('bcrypt');
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      
-      const superadmin = await prisma.user.create({
-        data: {
-          username: 'superadmin',
-          passwordHash: hashedPassword,
-          fullName: 'Super Administrator',
-          email: 'admin@lottery.com',
-          role: 'superadmin',
-          status: 'active'
-        }
-      });
-      
-      console.log('✅ Superadmin created:');
-      console.log('   Username: superadmin');
-      console.log('   Password: admin123');
-      
-      // Create regions
-      await prisma.region.createMany({
-        data: [
-          { name: 'Region 1' },
-          { name: 'Region 2' },
-          { name: 'Region 3' },
-          { name: 'Region 4' },
-          { name: 'Region 5' }
-        ]
-      });
-      
-      // Create default template
-      await prisma.ticketTemplate.create({
-        data: {
-          name: 'Default Template',
-          design: {
-            header: 'LOTTERY TICKET',
-            footer: 'Good Luck!',
-            layout: 'standard'
-          },
-          isActive: true,
-          createdById: superadmin.id
-        }
-      });
-      
-      // Create bet limits
-      await prisma.betLimit.createMany({
-        data: [
-          { betType: 'standard', limitAmount: 10000, isActive: true, createdById: superadmin.id },
-          { betType: 'rambolito', limitAmount: 5000, isActive: true, createdById: superadmin.id }
-        ]
-      });
-      
-      // Create prize configurations
-      await prisma.prizeConfiguration.createMany({
-        data: [
-          { 
-            betType: 'standard', 
-            multiplier: 450.0, 
-            baseAmount: 10.0, 
-            basePrize: 4500.0,
-            description: 'Standard bet prize configuration',
-            createdById: superadmin.id
-          },
-          { 
-            betType: 'rambolito', 
-            multiplier: 450.0, 
-            baseAmount: 10.0, 
-            basePrize: 4500.0,
-            description: 'Rambolito bet prize configuration',
-            createdById: superadmin.id
-          }
-        ]
-      });
-      
-      // Create system functions
-      await prisma.systemFunction.createMany({
-        data: [
-          { name: 'User Management', key: 'user_management', description: 'Manage users and roles', category: 'Administration' },
-          { name: 'Draw Management', key: 'draw_management', description: 'Manage lottery draws', category: 'Operations' },
-          { name: 'Ticket Management', key: 'ticket_management', description: 'Manage tickets and sales', category: 'Operations' },
-          { name: 'Reports', key: 'reports', description: 'View reports and analytics', category: 'Reports' },
-          { name: 'System Settings', key: 'system_settings', description: 'Configure system settings', category: 'Administration' }
-        ]
-      });
-      
-      console.log('✅ Database initialized successfully!');
+      console.log('⚠️ Database appears empty - this should not happen after build');
     } else {
-      console.log('✅ Database already initialized');
+      console.log('✅ Database is properly initialized');
     }
     
     await prisma.$disconnect();
     
   } catch (error) {
-    console.error('❌ Database initialization error:', error.message);
+    console.error('❌ Database verification error:', error.message);
     await prisma.$disconnect();
-    // Don't exit, continue with server startup
+    console.log('⚠️ Continuing with server startup despite database issues...');
   }
 }
 
 async function startServer() {
   console.log('🚀 Starting Lottery System Server...');
   
-  // Initialize database first
-  await initializeDatabase();
+  // Verify database connection
+  await verifyDatabase();
   
   // Start the main server
   console.log('🌐 Starting HTTP Server...');
