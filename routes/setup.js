@@ -1,17 +1,17 @@
-#!/usr/bin/env node
+const express = require('express');
+const router = express.Router();
+const { PrismaClient } = require('@prisma/client');
+const { execSync } = require('child_process');
 
 /**
- * Enhanced Server Startup Script
- * Handles database initialization and server startup
+ * Database Setup Route
+ * Call this endpoint to set up the database tables and initial data
+ * GET /api/v1/setup
  */
 
-const { spawn } = require('child_process');
-const { PrismaClient } = require('@prisma/client');
-
-async function setupDatabase() {
-  console.log('🔧 Setting up Database...');
+router.get('/setup', async (req, res) => {
+  console.log('🔧 Database setup requested via API...');
   
-  const { execSync } = require('child_process');
   const prisma = new PrismaClient();
   
   try {
@@ -26,8 +26,12 @@ async function setupDatabase() {
         execSync('npx prisma db push --force-reset', { stdio: 'inherit' });
         console.log('✅ Database schema pushed successfully');
       } catch (pushError) {
-        console.log('❌ Database setup failed, but continuing...');
-        console.log('💡 You may need to manually run: npx prisma db push');
+        console.log('❌ Database setup failed');
+        return res.status(500).json({
+          success: false,
+          message: 'Database setup failed',
+          error: pushError.message
+        });
       }
     }
     
@@ -55,9 +59,7 @@ async function setupDatabase() {
         }
       });
       
-      console.log('✅ Superadmin created:');
-      console.log('   Username: superadmin');
-      console.log('   Password: admin123');
+      console.log('✅ Superadmin created');
       
       // Create regions
       await prisma.region.createMany({
@@ -130,57 +132,42 @@ async function setupDatabase() {
       });
       console.log('✅ System functions initialized');
       
-      console.log('🎉 Database initialization complete!');
+      await prisma.$disconnect();
+      
+      res.json({
+        success: true,
+        message: 'Database setup completed successfully!',
+        data: {
+          superadmin: {
+            username: 'superadmin',
+            password: 'admin123'
+          },
+          regions: 5,
+          templates: 1,
+          betLimits: 2,
+          prizeConfigs: 2,
+          systemFunctions: 5
+        }
+      });
+      
     } else {
-      console.log('✅ Database already initialized');
+      await prisma.$disconnect();
+      res.json({
+        success: true,
+        message: 'Database already initialized',
+        userCount: userCount
+      });
     }
-    
-    await prisma.$disconnect();
     
   } catch (error) {
     console.error('❌ Database setup error:', error.message);
     await prisma.$disconnect();
-    console.log('⚠️ Continuing with server startup despite database issues...');
+    res.status(500).json({
+      success: false,
+      message: 'Database setup failed',
+      error: error.message
+    });
   }
-}
-
-async function startServer() {
-  console.log('🚀 Starting Lottery System Server...');
-  
-  // Setup database
-  await setupDatabase();
-  
-  // Start the main server
-  console.log('🌐 Starting HTTP Server...');
-  const server = spawn('node', ['server.js'], {
-    stdio: 'inherit',
-    env: process.env
-  });
-  
-  server.on('error', (error) => {
-    console.error('❌ Server error:', error);
-    process.exit(1);
-  });
-  
-  server.on('exit', (code) => {
-    console.log(`📊 Server exited with code ${code}`);
-    process.exit(code);
-  });
-  
-  // Handle graceful shutdown
-  process.on('SIGTERM', () => {
-    console.log('🛑 Received SIGTERM, shutting down gracefully...');
-    server.kill('SIGTERM');
-  });
-  
-  process.on('SIGINT', () => {
-    console.log('🛑 Received SIGINT, shutting down gracefully...');
-    server.kill('SIGINT');
-  });
-}
-
-// Start the application
-startServer().catch((error) => {
-  console.error('❌ Startup error:', error);
-  process.exit(1);
 });
+
+module.exports = router;

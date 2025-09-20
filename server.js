@@ -34,6 +34,7 @@ const ticketTemplatesRoutes = require('./routes/ticket-templates');
 const prizeConfigurationRoutes = require('./routes/prize-configuration');
 const healthRoutes = require('./routes/health');
 const backupRoutes = require('./routes/backup');
+const setupRoutes = require('./routes/setup');
 
 // Import middleware
 const authMiddleware = require('./middleware/auth');
@@ -176,6 +177,9 @@ app.use('/api/v1/prize-configuration', authMiddleware, prizeConfigurationRoutes)
 
 // Health check routes (no authentication required)
 app.use('/api/v1/health', healthRoutes);
+
+// Setup routes (no authentication required)
+app.use('/api/v1', setupRoutes);
 
 // Backup management routes (protected)
 app.use('/api/v1/backup', authMiddleware, backupRoutes);
