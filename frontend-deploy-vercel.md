@@ -1,201 +1,184 @@
-# 🌐 Frontend Deployment to Vercel
+# Deploy Frontend to Vercel
 
-## Why Vercel?
-- **Free tier** with generous limits
-- **Automatic deployments** from GitHub
-- **Global CDN** for fast loading
-- **Easy environment variable management**
-- **Perfect for React applications**
+This guide will help you deploy your React frontend to Vercel, which is often more reliable than Netlify for React applications.
 
-## Step 1: Prepare Frontend for Production
+## Prerequisites
 
-### 1.1 Update API URLs
-Make sure your frontend is configured to use the Heroku backend URL.
+1. A Vercel account (free at [vercel.com](https://vercel.com))
+2. Your frontend code ready for deployment
+3. Your backend API URL (currently: `https://lottery-system-tna9.onrender.com`)
 
-In `frontend/src/utils/api.js`, update the base URL:
-```javascript
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://your-app-name.herokuapp.com';
-```
+## Deployment Steps
 
-### 1.2 Build the Frontend
-```bash
-cd frontend
-npm run build
-```
+### Method 1: Deploy via Vercel CLI (Recommended)
 
-## Step 2: Deploy to Vercel
-
-### Option A: Deploy via Vercel Dashboard
-
-1. **Go to [vercel.com](https://vercel.com)**
-2. **Sign up/Login** with your GitHub account
-3. **Click "New Project"**
-4. **Import your GitHub repository**
-5. **Configure the project:**
-   - **Framework Preset**: Create React App
-   - **Root Directory**: `frontend`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `build`
-   - **Install Command**: `npm install`
-
-### Option B: Deploy via Vercel CLI
-
-1. **Install Vercel CLI:**
+1. **Install Vercel CLI globally:**
    ```bash
    npm install -g vercel
    ```
 
-2. **Login to Vercel:**
+2. **Navigate to your frontend directory:**
+   ```bash
+   cd frontend
+   ```
+
+3. **Login to Vercel:**
    ```bash
    vercel login
    ```
 
-3. **Deploy from frontend directory:**
+4. **Deploy your project:**
    ```bash
-   cd frontend
    vercel
    ```
+   - Follow the prompts:
+     - Set up and deploy? **Yes**
+     - Which scope? **Your account**
+     - Link to existing project? **No**
+     - Project name: **newbetting-frontend** (or your preferred name)
+     - Directory: **./** (current directory)
+     - Override settings? **No**
 
-4. **Follow the prompts:**
-   - Set up and deploy? `Y`
-   - Which scope? (select your account)
-   - Link to existing project? `N`
-   - Project name: `newbetting-frontend`
-   - Directory: `./frontend`
-   - Override settings? `N`
+5. **Set environment variables:**
+   ```bash
+   vercel env add REACT_APP_API_URL
+   # Enter: https://lottery-system-tna9.onrender.com
+   
+   vercel env add REACT_APP_API_VERSION
+   # Enter: v1
+   
+   vercel env add REACT_APP_VERSION
+   # Enter: 1.0.0
+   
+   vercel env add GENERATE_SOURCEMAP
+   # Enter: false
+   ```
 
-## Step 3: Configure Environment Variables
+6. **Redeploy with environment variables:**
+   ```bash
+   vercel --prod
+   ```
 
-### 3.1 In Vercel Dashboard:
-1. Go to your project dashboard
-2. Click on **Settings** tab
-3. Click on **Environment Variables**
-4. Add these variables:
+### Method 2: Deploy via Vercel Dashboard
 
-```
-REACT_APP_API_URL = https://your-app-name.herokuapp.com
-REACT_APP_SOCKET_URL = https://your-app-name.herokuapp.com
-```
+1. **Go to [vercel.com](https://vercel.com) and sign in**
 
-### 3.2 Via Vercel CLI:
-```bash
-vercel env add REACT_APP_API_URL
-# Enter: https://your-app-name.herokuapp.com
+2. **Click "New Project"**
 
-vercel env add REACT_APP_SOCKET_URL
-# Enter: https://your-app-name.herokuapp.com
-```
+3. **Import your Git repository:**
+   - Connect your GitHub/GitLab/Bitbucket account
+   - Select your repository
+   - Choose the `frontend` folder as the root directory
 
-## Step 4: Update CORS Settings
+4. **Configure the project:**
+   - Framework Preset: **Create React App**
+   - Root Directory: **frontend**
+   - Build Command: **npm run build**
+   - Output Directory: **build**
+   - Install Command: **npm install**
 
-### 4.1 Update Heroku Backend CORS
-```bash
-# Update CORS_ORIGIN to your Vercel domain
-heroku config:set CORS_ORIGIN="https://your-frontend-name.vercel.app" --app your-app-name
-```
+5. **Set Environment Variables:**
+   - Go to Project Settings → Environment Variables
+   - Add the following:
+     ```
+     REACT_APP_API_URL = https://lottery-system-tna9.onrender.com
+     REACT_APP_API_VERSION = v1
+     REACT_APP_VERSION = 1.0.0
+     GENERATE_SOURCEMAP = false
+     ```
 
-### 4.2 Restart Heroku App
-```bash
-heroku restart --app your-app-name
-```
+6. **Deploy:**
+   - Click "Deploy"
+   - Wait for the build to complete
 
-## Step 5: Test Your Deployment
+## Configuration Files
 
-1. **Visit your Vercel URL**
-2. **Test the login functionality**
-3. **Check if API calls are working**
-4. **Test the winning tickets feature**
+### vercel.json
+The `vercel.json` file has been created with the following configuration:
+- Builds the React app using `@vercel/static-build`
+- Sets up proper routing for SPA (Single Page Application)
+- Configures environment variables
+- Sets the output directory to `build`
 
-## Step 6: Custom Domain (Optional)
+### package.json
+Added `vercel-build` script for Vercel compatibility.
 
-### 6.1 Add Custom Domain in Vercel:
-1. Go to project settings
-2. Click on **Domains**
-3. Add your custom domain
-4. Configure DNS as instructed
+## Environment Variables
 
-### 6.2 Update Environment Variables:
-```bash
-# Update CORS_ORIGIN with your custom domain
-heroku config:set CORS_ORIGIN="https://your-custom-domain.com" --app your-app-name
-```
+Make sure these environment variables are set in your Vercel project:
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `REACT_APP_API_URL` | `https://lottery-system-tna9.onrender.com` | Backend API URL |
+| `REACT_APP_API_VERSION` | `v1` | API version |
+| `REACT_APP_VERSION` | `1.0.0` | Frontend version |
+| `GENERATE_SOURCEMAP` | `false` | Disable source maps for production |
 
 ## Troubleshooting
 
 ### Common Issues:
 
-1. **API Connection Failed**
-   - Check if `REACT_APP_API_URL` is set correctly
-   - Verify Heroku app is running: `heroku ps --app your-app-name`
-   - Check CORS settings
+1. **Build Failures:**
+   - Check that all dependencies are in `package.json`
+   - Ensure Node.js version compatibility
+   - Check for TypeScript errors
 
-2. **Build Fails**
-   - Check if all dependencies are in `package.json`
-   - Verify Node.js version compatibility
-   - Check build logs in Vercel dashboard
+2. **Environment Variables Not Working:**
+   - Verify variables are set in Vercel dashboard
+   - Ensure variables start with `REACT_APP_`
+   - Redeploy after adding variables
 
-3. **Environment Variables Not Working**
-   - Make sure variables start with `REACT_APP_`
-   - Redeploy after adding new variables
-   - Check variable names are correct
+3. **Routing Issues:**
+   - The `vercel.json` includes SPA routing configuration
+   - All routes will redirect to `index.html`
 
-### Useful Commands:
+4. **API Connection Issues:**
+   - Verify your backend is running
+   - Check CORS settings on your backend
+   - Ensure API URL is correct
 
-```bash
-# Check Vercel deployment status
-vercel ls
+### ESLint Issues:
+Vercel typically handles ESLint issues better than Netlify. If you encounter ESLint errors:
 
-# View deployment logs
-vercel logs
+1. **Disable ESLint during build (temporary fix):**
+   ```bash
+   vercel env add DISABLE_ESLINT_PLUGIN
+   # Enter: true
+   ```
 
-# Redeploy
-vercel --prod
+2. **Or fix ESLint errors:**
+   - Run `npm run build` locally to see errors
+   - Fix the errors in your code
+   - Commit and redeploy
 
-# Check environment variables
-vercel env ls
-```
+## Automatic Deployments
 
-## Alternative: Netlify Deployment
+Once connected to Git:
+- Every push to the main branch will trigger a new deployment
+- Preview deployments are created for pull requests
+- You can manage deployments in the Vercel dashboard
 
-If you prefer Netlify over Vercel:
+## Custom Domain (Optional)
 
-### 1. Go to [netlify.com](https://netlify.com)
-### 2. Connect your GitHub repository
-### 3. Configure build settings:
-   - **Build command**: `cd frontend && npm run build`
-   - **Publish directory**: `frontend/build`
-### 4. Set environment variables:
-   - `REACT_APP_API_URL`: `https://your-app-name.herokuapp.com`
-   - `REACT_APP_SOCKET_URL`: `https://your-app-name.herokuapp.com`
+1. Go to Project Settings → Domains
+2. Add your custom domain
+3. Follow DNS configuration instructions
+4. SSL certificate will be automatically provisioned
 
-## Cost Comparison
+## Performance Optimization
 
-| Platform | Free Tier | Paid Plans |
-|----------|-----------|------------|
-| **Vercel** | 100GB bandwidth/month | $20/month |
-| **Netlify** | 100GB bandwidth/month | $19/month |
-| **Heroku** | No free tier | $7/month (basic) |
+Vercel automatically provides:
+- Global CDN
+- Automatic HTTPS
+- Edge functions
+- Image optimization
+- Analytics (Pro plan)
 
-## Final Architecture
+## Support
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   Database      │
-│   (Vercel)      │◄──►│   (Heroku)      │◄──►│   (PostgreSQL)  │
-│   React App     │    │   Node.js API   │    │   Heroku Addon  │
-│   https://...   │    │   https://...   │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-## Next Steps
-
-1. **Set up monitoring** (Vercel Analytics)
-2. **Configure custom domain**
-3. **Set up CI/CD** (automatic deployments)
-4. **Add error tracking** (Sentry)
-5. **Set up backups** (database backups)
+- Vercel Documentation: [vercel.com/docs](https://vercel.com/docs)
+- Vercel Community: [github.com/vercel/vercel/discussions](https://github.com/vercel/vercel/discussions)
 
 ---
 
-**Note**: Replace `your-app-name` and `your-frontend-name` with your actual app names.
-
+**Note:** Vercel offers better performance and reliability for React applications compared to Netlify, especially for complex builds and ESLint configurations.
