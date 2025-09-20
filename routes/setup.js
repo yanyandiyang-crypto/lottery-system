@@ -35,10 +35,17 @@ router.get('/setup', async (req, res) => {
       }
     }
     
-    // Step 2: Test Connection
+    // Step 2: Test Connection and Initialize Data
     console.log('🧪 Testing Database Connection...');
-    const userCount = await prisma.user.count();
-    console.log(`📊 Users in database: ${userCount}`);
+    let userCount = 0;
+    
+    try {
+      userCount = await prisma.user.count();
+      console.log(`📊 Users in database: ${userCount}`);
+    } catch (error) {
+      console.log('📊 Database tables not created yet, will initialize...');
+      userCount = 0;
+    }
     
     // Step 3: Initialize Data if Empty
     if (userCount === 0) {
