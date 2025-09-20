@@ -15,24 +15,18 @@ router.get('/setup', async (req, res) => {
   const prisma = new PrismaClient();
   
   try {
-    // Step 1: Apply Migrations
-    console.log('🗄️ Applying Database Migrations...');
+    // Step 1: Create Database Schema
+    console.log('🗄️ Creating Database Schema...');
     try {
-      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-      console.log('✅ Migrations applied successfully');
-    } catch (migrationError) {
-      console.log('⚠️ Migration failed, trying db push...');
-      try {
-        execSync('npx prisma db push --force-reset', { stdio: 'inherit' });
-        console.log('✅ Database schema pushed successfully');
-      } catch (pushError) {
-        console.log('❌ Database setup failed');
-        return res.status(500).json({
-          success: false,
-          message: 'Database setup failed',
-          error: pushError.message
-        });
-      }
+      execSync('npx prisma db push --force-reset', { stdio: 'inherit' });
+      console.log('✅ Database schema created successfully');
+    } catch (pushError) {
+      console.log('❌ Database schema creation failed');
+      return res.status(500).json({
+        success: false,
+        message: 'Database schema creation failed',
+        error: pushError.message
+      });
     }
     
     // Step 2: Test Connection and Initialize Data
