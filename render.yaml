@@ -3,7 +3,7 @@ services:
     name: lottery-backend
     runtime: node
     plan: free
-    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy && node fix-database-deployment.js
     startCommand: node server.js
     envVars:
       - key: NODE_ENV
