@@ -16,6 +16,8 @@ import {
   MinusIcon
 } from '@heroicons/react/24/outline';
 import QRCode from 'qrcode.react';
+import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate';
+import MobileTicketUtils from '../../utils/mobileTicketUtils';
 
 const BettingInterface = () => {
   const { user } = useAuth();
@@ -40,6 +42,8 @@ const BettingInterface = () => {
   const [betType, setBetType] = useState('standard');
   const [betAmount, setBetAmount] = useState(10);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMobileTicket, setShowMobileTicket] = useState(false);
+  const [createdTicket, setCreatedTicket] = useState(null);
   const [addedBets, setAddedBets] = useState([]);
   const [showViewBets, setShowViewBets] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -174,6 +178,10 @@ const BettingInterface = () => {
     {
       onSuccess: (data) => {
         toast.success('Ticket created successfully!');
+        
+        // Show mobile ticket preview
+        setCreatedTicket(data.data);
+        setShowMobileTicket(true);
         
         // Refresh balance and tickets
         queryClient.invalidateQueries(['balance', user.id]);
@@ -351,34 +359,62 @@ const BettingInterface = () => {
 
   const generateAndPrintTicket = async (ticket) => {
     try {
-      // Get agent's assigned template or use default
+      // Check if agent has mobile template assigned
       const templatesResponse = await api.get(`/ticket-templates/agent/${user.id}`);
       const templates = templatesResponse.data.data || [];
-      const selectedTemplate = templates.find(t => t.id === ticket.templateId) || templates[0];
+      const mobileTemplate = templates.find(t => t.design?.templateType === 'mobile');
       
-      let ticketHtml;
-      if (selectedTemplate && selectedTemplate.design && selectedTemplate.design.elements) {
-        // Use custom template
-        ticketHtml = generateCustomTicketTemplate(ticket, selectedTemplate);
+      if (mobileTemplate) {
+        // Use mobile template for 58mm thermal printers
+        const ticketHtml = generateCustomTicketTemplate(ticket, mobileTemplate);
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(ticketHtml);
+        printWindow.document.close();
+        
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+            setTimeout(() => printWindow.close(), 1000);
+          }, 500);
+        };
+        toast.success('Mobile ticket sent to printer');
       } else {
-        // Fallback to default template
-        ticketHtml = generateTicketTemplate(ticket);
+        // Fallback to mobile-optimized ticket
+        MobileTicketUtils.printMobileTicket(ticket, user);
+        toast.success('Ticket sent to printer');
       }
-      
-      // Create print window
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(ticketHtml);
-      printWindow.document.close();
-      
-      // Auto print
-      printWindow.onload = () => {
-        printWindow.print();
-        printWindow.close();
-      };
-      
     } catch (error) {
       console.error('Error printing ticket:', error);
       toast.error('Failed to print ticket');
+    }
+  };
+
+  const handleShareTicket = async (ticket) => {
+    try {
+      const result = await MobileTicketUtils.shareTicket(ticket, user);
+      if (result.success) {
+        if (result.method === 'web-share') {
+          toast.success('Ticket shared successfully!');
+        } else {
+          toast.success('Ticket link copied to clipboard!');
+        }
+      } else {
+        toast.error('Failed to share ticket');
+      }
+    } catch (error) {
+      console.error('Error sharing ticket:', error);
+      toast.error('Failed to share ticket');
+    }
+  };
+
+  const handleDownloadTicket = async (ticket) => {
+    try {
+      await MobileTicketUtils.downloadTicketImage(ticket, user);
+      toast.success('Ticket downloaded as image!');
+    } catch (error) {
+      console.error('Error downloading ticket:', error);
+      toast.error('Failed to download ticket');
     }
   };
 
@@ -998,6 +1034,47 @@ const BettingInterface = () => {
                     className="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 font-bold"
                   >
                     {isSubmitting ? 'Processing...' : 'Confirm'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Ticket Preview Modal */}
+        {showMobileTicket && createdTicket && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">Your Lottery Ticket</h3>
+                  <button
+                    onClick={() => setShowMobileTicket(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+                
+                <MobileTicketTemplate
+                  ticket={createdTicket}
+                  user={user}
+                  onShare={() => handleShareTicket(createdTicket)}
+                  onPrint={() => generateAndPrintTicket(createdTicket)}
+                />
+                
+                <div className="mt-4 flex space-x-2">
+                  <button
+                    onClick={() => handleDownloadTicket(createdTicket)}
+                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+                  >
+                    📱 Download Image
+                  </button>
+                  <button
+                    onClick={() => setShowMobileTicket(false)}
+                    className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
+                  >
+                    Close
                   </button>
                 </div>
               </div>

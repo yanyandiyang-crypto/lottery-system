@@ -1095,6 +1095,66 @@ function calculateWinningPrize(betType, betCombination) {
   return TicketGenerator.getWinningPrize(betType, betCombination);
 }
 
+// @route   GET /api/tickets/number/:ticketNumber
+// @desc    Get ticket by ticket number (for sharing)
+// @access  Public (for ticket sharing)
+router.get('/number/:ticketNumber', async (req, res) => {
+  try {
+    const { ticketNumber } = req.params;
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { ticketNumber },
+      include: {
+        agent: {
+          select: {
+            id: true,
+            fullName: true,
+            username: true,
+            agentId: true
+          }
+        },
+        draw: {
+          select: {
+            id: true,
+            drawDate: true,
+            drawTime: true,
+            winningNumber: true,
+            status: true
+          }
+        },
+        bets: {
+          select: {
+            id: true,
+            betType: true,
+            betCombination: true,
+            betAmount: true,
+            sequenceLetter: true
+          }
+        }
+      }
+    });
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: ticket
+    });
+
+  } catch (error) {
+    console.error('Get ticket by number error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 module.exports = router;
 
 

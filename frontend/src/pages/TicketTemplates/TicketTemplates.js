@@ -59,6 +59,7 @@ const TicketTemplates = () => {
       canvasSize: { width: 400, height: 600 }
     }
   });
+  const [templateType, setTemplateType] = useState('standard'); // 'standard' or 'mobile'
 
   // Dynamic data fields available for tickets
   const dynamicFields = useMemo(() => [
@@ -1064,6 +1065,408 @@ const TicketTemplates = () => {
     setSelectedElement(null);
   };
 
+  const createMobileTemplate = () => {
+    const mobileElements = [
+      // Header for mobile (58mm width optimized)
+      {
+        id: 'mobile-header-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 0,
+        y: 0,
+        width: 220, // 58mm = ~220px
+        height: 40,
+        style: {
+          backgroundColor: '#1e40af',
+          border: 'none',
+          borderRadius: '0px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'mobile-logo',
+        type: 'text',
+        content: '🎲 NEWBETTING',
+        x: 110,
+        y: 8,
+        width: 220,
+        height: 12,
+        style: {
+          fontSize: '12px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'mobile-title',
+        type: 'text',
+        content: '3D LOTTO TICKET',
+        x: 110,
+        y: 20,
+        width: 220,
+        height: 12,
+        style: {
+          fontSize: '11px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'mobile-ticket-number',
+        type: 'text',
+        content: '#',
+        x: 110,
+        y: 32,
+        width: 220,
+        height: 8,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'mobile-ticket-number-value',
+        type: 'dynamic',
+        fieldId: 'ticketNumber',
+        content: '12345678901234567',
+        label: 'Ticket Number',
+        x: 110,
+        y: 40,
+        width: 220,
+        height: 8,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // Draw info section
+      {
+        id: 'mobile-draw-info-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 10,
+        y: 55,
+        width: 200,
+        height: 25,
+        style: {
+          backgroundColor: '#fef3c7',
+          border: '1px solid #f59e0b',
+          borderRadius: '4px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'mobile-draw-time',
+        type: 'dynamic',
+        fieldId: 'drawTime',
+        content: '14:00',
+        label: 'Draw Time',
+        x: 15,
+        y: 60,
+        width: 60,
+        height: 10,
+        style: {
+          fontSize: '11px',
+          fontFamily: 'Courier New',
+          color: '#92400e',
+          fontWeight: 'bold',
+          textAlign: 'left',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'mobile-draw-date',
+        type: 'dynamic',
+        fieldId: 'drawDate',
+        content: '2025/09/16 Tue',
+        label: 'Draw Date',
+        x: 80,
+        y: 60,
+        width: 120,
+        height: 10,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#92400e',
+          fontWeight: 'bold',
+          textAlign: 'left',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // Bet information
+      {
+        id: 'mobile-bet-info',
+        type: 'dynamic',
+        fieldId: 'allBets',
+        content: 'Standard                                                                                        1    2    3\nA                                                                                                    Price: ₱10.00\n\nRambolito                                                                                        4   5   6 \nB                                                                                                     Price: ₱20.00',
+        label: 'All Bets Detail',
+        x: 10,
+        y: 90,
+        width: 200,
+        height: 60,
+        style: {
+          fontSize: '10px',
+          fontFamily: 'Courier New',
+          color: '#1e293b',
+          fontWeight: 'normal',
+          textAlign: 'left',
+          backgroundColor: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '4px',
+          padding: '4px',
+          lineHeight: '1.2'
+        },
+        zIndex: 2
+      },
+      // Total amount
+      {
+        id: 'mobile-total-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 10,
+        y: 160,
+        width: 200,
+        height: 25,
+        style: {
+          backgroundColor: '#1e293b',
+          border: 'none',
+          borderRadius: '4px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'mobile-total-label',
+        type: 'text',
+        content: 'TOTAL AMOUNT',
+        x: 110,
+        y: 165,
+        width: 200,
+        height: 8,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'mobile-total-value',
+        type: 'dynamic',
+        fieldId: 'totalBet',
+        content: '₱50.00',
+        label: 'Total Bet',
+        x: 110,
+        y: 175,
+        width: 200,
+        height: 10,
+        style: {
+          fontSize: '14px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // Agent info
+      {
+        id: 'mobile-agent-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 10,
+        y: 195,
+        width: 200,
+        height: 20,
+        style: {
+          backgroundColor: '#f1f5f9',
+          border: '1px solid #e2e8f0',
+          borderRadius: '4px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'mobile-agent-label',
+        type: 'text',
+        content: 'AGENT',
+        x: 15,
+        y: 198,
+        width: 40,
+        height: 6,
+        style: {
+          fontSize: '8px',
+          fontFamily: 'Courier New',
+          color: '#64748b',
+          fontWeight: 'bold',
+          textAlign: 'left',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'mobile-agent-value',
+        type: 'dynamic',
+        fieldId: 'agentName',
+        content: 'Juan Dela Cruz',
+        label: 'Agent Name',
+        x: 15,
+        y: 205,
+        width: 190,
+        height: 8,
+        style: {
+          fontSize: '10px',
+          fontFamily: 'Courier New',
+          color: '#1e293b',
+          fontWeight: 'bold',
+          textAlign: 'left',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // QR Code section
+      {
+        id: 'mobile-qr-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 70,
+        y: 225,
+        width: 80,
+        height: 80,
+        style: {
+          backgroundColor: '#ffffff',
+          border: '2px solid #e2e8f0',
+          borderRadius: '4px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'mobile-qr-code',
+        type: 'dynamic',
+        fieldId: 'qrCode',
+        content: 'https://quickchart.io/qr?text=sample',
+        label: 'QR Code',
+        x: 70,
+        y: 225,
+        width: 80,
+        height: 80,
+        style: {
+          fontSize: '8px',
+          fontFamily: 'Courier New',
+          color: '#000000',
+          fontWeight: 'normal',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // Footer
+      {
+        id: 'mobile-footer',
+        type: 'text',
+        content: 'GOOD LUCK! 🍀',
+        x: 110,
+        y: 315,
+        width: 220,
+        height: 10,
+        style: {
+          fontSize: '10px',
+          fontFamily: 'Courier New',
+          color: '#1e293b',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'mobile-timestamp',
+        type: 'dynamic',
+        fieldId: 'timestamp',
+        content: '2025/09/16 Tue 14:00',
+        label: 'Timestamp',
+        x: 110,
+        y: 325,
+        width: 220,
+        height: 8,
+        style: {
+          fontSize: '8px',
+          fontFamily: 'Courier New',
+          color: '#666666',
+          fontWeight: 'normal',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      }
+    ];
+
+    setSelectedTemplate(null);
+    setFormData({
+      name: 'Mobile 58mm Template',
+      design: {
+        elements: mobileElements,
+        canvasSize: { width: 220, height: 340 }, // 58mm width optimized
+        backgroundColor: '#ffffff',
+        templateType: 'mobile'
+      }
+    });
+    setCanvasElements(mobileElements);
+    setCanvasSize({ width: 220, height: 340 });
+    setTemplateType('mobile');
+    setShowDesigner(true);
+    setDesignerMode('select');
+    setSelectedElement(null);
+  };
+
   const createProfessionalTemplate = () => {
     const professionalElements = [
       // Header with professional gradient
@@ -1609,6 +2012,7 @@ const TicketTemplates = () => {
       });
       setCanvasElements(template.design?.elements || []);
       setCanvasSize(template.design?.canvasSize || { width: 400, height: 600 });
+      setTemplateType(template.design?.templateType || 'standard');
     } else {
       setSelectedTemplate(null);
       setFormData({
@@ -1616,11 +2020,13 @@ const TicketTemplates = () => {
         design: {
           elements: [],
           canvasSize: { width: 400, height: 600 },
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          templateType: 'standard'
         }
       });
       setCanvasElements([]);
       setCanvasSize({ width: 400, height: 600 });
+      setTemplateType('standard');
     }
     setShowDesigner(true);
     setDesignerMode('select');
@@ -1634,7 +2040,8 @@ const TicketTemplates = () => {
         design: {
           ...formData.design,
           elements: canvasElements,
-          canvasSize
+          canvasSize,
+          templateType: templateType
         }
       };
 
@@ -1675,6 +2082,13 @@ const TicketTemplates = () => {
         <div className="flex flex-wrap gap-3">
           {user?.role === 'superadmin' && (
             <>
+              <button
+                onClick={() => createMobileTemplate()}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 flex items-center shadow-lg"
+              >
+                <Square3Stack3DIcon className="h-5 w-5 mr-2" />
+                Mobile 58mm Template
+              </button>
               <button
                 onClick={() => createProfessionalTemplate()}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center shadow-lg"
@@ -1749,6 +2163,11 @@ const TicketTemplates = () => {
                 <h3 className="text-lg font-medium text-gray-900">{template.name}</h3>
                 <p className="text-sm text-gray-500">
                   {template.isActive ? 'Active' : 'Inactive'}
+                  {template.design?.templateType === 'mobile' && (
+                    <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                      📱 Mobile
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex space-x-2">
@@ -2198,6 +2617,21 @@ const TicketTemplates = () => {
                   placeholder="Template Name"
                   className="bg-gray-700 text-white px-3 py-1 rounded border-none focus:ring-2 focus:ring-blue-500"
                 />
+                <select
+                  value={templateType}
+                  onChange={(e) => {
+                    setTemplateType(e.target.value);
+                    if (e.target.value === 'mobile') {
+                      setCanvasSize({ width: 220, height: 340 });
+                    } else {
+                      setCanvasSize({ width: 400, height: 600 });
+                    }
+                  }}
+                  className="bg-gray-700 text-white px-3 py-1 rounded border-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="standard">Standard Template</option>
+                  <option value="mobile">Mobile 58mm Template</option>
+                </select>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">

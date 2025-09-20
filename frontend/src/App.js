@@ -37,6 +37,7 @@ import AgentTickets from './pages/AgentTickets/AgentTickets';
 import AgentResults from './pages/AgentResults/AgentResults';
 import WinningTickets from './pages/WinningTickets/WinningTickets';
 import PrizeConfiguration from './pages/PrizeConfiguration/PrizeConfiguration';
+import MobileTicketShare from './pages/Tickets/MobileTicketShare';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -187,6 +188,8 @@ function AppRoutes() {
         {/* Account Info */}
         <Route path="/account/info" element={<AccountInfo />} />
 
+        {/* Mobile Ticket Share - Public route */}
+        <Route path="/ticket/:ticketNumber" element={<MobileTicketShare />} />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
