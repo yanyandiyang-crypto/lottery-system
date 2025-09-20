@@ -1,0 +1,1013 @@
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSocket } from '../../contexts/SocketContext';
+import axios from 'axios';
+import api from '../../utils/api';
+import toast from 'react-hot-toast';
+import { formatDrawTime, getDrawTimeLabel } from '../../utils/drawTimeFormatter';
+import {
+  ClockIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon,
+  TicketIcon,
+  BackspaceIcon,
+  PlusIcon,
+  MinusIcon
+} from '@heroicons/react/24/outline';
+import QRCode from 'qrcode.react';
+
+const BettingInterface = () => {
+  const { user } = useAuth();
+  const { emit } = useSocket();
+  const queryClient = useQueryClient();
+
+  // Helper function to format draw time (using utility function)
+  const formatDrawTimeForTicket = (drawTime) => {
+    return formatDrawTime(drawTime);
+  };
+  
+  // Get URL parameters for draw selection
+  const urlParams = new URLSearchParams(window.location.search);
+  const drawParam = urlParams.get('draw');
+  const timeParam = urlParams.get('time');
+  
+  console.log('🔗 URL Parameters:', { drawParam, timeParam });
+  
+  const [selectedDraw, setSelectedDraw] = useState(null);
+  const [betDigits, setBetDigits] = useState(['?', '?', '?']);
+  const [currentDigitIndex, setCurrentDigitIndex] = useState(0);
+  const [betType, setBetType] = useState('standard');
+  const [betAmount, setBetAmount] = useState(10);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addedBets, setAddedBets] = useState([]);
+  const [showViewBets, setShowViewBets] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(null);
+
+  // Fetch active draws
+  const { data: draws, isLoading: drawsLoading } = useQuery(
+    'activeDraws',
+    async () => {
+      const response = await api.get('/draws/current/active');
+      // The API returns { success: true, data: [...] }, so we need response.data.data
+      return response.data.data || [];
+    },
+    {
+      refetchInterval: 30000, // Refetch every 30 seconds
+      onError: (error) => {
+        console.error('Error fetching draws:', error);
+        toast.error('Failed to load draw information');
+      }
+    }
+  );
+
+  // Fetch user balance
+  const { data: balance, refetch: refetchBalance, isLoading: balanceLoading } = useQuery(
+    ['balance', user?.id],
+    async () => {
+      if (!user?.id) return null;
+      const response = await api.get(`/balance/${user.id}`);
+      // The API returns { success: true, data: balance, currentBalance: balance.currentBalance }
+      return response.data.data || response.data;
+    },
+    {
+      enabled: !!user?.id,
+      refetchInterval: 10000, // Refetch every 10 seconds
+      onError: (error) => {
+        console.error('Error fetching balance:', error);
+      }
+    }
+  );
+
+
+  // Set default draw when draws are loaded
+  useEffect(() => {
+    if (draws && Array.isArray(draws) && draws.length > 0 && !selectedDraw) {
+      // First, try to find the draw by ID from URL parameter
+      if (drawParam) {
+        const drawById = draws.find(draw => draw.id.toString() === drawParam);
+        if (drawById) {
+          console.log('🎯 Selected draw by ID:', drawById.drawTime, drawById.id);
+          setSelectedDraw(drawById);
+          return;
+        }
+      }
+      
+      // If no draw ID or draw not found, try to find by draw time
+      if (timeParam) {
+        const drawByTime = draws.find(draw => {
+          const drawTimeLabel = getDrawTimeLabel(draw.drawTime);
+          return drawTimeLabel === timeParam || formatDrawTime(draw.drawTime) === timeParam;
+        });
+        if (drawByTime) {
+          console.log('🎯 Selected draw by time:', drawByTime.drawTime, drawByTime.id);
+          setSelectedDraw(drawByTime);
+          return;
+        }
+      }
+      
+      // Fallback: Find the first open draw
+      const openDraw = draws.find(draw => draw.status === 'open');
+      if (openDraw) {
+        console.log('🎯 Selected first open draw:', openDraw.drawTime, openDraw.id);
+        setSelectedDraw(openDraw);
+      } else {
+        console.log('🎯 Selected first available draw:', draws[0].drawTime, draws[0].id);
+        setSelectedDraw(draws[0]);
+      }
+    }
+  }, [draws, selectedDraw, drawParam, timeParam]);
+
+  // Timer effect for countdown
+  useEffect(() => {
+    if (!selectedDraw) return;
+
+    const updateTimer = () => {
+      const now = new Date();
+      const cutoffTime = new Date(selectedDraw.cutoffTime);
+      const drawTime = new Date(selectedDraw.drawDatetime);
+      
+      let targetTime;
+      if (now > drawTime) {
+        targetTime = null; // Draw is over
+      } else if (now > cutoffTime) {
+        targetTime = drawTime; // Show time until draw
+      } else {
+        targetTime = cutoffTime; // Show time until cutoff
+      }
+
+      if (targetTime) {
+        const diff = targetTime - now;
+        if (diff > 0) {
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          
+          setTimeRemaining({
+            hours,
+            minutes,
+            seconds,
+            total: diff,
+            isCutoff: now <= cutoffTime
+          });
+        } else {
+          setTimeRemaining(null);
+        }
+      } else {
+        setTimeRemaining(null);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [selectedDraw]);
+
+  // Create ticket mutation
+  const createTicketMutation = useMutation(
+    async (ticketData) => {
+      const response = await api.post('/tickets', ticketData);
+      return response.data;
+    },
+    {
+      onSuccess: (data) => {
+        toast.success('Ticket created successfully!');
+        
+        // Refresh balance and tickets
+        queryClient.invalidateQueries(['balance', user.id]);
+        queryClient.invalidateQueries('tickets');
+        refetchBalance(); // Force immediate balance refresh
+        
+        // Emit real-time notification
+        emit('ticket-created', {
+          ticketId: data.data.id,
+          ticketNumber: data.data.ticketNumber,
+          agentName: user.fullName,
+          betType: data.data.betType,
+          betDigits: data.data.betDigits,
+          betAmount: data.data.betAmount,
+          drawTime: data.data.draw.drawTime
+        });
+        
+        // Reset form
+        setBetDigits(['?', '?', '?']);
+        setCurrentDigitIndex(0);
+        setBetAmount(10);
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to create ticket');
+      }
+    }
+  );
+
+  const handleBetTypeChange = (type) => {
+    setBetType(type);
+    setBetDigits(''); // Clear digits when changing bet type
+  };
+
+  const handleDigitInput = (digit) => {
+    if (currentDigitIndex < 3) {
+      const newDigits = [...betDigits];
+      newDigits[currentDigitIndex] = digit.toString();
+      setBetDigits(newDigits);
+      setCurrentDigitIndex(prev => Math.min(prev + 1, 2));
+    }
+  };
+
+  const handleClearDigits = () => {
+    setBetDigits(['?', '?', '?']);
+    setCurrentDigitIndex(0);
+  };
+
+  const handleBackspace = () => {
+    if (currentDigitIndex > 0) {
+      const newDigits = [...betDigits];
+      newDigits[currentDigitIndex - 1] = '?';
+      setBetDigits(newDigits);
+      setCurrentDigitIndex(prev => Math.max(prev - 1, 0));
+    }
+  };
+
+  const handleDigitClick = (index) => {
+    setCurrentDigitIndex(index);
+  };
+
+  const handleAddBet = () => {
+    const hasAllDigits = betDigits.every(digit => digit !== '?');
+    
+    if (!hasAllDigits) {
+      toast.error('Please enter exactly 3 digits');
+      return;
+    }
+
+    if (betAmount < 1) {
+      toast.error('Minimum bet amount is ₱1');
+      return;
+    }
+
+    const betNumber = betDigits.join('');
+    const newBet = {
+      id: Date.now(),
+      number: betNumber,
+      type: betType,
+      amount: betAmount
+    };
+
+    // Check if bet already exists
+    const existingBet = addedBets.find(bet => 
+      bet.number === betNumber && bet.type === betType
+    );
+
+    if (existingBet) {
+      toast.error('This bet combination already exists');
+      return;
+    }
+
+    setAddedBets(prev => [...prev, newBet]);
+    setBetDigits(['?', '?', '?']);
+    setCurrentDigitIndex(0);
+    toast.success(`Bet ${betNumber} (${betType}) added for ₱${betAmount}`);
+  };
+
+  const handleRemoveBet = (betId) => {
+    setAddedBets(prev => prev.filter(bet => bet.id !== betId));
+    toast.success('Bet removed');
+  };
+
+  const getTotalBetAmount = () => {
+    return addedBets.reduce((total, bet) => total + bet.amount, 0);
+  };
+
+  const handleConfirmAllBets = () => {
+    if (addedBets.length === 0) {
+      toast.error('Please add at least one bet');
+      return;
+    }
+
+    if (balance && balance.currentBalance < getTotalBetAmount()) {
+      toast.error('Insufficient balance');
+      return;
+    }
+
+    setShowConfirmModal(true);
+  };
+
+  const handleFinalConfirm = async () => {
+    // Check if draws are loaded
+    if (!draws || !Array.isArray(draws)) {
+      toast.error('Draw information is still loading. Please wait and try again.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Ensure we use an open draw
+      const targetDraw = selectedDraw?.status === 'open' ? selectedDraw : 
+                        (Array.isArray(draws) ? draws.find(draw => draw.status === 'open') : null);
+      
+      if (!targetDraw) {
+        toast.error('No open draws available for betting');
+        return;
+      }
+
+      // Create a single ticket with multiple bets
+      const ticketData = {
+        drawId: targetDraw.id,
+        userId: user.id,
+        bets: addedBets.map(bet => ({
+          betCombination: bet.number,
+          betType: bet.type,
+          betAmount: bet.amount
+        }))
+      };
+
+      const response = await api.post('/tickets', ticketData);
+      const ticket = response.data.data;
+
+      // Generate and print the single ticket
+      await generateAndPrintTicket(ticket);
+
+      toast.success(`Ticket with ${addedBets.length} bets created successfully!`);
+      
+      // Reset form
+      setAddedBets([]);
+      setBetDigits(['?', '?', '?']);
+      setCurrentDigitIndex(0);
+      setShowConfirmModal(false);
+      
+      // Refresh balance
+      queryClient.invalidateQueries(['balance', user.id]);
+      refetchBalance(); // Force immediate balance refresh
+      
+    } catch (error) {
+      console.error('Error creating tickets:', error);
+      toast.error(error.response?.data?.message || 'Failed to create tickets');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const generateAndPrintTicket = async (ticket) => {
+    try {
+      // Get agent's assigned template or use default
+      const templatesResponse = await api.get(`/ticket-templates/agent/${user.id}`);
+      const templates = templatesResponse.data.data || [];
+      const selectedTemplate = templates.find(t => t.id === ticket.templateId) || templates[0];
+      
+      let ticketHtml;
+      if (selectedTemplate && selectedTemplate.design && selectedTemplate.design.elements) {
+        // Use custom template
+        ticketHtml = generateCustomTicketTemplate(ticket, selectedTemplate);
+      } else {
+        // Fallback to default template
+        ticketHtml = generateTicketTemplate(ticket);
+      }
+      
+      // Create print window
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(ticketHtml);
+      printWindow.document.close();
+      
+      // Auto print
+      printWindow.onload = () => {
+        printWindow.print();
+        printWindow.close();
+      };
+      
+    } catch (error) {
+      console.error('Error printing ticket:', error);
+      toast.error('Failed to print ticket');
+    }
+  };
+
+  const generateCustomTicketTemplate = (ticket, template) => {
+    const canvasSize = template.design.canvasSize || { width: 400, height: 600 };
+    const elements = template.design.elements || [];
+    
+    // Handle multiple bets for template
+    const bets = ticket.bets || [];
+    const firstBet = bets[0] || {};
+    
+    // Create bet combinations string for display
+    const betCombinations = bets.map((bet, index) => {
+      const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
+      const sequence = String.fromCharCode(65 + index); // A, B, C, etc.
+      return `${betType} (Bet Type)                                                ${bet.betCombination.split('').join('   ')} (Bet Combination)\n${sequence} (Bet Sequence)                                                                           Price: ₱${parseFloat(bet.betAmount).toFixed(2)} (Bet Price)`;
+    }).join('\n\n');
+    
+    // Map dynamic data to match template format
+    const dynamicData = {
+      ticketNumber: ticket.ticketNumber,
+      drawTime: formatDrawTimeForTicket(ticket.draw?.drawTime),
+      drawDate: ticket.draw?.drawDate ? 
+        `${new Date(ticket.draw.drawDate).toLocaleDateString('en-CA')} ${new Date(ticket.draw.drawDate).toLocaleDateString('en-US', { weekday: 'short' })} ${formatDrawTimeForTicket(ticket.draw?.drawTime)}` : 
+        'No Date',
+      betNumbers: betCombinations || firstBet.betCombination || 'No Bets',
+      betType: firstBet.betType ? firstBet.betType.charAt(0).toUpperCase() + firstBet.betType.slice(1) : 'Standard',
+      betAmount: firstBet.betAmount ? `₱${parseFloat(firstBet.betAmount).toFixed(2)}` : '₱0.00',
+      totalBet: `₱${parseFloat(ticket.totalAmount).toFixed(2)}`,
+      agentName: user.fullName || user.username,
+      timestamp: ticket.draw?.drawDate ? 
+        `${new Date(ticket.draw.drawDate).toLocaleDateString('en-CA')} ${new Date(ticket.draw.drawDate).toLocaleDateString('en-US', { weekday: 'short' })} ${formatDrawTimeForTicket(ticket.draw?.drawTime)}` : 
+        new Date(ticket.createdAt).toLocaleString(),
+      qrCode: ticket.qrCode,
+      barcode: `|||${ticket.ticketNumber.slice(-8)}|||`,
+      betCount: bets.length.toString(),
+      allBets: bets.map((bet, index) => {
+        const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
+        const sequence = String.fromCharCode(65 + index); // A, B, C, etc.
+        return `${betType}                                                                                        ${bet.betCombination.split('').join('   ')}\n${sequence}                                                                                                    Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
+      }).join('\n\n'),
+      
+      // Individual bet components (only for bets that exist and have valid data)
+      ...(() => {
+        const betComponents = {};
+        const validBets = bets.filter(bet => bet && bet.betType && bet.betCombination && bet.betAmount);
+        
+        for (let i = 0; i < validBets.length; i++) {
+          const betIndex = i + 1;
+          const bet = validBets[i];
+          const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
+          const sequence = String.fromCharCode(65 + i); // A, B, C, etc.
+          
+          betComponents[`bet${betIndex}Type`] = betType;
+          betComponents[`bet${betIndex}Numbers`] = bet.betCombination.split('').join('   ');
+          betComponents[`bet${betIndex}Sequence`] = sequence;
+          betComponents[`bet${betIndex}Price`] = `Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
+        }
+        
+        return betComponents;
+      })()
+    };
+
+    // Generate elements HTML
+    const elementsHtml = elements.map(element => {
+      const style = `
+        position: absolute;
+        left: ${element.x}px;
+        top: ${element.y}px;
+        width: ${element.width}px;
+        height: ${element.height}px;
+        z-index: ${element.zIndex || 1};
+        ${element.style ? Object.entries(element.style).map(([key, value]) => 
+          `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value};`
+        ).join(' ') : ''}
+      `;
+
+      if (element.type === 'text') {
+        return `<div style="${style}">${element.content}</div>`;
+      } else if (element.type === 'dynamic') {
+        const content = dynamicData[element.fieldId] || element.content;
+        
+        // Hide element if content is empty or if it's sample content (for unused bet components)
+        if (!content || content.trim() === '' || 
+            (element.fieldId && element.fieldId.startsWith('bet') && !dynamicData[element.fieldId])) {
+          return '';
+        }
+        
+        if (element.fieldId === 'qrCode') {
+          // Clean QR code style without borders
+          const cleanQRStyle = style.replace(/border[^;]*;?/g, '').replace(/background[^;]*;?/g, '');
+          return `<img src="${content}" alt="QR Code" style="${cleanQRStyle}" onerror="this.style.display='none';" crossorigin="anonymous" />`;
+        }
+        // Clean dynamic field style without borders
+        const cleanDynamicStyle = style.replace(/border[^;]*;?/g, '');
+        return `<div style="${cleanDynamicStyle}">${content}</div>`;
+      } else if (element.type === 'image') {
+        // Clean image/logo style without borders
+        const cleanImageStyle = style.replace(/border[^;]*;?/g, '');
+        return `<img src="${element.src}" alt="${element.alt || ''}" style="${cleanImageStyle}" onerror="this.style.display='none';" crossorigin="anonymous" />`;
+      } else if (element.type === 'shape') {
+        return `<div style="${style}"></div>`;
+      }
+      return '';
+    }).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${template.name} - Ticket</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #f0f0f0;
+          }
+          .ticket-container { 
+            width: ${canvasSize.width}px; 
+            height: ${canvasSize.height}px; 
+            position: relative; 
+            background: ${template.design.backgroundColor || '#ffffff'};
+            border: 1px solid #000;
+            margin: 0 auto;
+            overflow: hidden;
+          }
+          @media print {
+            body { background: white; padding: 0; }
+            .ticket-container { border: none; margin: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="ticket-container">
+          ${elementsHtml}
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  const generateTicketTemplate = (ticket) => {
+    // Handle multiple bets
+    const bets = ticket.bets || [];
+    const betListHtml = bets.length > 0 
+      ? bets.map((bet, index) => {
+          const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
+          const sequence = String.fromCharCode(65 + index); // A, B, C, etc.
+          return `<div class="bet-item" style="margin: 5px 0; padding: 5px; border-left: 2px solid #333; font-family: monospace;">
+            <div>${betType} (Bet Type)                                                ${bet.betCombination.split('').join('   ')} (Bet Combination)</div>
+            <div>${sequence} (Bet Sequence)                                                                           Price: ₱${parseFloat(bet.betAmount).toFixed(2)} (Bet Price)</div>
+          </div>`;
+        }).join('')
+      : '<div class="content">No bets found</div>';
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>3D Lotto Ticket</title>
+        <style>
+          body { font-family: monospace; font-size: 12px; margin: 0; padding: 10px; }
+          .ticket { width: 300px; border: 1px solid #000; padding: 10px; }
+          .header { text-align: center; font-weight: bold; margin-bottom: 10px; }
+          .content { margin: 5px 0; }
+          .footer { text-align: center; margin-top: 10px; font-size: 10px; }
+          .qr-code { text-align: center; margin: 10px 0; }
+          .bet-item { font-size: 11px; }
+          .total-amount { font-weight: bold; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ccc; }
+        </style>
+      </head>
+      <body>
+        <div class="ticket">
+          <div class="header">3D LOTTO TICKET</div>
+          <div class="content">Ticket #: ${ticket.ticketNumber}</div>
+          <div class="content">Draw: ${formatDrawTimeForTicket(ticket.draw?.drawTime)} - ${ticket.draw?.drawDate ? new Date(ticket.draw.drawDate).toLocaleDateString() : 'No Date'}</div>
+          <div class="content">Bets (${bets.length}):</div>
+          ${betListHtml}
+          <div class="content total-amount">Total Amount: ₱${ticket.totalAmount}</div>
+          <div class="content">Agent: ${user.fullName || user.username}</div>
+          <div class="content">Date: ${new Date(ticket.createdAt).toLocaleString()}</div>
+          <div class="qr-code">
+            <img src="${ticket.qrCode}" alt="QR Code" style="width: 100px; height: 100px;" />
+          </div>
+          <div class="footer">Good luck!</div>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  const availableAmounts = [1, 5, 10, 20, 30, 40, 50, 100, 200, 500];
+
+  const getDrawInfo = () => {
+    if (drawParam && timeParam) {
+      return {
+        id: drawParam,
+        time: decodeURIComponent(timeParam),
+        date: '2025-09-15',
+        status: 'Betting Open',
+        timeLeft: '19m left'
+      };
+    }
+    return null;
+  };
+
+  const drawInfo = getDrawInfo();
+
+  const validateBet = () => {
+    const hasAllDigits = betDigits.every(digit => digit !== '?');
+    
+    if (!hasAllDigits) {
+      toast.error('Please enter exactly 3 digits');
+      return false;
+    }
+
+    if (betType === 'rambolito') {
+      // Check for triple numbers (not allowed)
+      const uniqueDigits = [...new Set(betDigits)];
+      if (uniqueDigits.length === 1) {
+        toast.error('Triple numbers (000, 111, 222, etc.) are not allowed for Rambolito betting');
+        return false;
+      }
+    }
+
+    if (betAmount < 10) {
+      toast.error('Minimum bet amount is ₱10');
+      return false;
+    }
+
+    if (balance && balance.currentBalance < betAmount) {
+      toast.error('Insufficient balance');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateBet()) {
+      return;
+    }
+
+    // Check if draws are loaded
+    if (!draws || !Array.isArray(draws)) {
+      toast.error('Draw information is still loading. Please wait and try again.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Ensure we use an open draw
+      const targetDraw = selectedDraw?.status === 'open' ? selectedDraw : 
+                        (Array.isArray(draws) ? draws.find(draw => draw.status === 'open') : null);
+      
+      if (!targetDraw) {
+        toast.error('No open draws available for betting');
+        return;
+      }
+
+      await createTicketMutation.mutateAsync({
+        betType,
+        betDigits: betDigits.join(''),
+        betAmount,
+        drawId: targetDraw.id
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getDrawStatus = (draw) => {
+    const now = new Date();
+    const cutoffTime = new Date(draw.cutoffTime);
+    const drawTime = new Date(draw.drawDatetime);
+    
+    if (now > drawTime) {
+      return { status: 'closed', color: 'red', text: 'Draw Completed' };
+    } else if (now > cutoffTime) {
+      return { status: 'cutoff', color: 'yellow', text: 'Betting Closed' };
+    } else {
+      return { status: 'open', color: 'green', text: 'Betting Open' };
+    }
+  };
+
+  const getBettingWindowStatus = (draw) => {
+    if (!draw.bettingWindow) return null;
+    
+    const now = new Date();
+    const startTime = new Date(draw.bettingWindow.startTime);
+    const endTime = new Date(draw.bettingWindow.endTime);
+    
+    if (now < startTime) {
+      return { status: 'upcoming', text: `Opens at ${startTime.toLocaleTimeString()}` };
+    } else if (now > endTime) {
+      return { status: 'closed', text: 'Betting window closed' };
+    } else {
+      return { status: 'open', text: draw.bettingWindow.description };
+    }
+  };
+
+  if (drawsLoading || balanceLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6">
+      <div className="max-w-md mx-auto space-y-3 sm:space-y-4">
+        
+        {/* Draw Header with Countdown Timer */}
+        {selectedDraw && timeRemaining && (
+          <div className={`rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-4 border-l-4 ${
+            timeRemaining.isCutoff && timeRemaining.total < 300000 // 5 minutes
+              ? 'bg-white border-red-500 animate-pulse'
+              : timeRemaining.isCutoff && timeRemaining.total < 600000 // 10 minutes
+              ? 'bg-white border-yellow-500'
+              : 'bg-white border-blue-500'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                  {formatDrawTimeForTicket(selectedDraw.drawTime)} Draw
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  {new Date(selectedDraw.drawDate).toLocaleDateString()}
+                  {timeRemaining.isCutoff && timeRemaining.total < 300000 && (
+                    <span className="ml-2 font-bold text-red-600">⚠️ HURRY!</span>
+                  )}
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0 ml-2">
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  <ClockIcon className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                    timeRemaining.isCutoff && timeRemaining.total < 300000
+                      ? 'text-red-500'
+                      : timeRemaining.isCutoff && timeRemaining.total < 600000
+                      ? 'text-yellow-500'
+                      : 'text-blue-500'
+                  }`} />
+                  <span className={`text-sm sm:text-lg font-bold ${
+                    timeRemaining.isCutoff && timeRemaining.total < 300000
+                      ? 'text-red-600'
+                      : timeRemaining.isCutoff && timeRemaining.total < 600000
+                      ? 'text-yellow-600'
+                      : 'text-blue-600'
+                  }`}>
+                    {timeRemaining.hours > 0 && `${timeRemaining.hours}:`}
+                    {timeRemaining.minutes.toString().padStart(2, '0')}:
+                    {timeRemaining.seconds.toString().padStart(2, '0')}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {timeRemaining.isCutoff ? 'Betting Closes In' : 'Draw Starts In'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3D Lotto Betting Card */}
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
+
+          {/* Bet Type Selection */}
+          <div className="mb-4 sm:mb-6">
+            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Bet Type</p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <button
+                onClick={() => setBetType('standard')}
+                className={`p-2 sm:p-3 rounded-lg border-2 text-center text-xs sm:text-sm font-medium transition-colors ${
+                  betType === 'standard'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Standard
+              </button>
+              <button
+                onClick={() => setBetType('rambolito')}
+                className={`p-2 sm:p-3 rounded-lg border-2 text-center text-xs sm:text-sm font-medium transition-colors ${
+                  betType === 'rambolito'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Rambolito
+              </button>
+            </div>
+          </div>
+
+          {/* Number Selection Display */}
+          <div className="mb-4 sm:mb-6">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <p className="text-xs sm:text-sm text-gray-600">Select from 0-9</p>
+              <button
+                onClick={handleClearDigits}
+                className="text-red-500 text-xs sm:text-sm font-medium"
+              >
+                ✕ Clear
+              </button>
+            </div>
+            
+            {/* Selected Numbers Display */}
+            <div className="flex justify-center space-x-2 sm:space-x-4 mb-4 sm:mb-6">
+              {betDigits.map((digit, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleDigitClick(index)}
+                  className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 flex items-center justify-center text-lg sm:text-2xl font-bold transition-colors ${
+                    currentDigitIndex === index
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 bg-white text-gray-400'
+                  }`}
+                >
+                  {digit}
+                </button>
+              ))}
+            </div>
+
+            {/* Number Pad */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => handleDigitInput(num)}
+                  className="h-10 sm:h-12 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm sm:text-lg font-medium transition-colors"
+                >
+                  {num}
+                </button>
+              ))}
+              <button
+                onClick={handleBackspace}
+                className="h-10 sm:h-12 rounded-lg border border-gray-300 bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                <BackspaceIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+              <button
+                onClick={() => handleDigitInput(0)}
+                className="h-10 sm:h-12 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm sm:text-lg font-medium transition-colors"
+              >
+                0
+              </button>
+              <button 
+                onClick={handleAddBet}
+                disabled={betDigits.includes('?')}
+                className="h-10 sm:h-12 rounded-lg bg-green-400 hover:bg-green-500 disabled:bg-gray-300 text-white flex items-center justify-center transition-colors"
+              >
+                <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Bet Amount */}
+          <div className="mb-4 sm:mb-6">
+            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Bet Amount</p>
+            <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-2 sm:mb-3">
+              <button
+                onClick={() => setBetAmount(Math.max(1, betAmount - 1))}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center"
+              >
+                <MinusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              </button>
+              <input
+                type="number"
+                min="1"
+                value={betAmount}
+                onChange={(e) => setBetAmount(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-16 sm:w-20 px-2 sm:px-3 py-1 sm:py-2 text-center text-sm sm:text-lg font-bold text-blue-700 bg-blue-50 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-400"
+              />
+              <button
+                onClick={() => setBetAmount(betAmount + 1)}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center"
+              >
+                <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-5 gap-1 sm:gap-2">
+              {availableAmounts.map(amount => (
+                <button
+                  key={amount}
+                  onClick={() => setBetAmount(amount)}
+                  className={`py-1 px-1 sm:px-2 text-xs rounded border transition-colors ${
+                    betAmount === amount 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  ₱{amount}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-2 sm:space-y-3">
+            {addedBets.length > 0 && (
+              <>
+                <button
+                  onClick={() => setShowViewBets(true)}
+                  className="w-full bg-blue-500 text-white py-2 sm:py-3 rounded-lg font-bold text-sm sm:text-lg hover:bg-blue-600 transition-all"
+                >
+                  View Bets ({addedBets.length})
+                </button>
+                
+                <button
+                  onClick={handleConfirmAllBets}
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 sm:py-4 rounded-lg font-bold text-sm sm:text-lg hover:from-orange-600 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all"
+                >
+                  {isSubmitting ? 'Processing...' : `Confirm All Bets (₱${getTotalBetAmount()})`}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* View Bets Modal */}
+        {showViewBets && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center min-h-screen z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-lg sm:rounded-xl w-full max-w-md max-h-96 overflow-hidden">
+              <div className="p-3 sm:p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">Your Bets</h3>
+                  <button
+                    onClick={() => setShowViewBets(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </button>
+                </div>
+              </div>
+              <div className="p-3 sm:p-4 max-h-64 overflow-y-auto">
+                {addedBets.length === 0 ? (
+                  <p className="text-center text-gray-500 py-6 sm:py-8 text-sm sm:text-base">No bets added yet</p>
+                ) : (
+                  <div className="space-y-2 sm:space-y-3">
+                    {addedBets.map((bet) => (
+                      <div key={bet.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm sm:text-lg text-gray-900 truncate">{bet.number}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 truncate">{bet.type} • ₱{bet.amount}</p>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveBet(bet.id)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <XMarkIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-gray-900">Total: ₱{getTotalBetAmount()}</span>
+                  <button
+                    onClick={() => setShowViewBets(false)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation Modal */}
+        {showConfirmModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center min-h-screen z-50 p-4">
+            <div className="bg-white rounded-xl w-full max-w-md">
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Confirm Your Bets</h3>
+                <div className="mb-6">
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {addedBets.map((bet) => (
+                      <div key={bet.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <span className="font-mono text-lg font-bold">{bet.number}</span>
+                        <span className="text-sm text-gray-600">{bet.type}</span>
+                        <span className="font-medium">₱{bet.amount}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-bold">Total Amount:</span>
+                      <span className="text-xl font-bold text-green-600">₱{getTotalBetAmount()}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-sm text-gray-600">Current Balance:</span>
+                      <span className="text-sm font-medium">₱{balance?.currentBalance?.toLocaleString() || '0.00'}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-sm text-gray-600">Remaining Balance:</span>
+                      <span className="text-sm font-medium">₱{((balance?.currentBalance || 0) - getTotalBetAmount()).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowConfirmModal(false)}
+                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleFinalConfirm}
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 font-bold"
+                  >
+                    {isSubmitting ? 'Processing...' : 'Confirm'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default BettingInterface;
+
