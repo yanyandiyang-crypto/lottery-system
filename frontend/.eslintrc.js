@@ -8,5 +8,14 @@ module.exports = {
     'no-use-before-define': 'warn',
     'react-hooks/exhaustive-deps': 'warn',
     'no-empty-pattern': 'warn'
-  }
+  },
+  overrides: [
+    {
+      files: ['src/**/*.js', 'src/**/*.jsx'],
+      rules: {
+        'no-unused-vars': 'warn',
+        'react-hooks/exhaustive-deps': 'warn'
+      }
+    }
+  ]
 };
