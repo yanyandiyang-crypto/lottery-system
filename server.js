@@ -51,9 +51,17 @@ const { initSocket } = require('./utils/socket');
 
 const app = express();
 const server = http.createServer(app);
+
+// CORS configuration - Define allowed origins first
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+  "http://localhost:3000", 
+  "http://localhost:3002",
+  "https://lottery-system-gamma.vercel.app"
+];
+
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ["http://localhost:3000", "http://localhost:3002"],
+    origin: allowedOrigins,
     methods: ["GET", "POST"]
   }
 });
@@ -61,9 +69,18 @@ const io = socketIo(server, {
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 
-// CORS configuration - MUST be first to handle preflight requests
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ["http://localhost:3000", "http://localhost:3002"],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-API-Version', 'API-Version', 'x-client-version']
