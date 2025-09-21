@@ -20,7 +20,6 @@ import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate'
 import MobileTicketUtils from '../../utils/mobileTicketUtils';
 import EnhancedMobileTicketUtils from '../../utils/enhancedMobileTicketUtils';
 import MobilePOSUtils from '../../utils/mobilePOSUtils';
-import TicketEditor from '../../components/Tickets/TicketEditor';
 
 // Custom Template Preview Component
 const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
@@ -164,8 +163,6 @@ const BettingInterface = () => {
   const [showViewBets, setShowViewBets] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
-  const [showTicketEditor, setShowTicketEditor] = useState(false);
-  const [editingTicket, setEditingTicket] = useState(null);
 
   // Fetch active draws
   const { data: draws, isLoading: drawsLoading } = useQuery(
@@ -539,75 +536,23 @@ const BettingInterface = () => {
 
   const handleShareTicket = async (ticket) => {
     try {
-      // Open ticket editor for sharing
-      setEditingTicket(ticket);
-      setShowTicketEditor(true);
-    } catch (error) {
-      console.error('Error opening ticket editor:', error);
-      toast.error('Failed to open ticket editor');
-    }
-  };
-
-  const handleTicketEditorSave = async (editedData) => {
-    try {
-      const { ticket: editedTicket, user: editedUser, customMessage } = editedData;
-      
       // Get user's assigned template
       const template = await getUserTemplate(user.id);
       
-      // Create enhanced share data with custom message
-      const shareData = {
-        title: `🎲 NEWBETTING - Ticket #${editedTicket.ticketNumber}`,
-        text: `Check out my lottery ticket!\n\nTicket: #${editedTicket.ticketNumber}\nDraw: ${editedTicket.draw?.drawTime || 'No Time'}\nTotal: ₱${parseFloat(editedTicket.totalAmount).toFixed(2)}${customMessage ? `\n\n"${customMessage}"` : ''}\n\nGood luck! 🍀`,
-        url: EnhancedMobileTicketUtils.generateShareURL(editedTicket.ticketNumber)
-      };
-
-      // Generate high-quality ticket image with edited data
-      const imageBlob = await EnhancedMobileTicketUtils.createTicketImageBlob(editedTicket, editedUser, template);
-      
-      // Try Web Share API first
-      if ('share' in navigator) {
-        try {
-          const file = new File([imageBlob], `ticket-${editedTicket.ticketNumber}.png`, {
-            type: 'image/png'
-          });
-          
-          shareData.files = [file];
-          
-          await navigator.share(shareData);
+      const result = await EnhancedMobileTicketUtils.shareTicket(ticket, user, template);
+      if (result.success) {
+        if (result.method === 'web-share') {
           toast.success('Ticket shared successfully!');
-          setShowTicketEditor(false);
-          return;
-        } catch (error) {
-          console.log('Web Share failed, trying fallback:', error.message);
+        } else {
+          toast.success('Ticket link copied to clipboard!');
         }
+      } else {
+        toast.error('Failed to share ticket');
       }
-
-      // Fallback to clipboard
-      if ('clipboard' in navigator) {
-        try {
-          await navigator.clipboard.writeText(shareData.text + '\n\n' + shareData.url);
-          toast.success('Ticket info copied to clipboard!');
-          setShowTicketEditor(false);
-          return;
-        } catch (error) {
-          console.log('Clipboard failed:', error.message);
-        }
-      }
-
-      // Final fallback
-      toast.success('Ticket ready for sharing!');
-      setShowTicketEditor(false);
-      
     } catch (error) {
-      console.error('Error sharing edited ticket:', error);
+      console.error('Error sharing ticket:', error);
       toast.error('Failed to share ticket');
     }
-  };
-
-  const handleTicketEditorCancel = () => {
-    setShowTicketEditor(false);
-    setEditingTicket(null);
   };
 
   const handleDownloadTicket = async (ticket) => {
@@ -1213,18 +1158,12 @@ const BettingInterface = () => {
                   />
                 )}
                 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-4 flex space-x-2">
                   <button
-                    onClick={() => handleDownloadTicket(createdTicket)}
+                    onClick={() => handleShareTicket(createdTicket)}
                     className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
                   >
-                    📱 Download Image
-                  </button>
-                  <button
-                    onClick={() => handleMobilePOSPrint(createdTicket)}
-                    className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
-                  >
-                    🖨️ POS Print
+                    📱 Share Ticket
                   </button>
                   <button
                     onClick={() => handleMobilePOSShare(createdTicket)}
@@ -1243,16 +1182,6 @@ const BettingInterface = () => {
             </div>
           </div>
         )}
-
-        {/* Ticket Editor Modal */}
-        <TicketEditor
-          ticket={editingTicket}
-          user={user}
-          template={null} // Will be fetched in the editor
-          onSave={handleTicketEditorSave}
-          onCancel={handleTicketEditorCancel}
-          isOpen={showTicketEditor}
-        />
       </div>
     </div>
   );

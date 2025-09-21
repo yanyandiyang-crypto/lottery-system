@@ -2461,6 +2461,24 @@ const TicketTemplates = () => {
     }
   };
 
+  const editCurrentTemplate = () => {
+    if (selectedTemplate) {
+      // Load the selected template for editing
+      setFormData({
+        name: selectedTemplate.name,
+        design: selectedTemplate.design
+      });
+      setCanvasElements(selectedTemplate.design.elements || []);
+      setCanvasSize(selectedTemplate.design.canvasSize || { width: 400, height: 600 });
+      setTemplateType(selectedTemplate.design.templateType || 'standard');
+      setDesignerMode('select');
+      setSelectedElement(null);
+      toast.success('Template loaded for editing!');
+    } else {
+      toast.error('No template selected for editing');
+    }
+  };
+
   const openPreviewModal = (template) => {
     setSelectedTemplate(template);
     setShowPreviewModal(true);
@@ -3077,6 +3095,12 @@ const TicketTemplates = () => {
                   className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded"
                 >
                   Save Template
+                </button>
+                <button
+                  onClick={() => editCurrentTemplate()}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mr-2"
+                >
+                  Edit Template
                 </button>
                 <button
                   onClick={() => setShowDesigner(false)}

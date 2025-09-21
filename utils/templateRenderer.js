@@ -68,9 +68,8 @@ class TemplateRenderer {
       return `${betType.padEnd(20)}${numbers}\n${sequence.padEnd(20)}Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
     }).join('\n\n');
 
-    // Generate QR code URL - use simple ticket number for QR
+    // Generate QR code data (not URL)
     const qrCodeData = ticket.qrCode || ticket.ticketNumber;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeData)}&size=100x100`;
 
     return {
       ticketNumber: ticket.ticketNumber,
@@ -82,7 +81,8 @@ class TemplateRenderer {
       totalBet: `₱${parseFloat(ticket.totalAmount).toFixed(2)}`,
       agentName: user.fullName || user.username,
       timestamp: new Date(ticket.createdAt).toLocaleString(),
-      qrCode: qrCodeUrl,
+      qrCode: qrCodeData,
+      qrCodeData: qrCodeData,
       barcode: `|||${ticket.ticketNumber}|||`,
       betCount: bets.length.toString(),
       allBets: allBetsDetail,
@@ -144,7 +144,26 @@ class TemplateRenderer {
         elementContent = content || '';
         break;
       case 'dynamic':
-        elementContent = dynamicData[fieldId] || content || '';
+        if (fieldId === 'qrCode') {
+          // Generate QR code for qrCode field
+          const qrData = dynamicData.qrCodeData || dynamicData.ticketNumber || 'sample';
+          try {
+            const qrCodeDataURL = await QRCode.toDataURL(qrData, { 
+              width: width || 80, 
+              margin: 0,
+              color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+              }
+            });
+            elementContent = `<img src="${qrCodeDataURL}" alt="QR Code" style="width:100%; height:100%; object-fit:contain;" />`;
+          } catch (error) {
+            console.error('QR Code generation error:', error);
+            elementContent = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:8px; border:1px solid #ccc;">QR: ${qrData}</div>`;
+          }
+        } else {
+          elementContent = dynamicData[fieldId] || content || '';
+        }
         break;
       case 'image':
         if (src) {
