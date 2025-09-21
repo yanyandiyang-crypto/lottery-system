@@ -53,11 +53,13 @@ const app = express();
 const server = http.createServer(app);
 
 // CORS configuration - Define allowed origins first
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [
   "http://localhost:3000", 
   "http://localhost:3002",
   "https://lottery-system-gamma.vercel.app"
 ];
+
+console.log('CORS Allowed Origins:', allowedOrigins);
 
 const io = socketIo(server, {
   cors: {
@@ -83,24 +85,43 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
+    
+    console.log('CORS: Checking origin:', origin);
+    console.log('CORS: Allowed origins:', allowedOrigins);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log('CORS: Origin allowed:', origin);
       callback(null, true);
     } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
+      console.log('CORS: Blocked origin:', origin);
+      console.log('CORS: Available origins:', allowedOrigins);
+      callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-API-Version', 'API-Version', 'x-client-version']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-API-Version', 'API-Version', 'x-client-version'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }));
 
 // Global security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
+
+// Handle preflight requests explicitly
+app.options('*', (req, res) => {
+  console.log('CORS: Handling preflight request for:', req.headers.origin);
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
 app.use(requestSizeLimit('10mb'));
 
 // Request logging middleware

@@ -13,7 +13,7 @@ services:
           name: lottery-db
           property: connectionString
       - key: CORS_ORIGIN
-        value: https://lottery-system-gamma.vercel.app
+        value: https://lottery-system-gamma.vercel.app,http://localhost:3000,http://localhost:3002
     healthCheckPath: /api/v1/health
 
 databases:
