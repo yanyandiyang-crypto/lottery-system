@@ -1,4 +1,5 @@
 const TicketGenerator = require('./ticketGenerator');
+const QRCode = require('qrcode');
 
 class TemplateRenderer {
   /**
@@ -36,9 +37,9 @@ class TemplateRenderer {
       `;
 
       // Render elements
-      elements.forEach(element => {
-        html += this.renderElement(element, dynamicData);
-      });
+      for (const element of elements) {
+        html += await this.renderElement(element, dynamicData);
+      }
 
       html += `
           </div>
@@ -133,7 +134,7 @@ class TemplateRenderer {
   /**
    * Render individual element
    */
-  static renderElement(element, dynamicData) {
+  static async renderElement(element, dynamicData) {
     const { type, x, y, width, height, style, content, fieldId, label, src, alt, shapeType, zIndex } = element;
     
     const elementStyle = this.generateElementStyle(style, x, y, width, height, zIndex);
