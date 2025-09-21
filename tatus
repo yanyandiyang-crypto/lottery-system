@@ -1,0 +1,5 @@
+[33m208bca2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m 🔧 Fix Socket.IO timeout and API validation issues
+[33m6b636b2[m Fix undefined values in new ticket notifications
+[33m634f01f[m Fix ticket template assignment and add debugging
+[33mdc162b7[m Fix loading spinner centering and mobile ticket sharing
+[33me9f0f22[m Fix ticket image sharing with Web Share API

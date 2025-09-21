@@ -581,4 +581,46 @@ router.post('/generate', requireAuth, async (req, res) => {
   }
 });
 
+// @route   GET /api/ticket-templates/user-assignment/:userId
+// @desc    Get template assignment for a specific user
+// @access  Private
+router.get('/user-assignment/:userId', requireAuth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Get template assignment for user
+    const assignment = await prisma.agentTicketTemplate.findFirst({
+      where: { agentId: parseInt(userId) },
+      include: {
+        template: true
+      }
+    });
+
+    if (!assignment) {
+      return res.json({
+        success: true,
+        data: { template: null }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        template: assignment.template,
+        assignment: {
+          id: assignment.id,
+          assignedAt: assignment.createdAt
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get user template assignment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 module.exports = router;

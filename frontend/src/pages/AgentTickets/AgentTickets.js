@@ -9,6 +9,7 @@ import {
   PrinterIcon,
   FunnelIcon
 } from '@heroicons/react/24/outline';
+import EnhancedMobileTicketUtils from '../../utils/enhancedMobileTicketUtils';
 
 const AgentTickets = () => {
   const { user } = useAuth();

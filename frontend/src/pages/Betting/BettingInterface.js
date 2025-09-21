@@ -18,6 +18,7 @@ import {
 import QRCode from 'qrcode.react';
 import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate';
 import MobileTicketUtils from '../../utils/mobileTicketUtils';
+import EnhancedMobileTicketUtils from '../../utils/enhancedMobileTicketUtils';
 
 const BettingInterface = () => {
   const { user } = useAuth();
@@ -421,7 +422,10 @@ const BettingInterface = () => {
 
   const handleShareTicket = async (ticket) => {
     try {
-      const result = await MobileTicketUtils.shareTicket(ticket, user);
+      // Get user's assigned template
+      const template = await getUserTemplate(user.id);
+      
+      const result = await EnhancedMobileTicketUtils.shareTicket(ticket, user, template);
       if (result.success) {
         if (result.method === 'web-share') {
           toast.success('Ticket shared successfully!');
@@ -439,11 +443,25 @@ const BettingInterface = () => {
 
   const handleDownloadTicket = async (ticket) => {
     try {
-      await MobileTicketUtils.downloadTicketImage(ticket, user);
+      // Get user's assigned template
+      const template = await getUserTemplate(user.id);
+      
+      await EnhancedMobileTicketUtils.downloadTicketImage(ticket, user, template);
       toast.success('Ticket downloaded as image!');
     } catch (error) {
       console.error('Error downloading ticket:', error);
       toast.error('Failed to download ticket');
+    }
+  };
+
+  // Get user's assigned template
+  const getUserTemplate = async (userId) => {
+    try {
+      const response = await api.get(`/ticket-templates/user-assignment/${userId}`);
+      return response.data.data?.template || null;
+    } catch (error) {
+      console.error('Error getting user template:', error);
+      return null;
     }
   };
 
