@@ -19,6 +19,7 @@ import QRCode from 'qrcode.react';
 import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate';
 import MobileTicketUtils from '../../utils/mobileTicketUtils';
 import EnhancedMobileTicketUtils from '../../utils/enhancedMobileTicketUtils';
+import MobilePOSUtils from '../../utils/mobilePOSUtils';
 
 // Custom Template Preview Component
 const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
@@ -559,11 +560,51 @@ const BettingInterface = () => {
       // Get user's assigned template
       const template = await getUserTemplate(user.id);
       
-      await EnhancedMobileTicketUtils.downloadTicketImage(ticket, user, template);
-      toast.success('Ticket downloaded as image!');
+      // Check if it's a mobile POS template
+      if (template && template.design?.templateType === 'mobile-pos') {
+        await MobilePOSUtils.downloadMobilePOSTicket(ticket, user, template);
+        toast.success('Mobile POS ticket downloaded as image!');
+      } else {
+        await EnhancedMobileTicketUtils.downloadTicketImage(ticket, user, template);
+        toast.success('Ticket downloaded as image!');
+      }
     } catch (error) {
       console.error('Error downloading ticket:', error);
       toast.error('Failed to download ticket');
+    }
+  };
+
+  const handleMobilePOSPrint = async (ticket) => {
+    try {
+      // Get user's assigned template
+      const template = await getUserTemplate(user.id);
+      
+      await MobilePOSUtils.printMobilePOSTicket(ticket, user, template);
+      toast.success('Mobile POS ticket sent to printer!');
+    } catch (error) {
+      console.error('Error printing mobile POS ticket:', error);
+      toast.error('Failed to print mobile POS ticket');
+    }
+  };
+
+  const handleMobilePOSShare = async (ticket) => {
+    try {
+      // Get user's assigned template
+      const template = await getUserTemplate(user.id);
+      
+      const result = await MobilePOSUtils.shareMobilePOSTicket(ticket, user, template);
+      if (result.success) {
+        if (result.method === 'web-share') {
+          toast.success('Mobile POS ticket shared successfully!');
+        } else {
+          toast.success('Mobile POS ticket link copied to clipboard!');
+        }
+      } else {
+        toast.error('Failed to share mobile POS ticket');
+      }
+    } catch (error) {
+      console.error('Error sharing mobile POS ticket:', error);
+      toast.error('Failed to share mobile POS ticket');
     }
   };
 
@@ -1117,12 +1158,24 @@ const BettingInterface = () => {
                   />
                 )}
                 
-                <div className="mt-4 flex space-x-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     onClick={() => handleDownloadTicket(createdTicket)}
                     className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
                   >
                     📱 Download Image
+                  </button>
+                  <button
+                    onClick={() => handleMobilePOSPrint(createdTicket)}
+                    className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                  >
+                    🖨️ POS Print
+                  </button>
+                  <button
+                    onClick={() => handleMobilePOSShare(createdTicket)}
+                    className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
+                  >
+                    📤 POS Share
                   </button>
                   <button
                     onClick={() => setShowMobileTicket(false)}

@@ -1467,6 +1467,408 @@ const TicketTemplates = () => {
     setSelectedElement(null);
   };
 
+  const createMobilePOSTemplate = () => {
+    const mobilePOSElements = [
+      // Header for Mobile POS (58mm width optimized with POS branding)
+      {
+        id: 'pos-header-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 0,
+        y: 0,
+        width: 220, // 58mm = ~220px
+        height: 45,
+        style: {
+          backgroundColor: '#059669', // Green for POS
+          border: 'none',
+          borderRadius: '0px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'pos-logo',
+        type: 'text',
+        content: '🖨️ NEWBETTING POS',
+        x: 110,
+        y: 8,
+        width: 220,
+        height: 12,
+        style: {
+          fontSize: '11px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'pos-title',
+        type: 'text',
+        content: '3D LOTTO POS TICKET',
+        x: 110,
+        y: 22,
+        width: 220,
+        height: 12,
+        style: {
+          fontSize: '10px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'pos-ticket-number',
+        type: 'text',
+        content: '#',
+        x: 110,
+        y: 35,
+        width: 220,
+        height: 8,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'pos-ticket-number-value',
+        type: 'dynamic',
+        fieldId: 'ticketNumber',
+        content: '12345678901234567',
+        label: 'Ticket Number',
+        x: 110,
+        y: 43,
+        width: 220,
+        height: 8,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // POS Draw info section with enhanced styling
+      {
+        id: 'pos-draw-info-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 10,
+        y: 58,
+        width: 200,
+        height: 30,
+        style: {
+          backgroundColor: '#fef3c7',
+          border: '2px solid #f59e0b',
+          borderRadius: '6px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'pos-draw-time',
+        type: 'dynamic',
+        fieldId: 'drawTime',
+        content: '14:00',
+        label: 'Draw Time',
+        x: 15,
+        y: 65,
+        width: 60,
+        height: 12,
+        style: {
+          fontSize: '12px',
+          fontFamily: 'Courier New',
+          color: '#92400e',
+          fontWeight: 'bold',
+          textAlign: 'left',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'pos-draw-date',
+        type: 'dynamic',
+        fieldId: 'drawDate',
+        content: '2025/09/16 Tue',
+        label: 'Draw Date',
+        x: 80,
+        y: 65,
+        width: 120,
+        height: 12,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#92400e',
+          fontWeight: 'bold',
+          textAlign: 'left',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // POS Bet information with enhanced formatting
+      {
+        id: 'pos-bet-info',
+        type: 'dynamic',
+        fieldId: 'allBets',
+        content: 'Standard                                                                                        1    2    3\nA                                                                                                    Price: ₱10.00\n\nRambolito                                                                                        4   5   6 \nB                                                                                                     Price: ₱20.00',
+        label: 'All Bets Detail',
+        x: 10,
+        y: 98,
+        width: 200,
+        height: 70,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#1e293b',
+          fontWeight: 'normal',
+          textAlign: 'left',
+          backgroundColor: '#f8fafc',
+          border: '2px solid #e2e8f0',
+          borderRadius: '6px',
+          padding: '6px',
+          lineHeight: '1.3'
+        },
+        zIndex: 2
+      },
+      // POS Total amount with enhanced styling
+      {
+        id: 'pos-total-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 10,
+        y: 178,
+        width: 200,
+        height: 30,
+        style: {
+          backgroundColor: '#1e293b',
+          border: 'none',
+          borderRadius: '6px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'pos-total-label',
+        type: 'text',
+        content: 'POS TOTAL AMOUNT',
+        x: 110,
+        y: 185,
+        width: 200,
+        height: 8,
+        style: {
+          fontSize: '9px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'pos-total-value',
+        type: 'dynamic',
+        fieldId: 'totalBet',
+        content: '₱50.00',
+        label: 'Total Bet',
+        x: 110,
+        y: 195,
+        width: 200,
+        height: 12,
+        style: {
+          fontSize: '16px',
+          fontFamily: 'Courier New',
+          color: '#ffffff',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // POS Agent info with enhanced styling
+      {
+        id: 'pos-agent-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 10,
+        y: 218,
+        width: 200,
+        height: 25,
+        style: {
+          backgroundColor: '#f1f5f9',
+          border: '2px solid #e2e8f0',
+          borderRadius: '6px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'pos-agent-label',
+        type: 'text',
+        content: 'POS AGENT',
+        x: 15,
+        y: 223,
+        width: 60,
+        height: 6,
+        style: {
+          fontSize: '8px',
+          fontFamily: 'Courier New',
+          color: '#64748b',
+          fontWeight: 'bold',
+          textAlign: 'left',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'pos-agent-value',
+        type: 'dynamic',
+        fieldId: 'agentName',
+        content: 'Juan Dela Cruz',
+        label: 'Agent Name',
+        x: 15,
+        y: 232,
+        width: 190,
+        height: 8,
+        style: {
+          fontSize: '10px',
+          fontFamily: 'Courier New',
+          color: '#1e293b',
+          fontWeight: 'bold',
+          textAlign: 'left',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // POS QR Code section with enhanced styling
+      {
+        id: 'pos-qr-bg',
+        type: 'shape',
+        shapeType: 'rectangle',
+        x: 70,
+        y: 253,
+        width: 80,
+        height: 80,
+        style: {
+          backgroundColor: '#ffffff',
+          border: '3px solid #059669',
+          borderRadius: '6px'
+        },
+        zIndex: 1
+      },
+      {
+        id: 'pos-qr-code',
+        type: 'dynamic',
+        fieldId: 'qrCode',
+        content: 'https://quickchart.io/qr?text=sample',
+        label: 'QR Code',
+        x: 70,
+        y: 253,
+        width: 80,
+        height: 80,
+        style: {
+          fontSize: '8px',
+          fontFamily: 'Courier New',
+          color: '#000000',
+          fontWeight: 'normal',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      // POS Footer with enhanced styling
+      {
+        id: 'pos-footer',
+        type: 'text',
+        content: 'POS SYSTEM - GOOD LUCK! 🍀',
+        x: 110,
+        y: 343,
+        width: 220,
+        height: 10,
+        style: {
+          fontSize: '10px',
+          fontFamily: 'Courier New',
+          color: '#059669',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      },
+      {
+        id: 'pos-timestamp',
+        type: 'dynamic',
+        fieldId: 'timestamp',
+        content: '2025/09/16 Tue 14:00',
+        label: 'Timestamp',
+        x: 110,
+        y: 353,
+        width: 220,
+        height: 8,
+        style: {
+          fontSize: '8px',
+          fontFamily: 'Courier New',
+          color: '#666666',
+          fontWeight: 'normal',
+          textAlign: 'center',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: '0px'
+        },
+        zIndex: 2
+      }
+    ];
+
+    setSelectedTemplate(null);
+    setFormData({
+      name: 'Mobile POS Template',
+      design: {
+        elements: mobilePOSElements,
+        canvasSize: { width: 220, height: 370 }, // Optimized for POS
+        backgroundColor: '#ffffff',
+        templateType: 'mobile-pos'
+      }
+    });
+    setCanvasElements(mobilePOSElements);
+    setCanvasSize({ width: 220, height: 370 });
+    setTemplateType('mobile-pos');
+    setShowDesigner(true);
+    setDesignerMode('select');
+    setSelectedElement(null);
+  };
+
   const createProfessionalTemplate = () => {
     const professionalElements = [
       // Header with professional gradient
@@ -2088,6 +2490,13 @@ const TicketTemplates = () => {
               >
                 <Square3Stack3DIcon className="h-5 w-5 mr-2" />
                 Mobile 58mm Template
+              </button>
+              <button
+                onClick={() => createMobilePOSTemplate()}
+                className="bg-gradient-to-r from-green-600 to-teal-600 text-white px-4 py-2 rounded-lg hover:from-green-700 hover:to-teal-700 flex items-center shadow-lg"
+              >
+                <Square3Stack3DIcon className="h-5 w-5 mr-2" />
+                Mobile POS Template
               </button>
               <button
                 onClick={() => createProfessionalTemplate()}
