@@ -7,11 +7,18 @@ const API_VERSION = process.env.REACT_APP_API_VERSION || 'v1';
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
-  timeout: 10000,
+  timeout: 30000, // Increased timeout to 30 seconds
   headers: {
     'Content-Type': 'application/json',
     'X-API-Version': API_VERSION,
     'X-Client-Version': process.env.REACT_APP_VERSION || '1.0.0'
+  },
+  // Retry configuration
+  retry: 3,
+  retryDelay: 1000,
+  // Additional axios options
+  validateStatus: function (status) {
+    return status >= 200 && status < 300; // default
   }
 });
 
@@ -69,6 +76,13 @@ api.interceptors.response.use(
       const { status, data } = error.response;
       
       switch (status) {
+        case 400:
+          // Bad Request - Validation failed
+          console.error('Validation failed:', data.message || 'Invalid request data');
+          if (data.errors && Array.isArray(data.errors)) {
+            console.error('Validation errors:', data.errors);
+          }
+          break;
         case 401:
           // Unauthorized - clear token but don't auto-redirect
           // Let the AuthContext handle the redirect logic
@@ -89,11 +103,15 @@ api.interceptors.response.use(
           console.error('Server error:', data.message);
           break;
         default:
-          console.error('API error:', data.message);
+          console.error('API error:', data.message || 'Unknown error');
       }
     } else if (error.request) {
-      // Network error
-      console.error('Network error:', error.message);
+      // Network error or timeout
+      if (error.code === 'ECONNABORTED') {
+        console.error('Request timeout:', error.message);
+      } else {
+        console.error('Network error:', error.message);
+      }
     } else {
       // Other error
       console.error('Error:', error.message);

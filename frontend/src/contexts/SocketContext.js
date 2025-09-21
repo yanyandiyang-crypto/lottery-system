@@ -24,6 +24,23 @@ export const SocketProvider = ({ children }) => {
       const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://lottery-system-tna9.onrender.com', {
         transports: ['websocket', 'polling'],
         autoConnect: true,
+        // Connection timeout configuration
+        timeout: 45000,           // 45 seconds connection timeout
+        forceNew: false,          // Reuse existing connection if available
+        // Retry configuration
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        maxReconnectionAttempts: 5,
+        // Ping/pong configuration
+        pingTimeout: 60000,       // 60 seconds
+        pingInterval: 25000,      // 25 seconds
+        // Upgrade timeout
+        upgradeTimeout: 10000,    // 10 seconds
+        // Additional options
+        rememberUpgrade: true,
+        // Debug mode in development
+        debug: process.env.NODE_ENV === 'development'
       });
 
       newSocket.on('connect', () => {
@@ -45,6 +62,46 @@ export const SocketProvider = ({ children }) => {
       newSocket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
         setConnected(false);
+        
+        // Show user-friendly error message for timeout
+        if (error.message === 'timeout') {
+          toast.error('Connection timeout. Retrying...', {
+            duration: 3000,
+            icon: '⚠️'
+          });
+        } else {
+          toast.error('Connection failed. Retrying...', {
+            duration: 3000,
+            icon: '⚠️'
+          });
+        }
+      });
+
+      // Handle reconnection events
+      newSocket.on('reconnect', (attemptNumber) => {
+        console.log('Socket reconnected after', attemptNumber, 'attempts');
+        setConnected(true);
+        toast.success('Connection restored!', {
+          duration: 2000,
+          icon: '✅'
+        });
+      });
+
+      newSocket.on('reconnect_attempt', (attemptNumber) => {
+        console.log('Socket reconnection attempt:', attemptNumber);
+      });
+
+      newSocket.on('reconnect_error', (error) => {
+        console.error('Socket reconnection error:', error);
+      });
+
+      newSocket.on('reconnect_failed', () => {
+        console.error('Socket reconnection failed');
+        setConnected(false);
+        toast.error('Unable to reconnect. Please refresh the page.', {
+          duration: 5000,
+          icon: '❌'
+        });
       });
 
       // Listen for notifications (toast disabled)

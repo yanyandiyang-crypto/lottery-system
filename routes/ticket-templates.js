@@ -507,4 +507,78 @@ router.get('/agent/:agentId', requireAuth, async (req, res) => {
   }
 });
 
+// @route   POST /api/ticket-templates/generate
+// @desc    Generate ticket HTML from template
+// @access  Private
+router.post('/generate', requireAuth, async (req, res) => {
+  try {
+    const { ticketId, templateId } = req.body;
+
+    if (!ticketId || !templateId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ticket ID and Template ID are required'
+      });
+    }
+
+    // Get ticket data
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: parseInt(ticketId) },
+      include: {
+        bets: true,
+        draw: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            fullName: true
+          }
+        }
+      }
+    });
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found'
+      });
+    }
+
+    // Get template
+    const template = await prisma.ticketTemplate.findUnique({
+      where: { id: parseInt(templateId) }
+    });
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: 'Template not found'
+      });
+    }
+
+    // Generate HTML using template renderer
+    const TemplateRenderer = require('../utils/templateRenderer');
+    const ticketHtml = await TemplateRenderer.generateTicketHTML(ticket, template, ticket.user);
+
+    res.json({
+      success: true,
+      data: {
+        html: ticketHtml,
+        template: {
+          id: template.id,
+          name: template.name,
+          type: template.design?.templateType || 'standard'
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Generate ticket HTML error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 module.exports = router;

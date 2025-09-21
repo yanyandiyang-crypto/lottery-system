@@ -340,7 +340,7 @@ export class MobileTicketUtils {
 
           <!-- QR Code -->
           <div class="qr-section">
-            <img src="${ticket.qrCode}" alt="QR Code" class="qr-code" />
+            <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(ticket.ticketNumber || `Ticket: ${ticket.id}`)}&size=100x100" alt="QR Code" class="qr-code" />
           </div>
 
           <!-- Footer -->
@@ -359,7 +359,7 @@ export class MobileTicketUtils {
    */
   static async shareTicket(ticket, user) {
     // Debug Web Share API support first
-    const debugInfo = this.debugWebShareSupport();
+    this.debugWebShareSupport();
     
     const shareData = {
       title: `Lottery Ticket #${ticket.ticketNumber}`,
@@ -468,25 +468,29 @@ export class MobileTicketUtils {
   }
 
   /**
-   * Create ticket image as blob for sharing
+   * Create ticket image as blob for sharing with high quality
    */
-  static async createTicketImageBlob(ticket, user) {
+  static async createTicketImageBlob(ticket, user, template = null) {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      // Set canvas size for mobile sharing (higher resolution)
-      canvas.width = 400;
-      canvas.height = 600;
+      // Set high resolution canvas for better quality
+      const scale = 2; // 2x resolution for crisp images
+      canvas.width = 800; // 400 * 2
+      canvas.height = 1200; // 600 * 2
+      
+      // Scale context for high DPI
+      ctx.scale(scale, scale);
       
       // White background
       ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
       
       // Black border
       ctx.strokeStyle = 'black';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, 1, (canvas.width / scale) - 2, (canvas.height / scale) - 2);
       
       // Set font
       ctx.font = '16px Courier New';
@@ -497,25 +501,25 @@ export class MobileTicketUtils {
       // Header
       ctx.font = 'bold 24px Courier New';
       ctx.textAlign = 'center';
-      ctx.fillText('🎲 NEWBETTING', canvas.width / 2, y);
+      ctx.fillText('🎲 NEWBETTING', canvas.width / scale / 2, y);
       y += 30;
       
       ctx.font = 'bold 20px Courier New';
-      ctx.fillText('3D LOTTO TICKET', canvas.width / 2, y);
+      ctx.fillText('3D LOTTO TICKET', canvas.width / scale / 2, y);
       y += 30;
       
       ctx.font = '16px Courier New';
-      ctx.fillText(`#${ticket.ticketNumber}`, canvas.width / 2, y);
+      ctx.fillText(`#${ticket.ticketNumber}`, canvas.width / scale / 2, y);
       y += 40;
       
       // Draw info
       ctx.font = 'bold 20px Courier New';
-      ctx.fillText(ticket.draw?.drawTime || 'No Time', canvas.width / 2, y);
+      ctx.fillText(ticket.draw?.drawTime || 'No Time', canvas.width / scale / 2, y);
       y += 30;
       
       ctx.font = '16px Courier New';
       ctx.fillStyle = '#666';
-      ctx.fillText(ticket.draw?.drawDate || 'No Date', canvas.width / 2, y);
+      ctx.fillText(ticket.draw?.drawDate || 'No Date', canvas.width / scale / 2, y);
       y += 40;
       
       // Bets
@@ -532,12 +536,12 @@ export class MobileTicketUtils {
         
         ctx.font = 'bold 28px Courier New';
         ctx.textAlign = 'center';
-        ctx.fillText(bet.betCombination.split('').join('   '), canvas.width / 2, y);
+        ctx.fillText(bet.betCombination.split('').join('   '), canvas.width / scale / 2, y);
         y += 35;
         
         ctx.font = '16px Courier New';
         ctx.textAlign = 'right';
-        ctx.fillText(`${sequence} - ₱${parseFloat(bet.betAmount || 0).toFixed(2)}`, canvas.width - 20, y);
+        ctx.fillText(`${sequence} - ₱${parseFloat(bet.betAmount || 0).toFixed(2)}`, (canvas.width / scale) - 20, y);
         y += 30;
       });
       
@@ -545,70 +549,77 @@ export class MobileTicketUtils {
       ctx.font = 'bold 20px Courier New';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'black';
-      ctx.fillText('TOTAL AMOUNT', canvas.width / 2, y);
+      ctx.fillText('TOTAL AMOUNT', canvas.width / scale / 2, y);
       y += 30;
       
       ctx.font = 'bold 32px Courier New';
-      ctx.fillText(`₱${parseFloat(ticket.totalAmount || 0).toFixed(2)}`, canvas.width / 2, y);
+      ctx.fillText(`₱${parseFloat(ticket.totalAmount || 0).toFixed(2)}`, canvas.width / scale / 2, y);
       y += 50;
       
       // Agent
       ctx.font = '16px Courier New';
-      ctx.fillText('AGENT', canvas.width / 2, y);
+      ctx.fillText('AGENT', canvas.width / scale / 2, y);
       y += 25;
       
       ctx.font = 'bold 18px Courier New';
-      ctx.fillText(user.fullName || user.username, canvas.width / 2, y);
+      ctx.fillText(user.fullName || user.username, canvas.width / scale / 2, y);
       y += 50;
       
-      // QR Code placeholder (you can add actual QR code here)
+      // QR Code placeholder (HTML version uses external service)
       ctx.fillStyle = '#f0f0f0';
-      ctx.fillRect(canvas.width / 2 - 60, y, 120, 120);
+      ctx.fillRect((canvas.width / scale / 2) - 50, y, 100, 100);
       ctx.fillStyle = 'black';
-      ctx.font = '12px Courier New';
+      ctx.font = '10px Courier New';
       ctx.textAlign = 'center';
-      ctx.fillText('QR CODE', canvas.width / 2, y + 60);
+      ctx.fillText('QR CODE', canvas.width / scale / 2, y + 50);
       
       // Footer
       y += 140;
       ctx.font = '14px Courier New';
-      ctx.fillText('GOOD LUCK! 🍀', canvas.width / 2, y);
+      ctx.fillText('GOOD LUCK! 🍀', canvas.width / scale / 2, y);
       y += 20;
       
       ctx.font = '12px Courier New';
       ctx.fillStyle = '#666';
-      ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / 2, y);
+      ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / scale / 2, y);
       
-      // Convert to blob
+      // Convert to blob with high quality
       canvas.toBlob((blob) => {
         if (blob) {
           resolve(blob);
         } else {
           reject(new Error('Failed to create image blob'));
         }
-      }, 'image/png', 1.0);
+      }, 'image/png', 1.0); // Maximum quality
     });
   }
 
   /**
-   * Create downloadable ticket image
+   * Create downloadable ticket image with high quality
    */
-  static async createTicketImage(ticket, user) {
+  static async createTicketImage(ticket, user, template = null) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Set canvas size for 58mm width (approximately 220px at 96 DPI)
-    canvas.width = 220;
-    canvas.height = 400;
+    // Set high resolution canvas for better quality
+    const scale = 3; // 3x resolution for crisp images
+    const baseWidth = 220; // 58mm width
+    const baseHeight = 400;
+    
+    canvas.width = baseWidth * scale;
+    canvas.height = baseHeight * scale;
+    
+    // Scale context for high DPI
+    ctx.scale(scale, scale);
     
     // White background
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, baseWidth, baseHeight);
     
     // Black border
     ctx.strokeStyle = 'black';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, baseWidth - 1, baseHeight - 1);
     
     // Set font
     ctx.font = '10px Courier New';
@@ -619,25 +630,25 @@ export class MobileTicketUtils {
     // Header
     ctx.font = 'bold 12px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillText('🎲 NEWBETTING', canvas.width / 2, y);
+    ctx.fillText('🎲 NEWBETTING', baseWidth / 2, y);
     y += 15;
     
     ctx.font = 'bold 11px Courier New';
-    ctx.fillText('3D LOTTO TICKET', canvas.width / 2, y);
+    ctx.fillText('3D LOTTO TICKET', baseWidth / 2, y);
     y += 15;
     
     ctx.font = '9px Courier New';
-    ctx.fillText(`#${ticket.ticketNumber}`, canvas.width / 2, y);
+    ctx.fillText(`#${ticket.ticketNumber}`, baseWidth / 2, y);
     y += 20;
     
     // Draw info
     ctx.font = 'bold 11px Courier New';
-    ctx.fillText(ticket.draw?.drawTime || 'No Time', canvas.width / 2, y);
+    ctx.fillText(ticket.draw?.drawTime || 'No Time', baseWidth / 2, y);
     y += 15;
     
     ctx.font = '9px Courier New';
     ctx.fillStyle = '#666';
-    ctx.fillText(ticket.draw?.drawDate || 'No Date', canvas.width / 2, y);
+    ctx.fillText(ticket.draw?.drawDate || 'No Date', baseWidth / 2, y);
     y += 20;
     
     // Bets
@@ -654,56 +665,56 @@ export class MobileTicketUtils {
       
       ctx.font = 'bold 14px Courier New';
       ctx.textAlign = 'center';
-      ctx.fillText(bet.betCombination.split('').join('   '), canvas.width / 2, y);
+      ctx.fillText(bet.betCombination.split('').join('   '), baseWidth / 2, y);
       y += 15;
       
       ctx.font = '9px Courier New';
       ctx.textAlign = 'right';
-      ctx.fillText(`${sequence} - ₱${parseFloat(bet.betAmount).toFixed(2)}`, canvas.width - 10, y);
+      ctx.fillText(`${sequence} - ₱${parseFloat(bet.betAmount).toFixed(2)}`, baseWidth - 10, y);
       y += 15;
     });
     
     // Total
     y += 10;
     ctx.strokeStyle = 'black';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(10, y);
-    ctx.lineTo(canvas.width - 10, y);
+    ctx.lineTo(baseWidth - 10, y);
     ctx.stroke();
     y += 10;
     
     ctx.fillStyle = 'black';
     ctx.font = 'bold 9px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillText('TOTAL AMOUNT', canvas.width / 2, y);
+    ctx.fillText('TOTAL AMOUNT', baseWidth / 2, y);
     y += 12;
     
     ctx.font = 'bold 14px Courier New';
-    ctx.fillText(`₱${parseFloat(ticket.totalAmount).toFixed(2)}`, canvas.width / 2, y);
+    ctx.fillText(`₱${parseFloat(ticket.totalAmount).toFixed(2)}`, baseWidth / 2, y);
     y += 20;
     
     // Agent
     ctx.font = '8px Courier New';
     ctx.fillStyle = '#666';
-    ctx.fillText('AGENT', canvas.width / 2, y);
+    ctx.fillText('AGENT', baseWidth / 2, y);
     y += 10;
     
     ctx.font = 'bold 10px Courier New';
     ctx.fillStyle = 'black';
-    ctx.fillText(user.fullName || user.username, canvas.width / 2, y);
+    ctx.fillText(user.fullName || user.username, baseWidth / 2, y);
     y += 30;
     
-    // QR Code placeholder
+    // QR Code placeholder (HTML version uses external service)
     ctx.fillStyle = '#f0f0f0';
-    ctx.fillRect(canvas.width / 2 - 40, y, 80, 80);
+    ctx.fillRect(baseWidth / 2 - 40, y, 80, 80);
     ctx.strokeStyle = 'black';
-    ctx.strokeRect(canvas.width / 2 - 40, y, 80, 80);
+    ctx.strokeRect(baseWidth / 2 - 40, y, 80, 80);
     
     ctx.font = '8px Courier New';
     ctx.fillStyle = 'black';
     ctx.textAlign = 'center';
-    ctx.fillText('QR CODE', canvas.width / 2, y + 45);
+    ctx.fillText('QR CODE', baseWidth / 2, y + 45);
     
     y += 100;
     
@@ -712,20 +723,20 @@ export class MobileTicketUtils {
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(10, y);
-    ctx.lineTo(canvas.width - 10, y);
+    ctx.lineTo(baseWidth - 10, y);
     ctx.stroke();
     y += 10;
     
     ctx.font = '8px Courier New';
     ctx.fillStyle = '#666';
-    ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / 2, y);
+    ctx.fillText(new Date(ticket.createdAt).toLocaleString(), baseWidth / 2, y);
     y += 10;
     
     ctx.font = 'bold 10px Courier New';
     ctx.fillStyle = 'black';
-    ctx.fillText('GOOD LUCK! 🍀', canvas.width / 2, y);
+    ctx.fillText('GOOD LUCK! 🍀', baseWidth / 2, y);
     
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL('image/png', 1.0); // Maximum quality
   }
 
   /**

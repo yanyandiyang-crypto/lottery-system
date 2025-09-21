@@ -385,14 +385,17 @@ const BettingInterface = () => {
 
   const generateAndPrintTicket = async (ticket) => {
     try {
-      // Check if agent has mobile template assigned
+      // Check if agent has assigned templates
       const templatesResponse = await api.get(`/ticket-templates/agent/${user.id}`);
       const templates = templatesResponse.data.data || [];
-      const mobileTemplate = templates.find(t => t.design?.templateType === 'mobile');
       
-      if (mobileTemplate) {
-        // Use mobile template for 58mm thermal printers
-        const ticketHtml = generateCustomTicketTemplate(ticket, mobileTemplate);
+      // Find mobile template first, then any other assigned template
+      const mobileTemplate = templates.find(t => t.design?.templateType === 'mobile');
+      const selectedTemplate = mobileTemplate || templates[0];
+      
+      if (selectedTemplate) {
+        // Use assigned template
+        const ticketHtml = await generateCustomTicketTemplate(ticket, selectedTemplate);
         const printWindow = window.open('', '_blank');
         printWindow.document.write(ticketHtml);
         printWindow.document.close();
@@ -404,11 +407,11 @@ const BettingInterface = () => {
             setTimeout(() => printWindow.close(), 1000);
           }, 500);
         };
-        toast.success('Mobile ticket sent to printer');
+        toast.success(`${selectedTemplate.design?.templateType === 'mobile' ? 'Mobile' : 'Custom'} ticket sent to printer`);
       } else {
         // Fallback to mobile-optimized ticket
         MobileTicketUtils.printMobileTicket(ticket, user);
-        toast.success('Ticket sent to printer');
+        toast.success('Default ticket sent to printer');
       }
     } catch (error) {
       console.error('Error printing ticket:', error);
@@ -444,143 +447,20 @@ const BettingInterface = () => {
     }
   };
 
-  const generateCustomTicketTemplate = (ticket, template) => {
-    const canvasSize = template.design.canvasSize || { width: 400, height: 600 };
-    const elements = template.design.elements || [];
-    
-    // Handle multiple bets for template
-    const bets = ticket.bets || [];
-    const firstBet = bets[0] || {};
-    
-    // Create bet combinations string for display
-    const betCombinations = bets.map((bet, index) => {
-      const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
-      const sequence = String.fromCharCode(65 + index); // A, B, C, etc.
-      return `${betType} (Bet Type)                                                ${bet.betCombination.split('').join('   ')} (Bet Combination)\n${sequence} (Bet Sequence)                                                                           Price: ₱${parseFloat(bet.betAmount).toFixed(2)} (Bet Price)`;
-    }).join('\n\n');
-    
-    // Map dynamic data to match template format
-    const dynamicData = {
-      ticketNumber: ticket.ticketNumber,
-      drawTime: formatDrawTimeForTicket(ticket.draw?.drawTime),
-      drawDate: ticket.draw?.drawDate ? 
-        `${new Date(ticket.draw.drawDate).toLocaleDateString('en-CA')} ${new Date(ticket.draw.drawDate).toLocaleDateString('en-US', { weekday: 'short' })} ${formatDrawTimeForTicket(ticket.draw?.drawTime)}` : 
-        'No Date',
-      betNumbers: betCombinations || firstBet.betCombination || 'No Bets',
-      betType: firstBet.betType ? firstBet.betType.charAt(0).toUpperCase() + firstBet.betType.slice(1) : 'Standard',
-      betAmount: firstBet.betAmount ? `₱${parseFloat(firstBet.betAmount).toFixed(2)}` : '₱0.00',
-      totalBet: `₱${parseFloat(ticket.totalAmount).toFixed(2)}`,
-      agentName: user.fullName || user.username,
-      timestamp: ticket.draw?.drawDate ? 
-        `${new Date(ticket.draw.drawDate).toLocaleDateString('en-CA')} ${new Date(ticket.draw.drawDate).toLocaleDateString('en-US', { weekday: 'short' })} ${formatDrawTimeForTicket(ticket.draw?.drawTime)}` : 
-        new Date(ticket.createdAt).toLocaleString(),
-      qrCode: ticket.qrCode,
-      barcode: `|||${ticket.ticketNumber.slice(-8)}|||`,
-      betCount: bets.length.toString(),
-      allBets: bets.map((bet, index) => {
-        const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
-        const sequence = String.fromCharCode(65 + index); // A, B, C, etc.
-        return `${betType}                                                                                        ${bet.betCombination.split('').join('   ')}\n${sequence}                                                                                                    Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
-      }).join('\n\n'),
+  const generateCustomTicketTemplate = async (ticket, template) => {
+    try {
+      // Use backend template generation for better consistency
+      const response = await api.post('/ticket-templates/generate', {
+        ticketId: ticket.id,
+        templateId: template.id
+      });
       
-      // Individual bet components (only for bets that exist and have valid data)
-      ...(() => {
-        const betComponents = {};
-        const validBets = bets.filter(bet => bet && bet.betType && bet.betCombination && bet.betAmount);
-        
-        for (let i = 0; i < validBets.length; i++) {
-          const betIndex = i + 1;
-          const bet = validBets[i];
-          const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
-          const sequence = String.fromCharCode(65 + i); // A, B, C, etc.
-          
-          betComponents[`bet${betIndex}Type`] = betType;
-          betComponents[`bet${betIndex}Numbers`] = bet.betCombination.split('').join('   ');
-          betComponents[`bet${betIndex}Sequence`] = sequence;
-          betComponents[`bet${betIndex}Price`] = `Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
-        }
-        
-        return betComponents;
-      })()
-    };
-
-    // Generate elements HTML
-    const elementsHtml = elements.map(element => {
-      const style = `
-        position: absolute;
-        left: ${element.x}px;
-        top: ${element.y}px;
-        width: ${element.width}px;
-        height: ${element.height}px;
-        z-index: ${element.zIndex || 1};
-        ${element.style ? Object.entries(element.style).map(([key, value]) => 
-          `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value};`
-        ).join(' ') : ''}
-      `;
-
-      if (element.type === 'text') {
-        return `<div style="${style}">${element.content}</div>`;
-      } else if (element.type === 'dynamic') {
-        const content = dynamicData[element.fieldId] || element.content;
-        
-        // Hide element if content is empty or if it's sample content (for unused bet components)
-        if (!content || content.trim() === '' || 
-            (element.fieldId && element.fieldId.startsWith('bet') && !dynamicData[element.fieldId])) {
-          return '';
-        }
-        
-        if (element.fieldId === 'qrCode') {
-          // Clean QR code style without borders
-          const cleanQRStyle = style.replace(/border[^;]*;?/g, '').replace(/background[^;]*;?/g, '');
-          return `<img src="${content}" alt="QR Code" style="${cleanQRStyle}" onerror="this.style.display='none';" crossorigin="anonymous" />`;
-        }
-        // Clean dynamic field style without borders
-        const cleanDynamicStyle = style.replace(/border[^;]*;?/g, '');
-        return `<div style="${cleanDynamicStyle}">${content}</div>`;
-      } else if (element.type === 'image') {
-        // Clean image/logo style without borders
-        const cleanImageStyle = style.replace(/border[^;]*;?/g, '');
-        return `<img src="${element.src}" alt="${element.alt || ''}" style="${cleanImageStyle}" onerror="this.style.display='none';" crossorigin="anonymous" />`;
-      } else if (element.type === 'shape') {
-        return `<div style="${style}"></div>`;
-      }
-      return '';
-    }).join('');
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>${template.name} - Ticket</title>
-        <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background: #f0f0f0;
-          }
-          .ticket-container { 
-            width: ${canvasSize.width}px; 
-            height: ${canvasSize.height}px; 
-            position: relative; 
-            background: ${template.design.backgroundColor || '#ffffff'};
-            border: 1px solid #000;
-            margin: 0 auto;
-            overflow: hidden;
-          }
-          @media print {
-            body { background: white; padding: 0; }
-            .ticket-container { border: none; margin: 0; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="ticket-container">
-          ${elementsHtml}
-        </div>
-      </body>
-      </html>
-    `;
+      return response.data.data.html;
+    } catch (error) {
+      console.error('Error generating custom template:', error);
+      // Fallback to default template
+      return generateTicketTemplate(ticket);
+    }
   };
 
   const generateTicketTemplate = (ticket) => {

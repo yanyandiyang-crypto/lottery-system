@@ -173,7 +173,14 @@ const AgentTickets = () => {
       // Fetch assigned templates
       const templatesResponse = await api.get(`/ticket-templates/agent/${user.id}`);
       const templates = templatesResponse.data.data || [];
-      const selectedTemplate = templates.find(t => t.id === ticket.templateId) || templates[0];
+      
+      // Find the template used for this ticket or fallback to assigned templates
+      let selectedTemplate = templates.find(t => t.id === ticket.templateId);
+      
+      // If no specific template found, use mobile template if available, otherwise first assigned template
+      if (!selectedTemplate) {
+        selectedTemplate = templates.find(t => t.design?.templateType === 'mobile') || templates[0];
+      }
 
       let ticketHtml;
       if (selectedTemplate && selectedTemplate.design && selectedTemplate.design.elements) {
@@ -195,6 +202,8 @@ const AgentTickets = () => {
           setTimeout(() => printWindow.close(), 1000);
         }, 500);
       };
+      
+      toast.success(`${selectedTemplate?.design?.templateType === 'mobile' ? 'Mobile' : 'Custom'} ticket reprinted`);
     } catch (error) {
       console.error('Error printing ticket:', error);
       toast.error('Failed to print ticket');
@@ -225,140 +234,19 @@ const AgentTickets = () => {
   };
 
   const generateCustomTicketTemplate = async (ticket, template) => {
-    // Same logic as in BettingInterface.js
-    const canvasSize = template.design.canvasSize || { width: 400, height: 600 };
-    const elements = template.design.elements || [];
-    
-    const dynamicData = {
-      ticketNumber: ticket.ticketNumber,
-      drawTime: formatDrawTimeForTicket(ticket.draw?.drawTime),
-      drawDate: ticket.draw?.drawDate ? 
-        `${new Date(ticket.draw.drawDate).toLocaleDateString('en-CA')} ${new Date(ticket.draw.drawDate).toLocaleDateString('en-US', { weekday: 'short' })} ${formatDrawTimeForTicket(ticket.draw?.drawTime)}` : 
-        'No Date',
-      betNumbers: ticket.bets && ticket.bets.length > 0 
-        ? ticket.bets.map((bet, index) => {
-            const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
-            const sequence = String.fromCharCode(65 + index); // A, B, C, etc.
-            return `${betType}                                                                                        ${bet.betCombination.split('').join('   ')}\n${sequence}                                                                                                    Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
-          }).join('\n\n')
-        : 'No Bets',
-      betType: ticket.bets && ticket.bets.length > 0 
-        ? ticket.bets[0].betType.charAt(0).toUpperCase() + ticket.bets[0].betType.slice(1)
-        : 'Standard',
-      betAmount: ticket.bets && ticket.bets.length > 0 
-        ? `₱${parseFloat(ticket.bets[0].betAmount).toFixed(2)}`
-        : '₱0.00',
-      totalBet: `₱${parseFloat(ticket.totalAmount).toFixed(2)}`,
-      agentName: user.fullName || user.username,
-      timestamp: ticket.draw?.drawDate ? 
-        `${new Date(ticket.draw.drawDate).toLocaleDateString('en-CA')} ${new Date(ticket.draw.drawDate).toLocaleDateString('en-US', { weekday: 'short' })} ${formatDrawTimeForTicket(ticket.draw?.drawTime)}` : 
-        new Date(ticket.createdAt).toLocaleString(),
-      qrCode: ticket.qrCode,
-      barcode: `|||${ticket.ticketNumber.slice(-8)}|||`,
+    try {
+      // Use backend template generation for better consistency
+      const response = await api.post('/ticket-templates/generate', {
+        ticketId: ticket.id,
+        templateId: template.id
+      });
       
-      // Individual bet components (only for bets that exist and have valid data)
-      ...(() => {
-        const betComponents = {};
-        const bets = ticket.bets || [];
-        const validBets = bets.filter(bet => bet && bet.betType && bet.betCombination && bet.betAmount);
-        
-        for (let i = 0; i < validBets.length; i++) {
-          const betIndex = i + 1;
-          const bet = validBets[i];
-          const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
-          const sequence = String.fromCharCode(65 + i); // A, B, C, etc.
-          
-          betComponents[`bet${betIndex}Type`] = betType;
-          betComponents[`bet${betIndex}Numbers`] = bet.betCombination.split('').join('   ');
-          betComponents[`bet${betIndex}Sequence`] = sequence;
-          betComponents[`bet${betIndex}Price`] = `Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
-        }
-        
-        return betComponents;
-      })()
-    };
-
-    // Convert external images to base64 for better print compatibility
-    const processedElements = await Promise.all(elements.map(async (element) => {
-      if (element.type === 'image' || (element.type === 'dynamic' && element.fieldId === 'qrCode')) {
-        const imageUrl = element.type === 'image' ? element.src : dynamicData[element.fieldId];
-        if (imageUrl && imageUrl.startsWith('http')) {
-          try {
-            const base64Image = await convertImageToBase64(imageUrl);
-            return { ...element, processedSrc: base64Image };
+      return response.data.data.html;
           } catch (error) {
-            console.warn('Failed to convert image to base64:', error);
-            return { ...element, processedSrc: imageUrl };
-          }
-        }
-      }
-      return element;
-    }));
-
-    const elementsHtml = processedElements.map(element => {
-      const style = `
-        position: absolute;
-        left: ${element.x}px;
-        top: ${element.y}px;
-        width: ${element.width}px;
-        height: ${element.height}px;
-        ${element.style ? Object.entries(element.style).map(([key, value]) => 
-          `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value};`
-        ).join(' ') : ''}
-      `;
-
-      if (element.type === 'text') {
-        return `<div style="${style}">${element.content}</div>`;
-      } else if (element.type === 'dynamic') {
-        const content = dynamicData[element.fieldId] || element.content;
-        
-        // Hide element if content is empty or if it's sample content (for unused bet components)
-        if (!content || content.trim() === '' || 
-            (element.fieldId && element.fieldId.startsWith('bet') && !dynamicData[element.fieldId])) {
-          return '';
-        }
-        
-        if (element.fieldId === 'qrCode') {
-          const cleanQRStyle = style.replace(/border[^;]*;?/g, '').replace(/background[^;]*;?/g, '');
-          const imageSrc = element.processedSrc || content;
-          return `<img src="${imageSrc}" alt="QR Code" style="${cleanQRStyle}" onload="console.log('QR loaded')" onerror="console.log('QR failed'); this.style.display='none';" />`;
-        }
-        const cleanDynamicStyle = style.replace(/border[^;]*;?/g, '');
-        return `<div style="${cleanDynamicStyle}">${content}</div>`;
-      } else if (element.type === 'image') {
-        const cleanImageStyle = style.replace(/border[^;]*;?/g, '');
-        const imageSrc = element.processedSrc || element.src;
-        return `<img src="${imageSrc}" alt="${element.alt || ''}" style="${cleanImageStyle}" onload="console.log('Logo loaded')" onerror="console.log('Logo failed'); this.style.display='none';" />`;
-      } else if (element.type === 'shape') {
-        return `<div style="${style}"></div>`;
-      }
-      return '';
-    }).join('');
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Lottery Ticket</title>
-        <style>
-          body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-          .ticket { position: relative; width: ${canvasSize.width}px; height: ${canvasSize.height}px; margin: 0 auto; }
-          img { max-width: 100%; height: auto; }
-          @media print {
-            body { margin: 0; padding: 0; }
-            .ticket { margin: 0; }
-            img { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="ticket">
-          ${elementsHtml}
-        </div>
-      </body>
-      </html>
-    `;
+      console.error('Error generating custom template:', error);
+      // Fallback to default template
+      return generateDefaultTicketTemplate(ticket);
+    }
   };
 
   const generateDefaultTicketTemplate = (ticket) => {

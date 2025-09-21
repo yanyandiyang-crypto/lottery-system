@@ -63,7 +63,18 @@ const io = socketIo(server, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"]
-  }
+  },
+  // Socket.IO timeout configuration
+  pingTimeout: 60000,        // 60 seconds
+  pingInterval: 25000,       // 25 seconds
+  upgradeTimeout: 10000,     // 10 seconds
+  allowEIO3: true,           // Allow Engine.IO v3 clients
+  transports: ['websocket', 'polling'],
+  // Connection timeout
+  connectTimeout: 45000,     // 45 seconds
+  // Heartbeat configuration
+  heartbeatTimeout: 60000,   // 60 seconds
+  heartbeatInterval: 25000   // 25 seconds
 });
 
 const prisma = new PrismaClient();
