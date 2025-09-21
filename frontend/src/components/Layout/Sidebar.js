@@ -15,7 +15,8 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   ChartPieIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  PrinterIcon
 } from '@heroicons/react/24/outline';
 
 // Static navigation items that are always visible based on role
@@ -26,6 +27,7 @@ const staticNavigation = [
   { name: 'Admin Management', href: '/admin-management', icon: UsersIcon, roles: ['superadmin'] },
   { name: 'Function Management', href: '/function-management', icon: CogIcon, roles: ['superadmin'] },
   { name: 'Prize Configuration', href: '/prize-configuration', icon: CurrencyDollarIcon, roles: ['superadmin'] },
+  { name: 'Mobile POS Templates', href: '/mobile-pos-templates', icon: PrinterIcon, roles: ['superadmin'] },
   
   // Operator Features
   { name: 'Operator Dashboard', href: '/operator-dashboard', icon: ChartPieIcon, roles: ['operator'] },
@@ -245,6 +247,7 @@ const Sidebar = () => {
         'Area Coordinator Management',
         'Bet Limits',
         'Agent Tickets',
+        'Mobile POS Templates',
         'Notifications',
         'Account Info'
       ];

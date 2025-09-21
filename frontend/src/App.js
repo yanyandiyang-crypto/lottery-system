@@ -31,6 +31,7 @@ import TicketReprint from './pages/Tickets/TicketReprint';
 import BetHistory from './pages/BetHistory/BetHistory';
 import SalesPerDraw from './pages/SalesPerDraw/SalesPerDraw';
 import TicketTemplates from './pages/TicketTemplates/TicketTemplates';
+import MobilePOSTemplates from './pages/TicketTemplates/MobilePOSTemplates';
 import FunctionManagement from './pages/FunctionManagement/FunctionManagement';
 import AgentSales from './pages/AgentSales/AgentSales';
 import AgentTickets from './pages/AgentTickets/AgentTickets';
@@ -133,6 +134,9 @@ function AppRoutes() {
 
         {/* Ticket Templates - Admin only */}
         <Route path="/ticket-templates" element={<AdminRoute><TicketTemplates /></AdminRoute>} />
+        
+        {/* Mobile POS Templates - SuperAdmin only */}
+        <Route path="/mobile-pos-templates" element={<SuperAdminRoute><MobilePOSTemplates /></SuperAdminRoute>} />
 
         {/* User Management - SuperAdmin only */}
         <Route path="/admin-management" element={<SuperAdminRoute><AdminManagement /></SuperAdminRoute>} />
