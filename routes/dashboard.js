@@ -68,7 +68,7 @@ router.get('/', requireAuth, async (req, res) => {
     // Role-based filtering for hierarchical data
     if (userRole === 'area_coordinator' && req.user.regionId) {
       const areaAgents = await prisma.user.findMany({
-        where: { regionId: req.user.regionId, role: 'agent' },
+        where: { regionId: req.user.regionId, role: 'agent', status: 'active' },
         select: { id: true, fullName: true }
       });
       whereClause.userId = {
@@ -77,7 +77,7 @@ router.get('/', requireAuth, async (req, res) => {
       dashboardData.hierarchicalData.agents = areaAgents;
     } else if (userRole === 'coordinator') {
       const coordinatorAgents = await prisma.user.findMany({
-        where: { coordinatorId: req.user.id, role: 'agent' },
+        where: { coordinatorId: req.user.id, role: 'agent', status: 'active' },
         select: { id: true, fullName: true }
       });
       whereClause.userId = {
@@ -441,7 +441,7 @@ async function getHierarchicalPerformanceData(userRole, user, today, tomorrow) {
 // Helper function to get region performance data
 async function getRegionPerformanceData(region, today, tomorrow) {
   const regionAgents = await prisma.user.findMany({
-    where: { regionId: region.regionId, role: 'agent' },
+    where: { regionId: region.regionId, role: 'agent', status: 'active' },
     select: { id: true }
   });
 
@@ -487,7 +487,7 @@ async function getRegionPerformanceData(region, today, tomorrow) {
 // Helper function to get coordinator performance data
 async function getCoordinatorPerformanceData(coordinator, today, tomorrow) {
   const coordinatorAgents = await prisma.user.findMany({
-    where: { coordinatorId: coordinator.id, role: 'agent' },
+    where: { coordinatorId: coordinator.id, role: 'agent', status: 'active' },
     select: { id: true }
   });
 
@@ -593,7 +593,7 @@ router.get('/live', requireAuth, async (req, res) => {
     // Role-based filtering
     if (userRole === 'area_coordinator' && req.user.regionId) {
       const areaAgents = await prisma.user.findMany({
-        where: { regionId: req.user.regionId, role: 'agent' },
+        where: { regionId: req.user.regionId, role: 'agent', status: 'active' },
         select: { id: true }
       });
       whereClause.userId = {
@@ -601,7 +601,7 @@ router.get('/live', requireAuth, async (req, res) => {
       };
     } else if (userRole === 'coordinator') {
       const coordinatorAgents = await prisma.user.findMany({
-        where: { coordinatorId: req.user.id, role: 'agent' },
+        where: { coordinatorId: req.user.id, role: 'agent', status: 'active' },
         select: { id: true }
       });
       whereClause.userId = {
@@ -726,6 +726,38 @@ router.get('/live', requireAuth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching live dashboard data'
+    });
+  }
+});
+
+// @route   POST /api/dashboard/invalidate-cache
+// @desc    Invalidate dashboard cache for real-time updates
+// @access  Private (Admin/SuperAdmin only)
+router.post('/invalidate-cache', requireAuth, async (req, res) => {
+  try {
+    // Only allow admin and superadmin to invalidate cache
+    if (!['admin', 'superadmin'].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+
+    // Clear any cached data (if using cache)
+    // This is a placeholder for future cache implementation
+    console.log('🔄 Dashboard cache invalidated by:', req.user.role, req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Dashboard cache invalidated successfully',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Cache invalidation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error invalidating cache'
     });
   }
 });

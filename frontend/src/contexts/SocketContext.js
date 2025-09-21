@@ -126,6 +126,22 @@ export const SocketProvider = ({ children }) => {
         );
       });
 
+      // Listen for dashboard refresh events
+      newSocket.on('dashboard-refresh', (data) => {
+        console.log('Dashboard refresh event received:', data);
+        
+        // Show notification for user deletion/deactivation
+        if (data.type === 'user-deleted' || data.type === 'user-deactivated') {
+          toast.info('Dashboard data updated - user changes detected', {
+            duration: 3000,
+            icon: '🔄'
+          });
+        }
+        
+        // Emit custom event for components to listen to
+        window.dispatchEvent(new CustomEvent('dashboard-refresh', { detail: data }));
+      });
+
       newSocket.on('agent-won', (data) => {
         const winningPrize = data.totalWinningPrize || data.winningPrize || 0;
         const winningNumbers = data.winningBets ? 

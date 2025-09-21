@@ -61,7 +61,7 @@ router.get('/', requireAuth, async (req, res) => {
         console.log('Sales route - Area coordinator filtering');
         // Get agents in the same region as the Area Coordinator
         const areaAgents = await prisma.user.findMany({
-          where: { regionId: req.user.regionId, role: 'agent' },
+          where: { regionId: req.user.regionId, role: 'agent', status: 'active' },
           select: { id: true }
         });
         console.log('Sales route - Found area agents:', areaAgents.length);
@@ -72,7 +72,7 @@ router.get('/', requireAuth, async (req, res) => {
       case 'coordinator':
         console.log('Sales route - Coordinator filtering');
         const coordAgents = await prisma.user.findMany({
-          where: { coordinatorId: req.user.id, role: 'agent' },
+          where: { coordinatorId: req.user.id, role: 'agent', status: 'active' },
           select: { id: true }
         });
         console.log('Sales route - Found coordinator agents:', coordAgents.length);

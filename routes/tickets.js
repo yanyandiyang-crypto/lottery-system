@@ -489,7 +489,7 @@ router.get('/', async (req, res) => {
       case 'area_coordinator':
         // Get agents in the same region as the Area Coordinator
         const areaAgents = await prisma.user.findMany({
-          where: { regionId: req.user.regionId, role: 'agent' },
+          where: { regionId: req.user.regionId, role: 'agent', status: 'active' },
           select: { id: true }
         });
         where.agentId = {
@@ -499,7 +499,7 @@ router.get('/', async (req, res) => {
       case 'coordinator':
         // Get agents under this coordinator
         const coordAgents = await prisma.user.findMany({
-          where: { coordinatorId: req.user.id, role: 'agent' },
+          where: { coordinatorId: req.user.id, role: 'agent', status: 'active' },
           select: { id: true }
         });
         where.agentId = {

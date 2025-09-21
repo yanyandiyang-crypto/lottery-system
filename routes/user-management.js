@@ -473,6 +473,16 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
         await tx.user.delete({ where: { id: userId } });
       });
 
+      // Emit dashboard refresh event for real-time updates
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('dashboard-refresh', {
+          type: 'user-deleted',
+          userId: userId,
+          timestamp: new Date().toISOString()
+        });
+      }
+
       return res.json({ success: true, message: 'User force-deleted successfully' });
     }
 
@@ -481,6 +491,16 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
       await prisma.user.delete({
         where: { id: parseInt(id) }
       });
+
+      // Emit dashboard refresh event for real-time updates
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('dashboard-refresh', {
+          type: 'user-deleted',
+          userId: parseInt(id),
+          timestamp: new Date().toISOString()
+        });
+      }
 
       return res.json({
         success: true,
@@ -506,6 +526,16 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
       });
 
       console.log('User deactivated:', updatedUser);
+
+      // Emit dashboard refresh event for real-time updates
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('dashboard-refresh', {
+          type: 'user-deactivated',
+          userId: parseInt(id),
+          timestamp: new Date().toISOString()
+        });
+      }
 
       return res.json({
         success: true,
