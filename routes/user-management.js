@@ -452,16 +452,22 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
         await tx.balanceTransaction.deleteMany({ where: { OR: [{ userId }, { processedById: userId }] } });
         await tx.userBalance.deleteMany({ where: { userId } });
         await tx.agentTicketTemplate.deleteMany({ where: { agentId: userId } });
-        await tx.ticket.updateMany({ where: { agentId: userId }, data: { agentId: 1 } });
-        await tx.ticket.updateMany({ where: { userId }, data: { userId: 1 } });
         await tx.sale.deleteMany({ where: { userId } });
         await tx.commission.deleteMany({ where: { userId } });
+        await tx.ticketReprint.deleteMany({ where: { reprintedById: userId } });
+        await tx.betLimit.deleteMany({ where: { createdById: userId } });
+
+        // Handle tickets - reassign to system user (ID 1) or delete if no system user exists
+        await tx.ticket.updateMany({ where: { agentId: userId }, data: { agentId: 1 } });
+        await tx.ticket.updateMany({ where: { userId }, data: { userId: 1 } });
 
         // Null out optional relations where applicable
         await tx.ticketTemplate.updateMany({ where: { createdById: userId }, data: { createdById: null } });
         await tx.systemSetting.updateMany({ where: { updatedById: userId }, data: { updatedById: null } });
         await tx.user.updateMany({ where: { coordinatorId: userId }, data: { coordinatorId: null } });
         await tx.region.updateMany({ where: { areaCoordinatorId: userId }, data: { areaCoordinatorId: null } });
+        await tx.prizeConfiguration.updateMany({ where: { createdById: userId }, data: { createdById: 1 } });
+        await tx.prizeConfiguration.updateMany({ where: { updatedById: userId }, data: { updatedById: null } });
 
         // Finally delete the user
         await tx.user.delete({ where: { id: userId } });
@@ -513,12 +519,26 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     console.error('Error details:', {
       message: error.message,
       code: error.code,
-      stack: error.stack
+      stack: error.stack,
+      userId: req.params.id,
+      force: req.query.force
     });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Error deleting user';
+    if (error.code === 'P2003') {
+      errorMessage = 'Cannot delete user due to foreign key constraints. Try soft delete instead.';
+    } else if (error.code === 'P2025') {
+      errorMessage = 'User not found or already deleted';
+    } else if (error.message.includes('transaction')) {
+      errorMessage = 'Database transaction failed during user deletion';
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error deleting user',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      code: error.code
     });
   }
 });
