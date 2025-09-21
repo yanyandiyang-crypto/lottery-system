@@ -93,6 +93,7 @@ app.use(cors({
     console.log('CORS: Checking origin:', origin);
     console.log('CORS: Allowed origins:', allowedOrigins);
     
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
       console.log('CORS: Origin allowed:', origin);
       callback(null, true);
