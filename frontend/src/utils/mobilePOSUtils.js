@@ -167,10 +167,17 @@ export class MobilePOSUtils {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
+      // Calculate dynamic height based on number of bets
+      const bets = ticket.bets || [];
+      const baseHeight = 340; // Base height for mobile ticket
+      const heightPerBet = 25; // Height per bet
+      const minHeight = 200; // Minimum height
+      const dynamicHeight = Math.max(minHeight, baseHeight + (bets.length * heightPerBet));
+      
       // Set high resolution canvas for mobile POS
       const scale = 4; // 4x resolution for crisp mobile POS printing
       canvas.width = 880; // 220 * 4 (58mm width)
-      canvas.height = 1360; // 340 * 4
+      canvas.height = dynamicHeight * scale; // Dynamic height * scale
       
       // Scale context for high DPI
       ctx.scale(scale, scale);
@@ -219,7 +226,6 @@ export class MobilePOSUtils {
       y += 35;
       
       // Bets section
-      const bets = ticket.bets || [];
       bets.forEach((bet, index) => {
         const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
         const sequence = String.fromCharCode(65 + index);
@@ -264,28 +270,108 @@ export class MobilePOSUtils {
       ctx.fillText(user.fullName || user.username, canvas.width / scale / 2, y);
       y += 25;
       
-      // QR Code section
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 2;
-      ctx.strokeRect((canvas.width / scale / 2) - 40, y, 80, 80);
+      // QR Code section with actual QR code generation
+      const qrCodeValue = ticket.qrCode || ticket.ticketNumber;
       
-      ctx.font = '8px Courier New';
-      ctx.fillText('QR CODE', canvas.width / scale / 2, y + 45);
-      y += 100;
-      
-      // Footer
-      ctx.font = 'bold 10px Courier New';
-      ctx.fillText('GOOD LUCK! 🍀', canvas.width / scale / 2, y);
-      y += 15;
-      
-      ctx.font = '8px Courier New';
-      ctx.fillStyle = '#666';
-      ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / scale / 2, y);
-      
-      // Convert to blob
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, 'image/png', 1.0);
+      // Use dynamic import for QRCode in browser environment
+      import('qrcode').then(QRCode => {
+        QRCode.default.toDataURL(qrCodeValue, { width: 80, margin: 0 }, (err, url) => {
+        if (err) {
+          console.error('QR Code generation error:', err);
+          // Draw placeholder if QR generation fails
+          ctx.strokeStyle = 'black';
+          ctx.lineWidth = 2;
+          ctx.strokeRect((canvas.width / scale / 2) - 40, y, 80, 80);
+          ctx.font = '8px Courier New';
+          ctx.fillText('QR CODE', canvas.width / scale / 2, y + 45);
+          y += 100;
+          
+          // Footer
+          ctx.font = 'bold 10px Courier New';
+          ctx.fillText('GOOD LUCK! 🍀', canvas.width / scale / 2, y);
+          y += 15;
+          
+          ctx.font = '8px Courier New';
+          ctx.fillStyle = '#666';
+          ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / scale / 2, y);
+          
+          // Convert to blob
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/png', 1.0);
+          return;
+        }
+        
+        const img = new Image();
+        img.onload = () => {
+          const qrX = (canvas.width / scale / 2) - 40;
+          ctx.drawImage(img, qrX, y, 80, 80);
+          y += 100;
+          
+          // Footer
+          ctx.font = 'bold 10px Courier New';
+          ctx.fillText('GOOD LUCK! 🍀', canvas.width / scale / 2, y);
+          y += 15;
+          
+          ctx.font = '8px Courier New';
+          ctx.fillStyle = '#666';
+          ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / scale / 2, y);
+          
+          // Convert to blob
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/png', 1.0);
+        };
+        img.onerror = (e) => {
+          console.error('QR Code image loading error:', e);
+          // Draw placeholder if image loading fails
+          ctx.strokeStyle = 'black';
+          ctx.lineWidth = 2;
+          ctx.strokeRect((canvas.width / scale / 2) - 40, y, 80, 80);
+          ctx.font = '8px Courier New';
+          ctx.fillText('QR CODE', canvas.width / scale / 2, y + 45);
+          y += 100;
+          
+          // Footer
+          ctx.font = 'bold 10px Courier New';
+          ctx.fillText('GOOD LUCK! 🍀', canvas.width / scale / 2, y);
+          y += 15;
+          
+          ctx.font = '8px Courier New';
+          ctx.fillStyle = '#666';
+          ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / scale / 2, y);
+          
+          // Convert to blob
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/png', 1.0);
+        };
+        img.src = url;
+        });
+      }).catch(err => {
+        console.error('QRCode import error:', err);
+        // Draw placeholder if QRCode import fails
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.strokeRect((canvas.width / scale / 2) - 40, y, 80, 80);
+        ctx.font = '8px Courier New';
+        ctx.fillText('QR CODE', canvas.width / scale / 2, y + 45);
+        y += 100;
+        
+        // Footer
+        ctx.font = 'bold 10px Courier New';
+        ctx.fillText('GOOD LUCK! 🍀', canvas.width / scale / 2, y);
+        y += 15;
+        
+        ctx.font = '8px Courier New';
+        ctx.fillStyle = '#666';
+        ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / scale / 2, y);
+        
+        // Convert to blob
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/png', 1.0);
+      });
     });
   }
 

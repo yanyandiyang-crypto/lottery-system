@@ -1,5 +1,4 @@
 const TicketGenerator = require('./ticketGenerator');
-const QRCode = require('qrcode');
 
 class TemplateRenderer {
   /**
@@ -13,9 +12,19 @@ class TemplateRenderer {
     try {
       const design = template.design || {};
       const elements = design.elements || [];
-      const canvasSize = design.canvasSize || { width: 400, height: 600 };
+      let canvasSize = design.canvasSize || { width: 400, height: 600 };
       const backgroundColor = design.backgroundColor || '#ffffff';
       const templateType = design.templateType || 'standard';
+
+      // Calculate dynamic height for mobile POS templates
+      if (design.dynamicHeight && templateType === 'mobile-pos') {
+        const bets = ticket.bets || [];
+        const baseHeight = canvasSize.height;
+        const heightPerBet = 25; // Height per bet
+        const minHeight = 200;
+        const dynamicHeight = Math.max(minHeight, baseHeight + (bets.length * heightPerBet));
+        canvasSize = { ...canvasSize, height: dynamicHeight };
+      }
 
       // Generate dynamic data for template
       const dynamicData = await this.generateDynamicData(ticket, user);
@@ -37,9 +46,9 @@ class TemplateRenderer {
       `;
 
       // Render elements
-      for (const element of elements) {
-        html += await this.renderElement(element, dynamicData);
-      }
+      elements.forEach(element => {
+        html += this.renderElement(element, dynamicData);
+      });
 
       html += `
           </div>
@@ -69,8 +78,12 @@ class TemplateRenderer {
       return `${betType.padEnd(20)}${numbers}\n${sequence.padEnd(20)}Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
     }).join('\n\n');
 
-    // Generate QR code data (not URL)
-    const qrCodeData = ticket.qrCode || ticket.ticketNumber;
+    // Generate QR code URL
+    const qrCodeUrl = await TicketGenerator.generateQRCode({
+      ticketNumber: ticket.ticketNumber,
+      drawTime: draw.drawTime,
+      totalAmount: ticket.totalAmount
+    });
 
     return {
       ticketNumber: ticket.ticketNumber,
@@ -82,8 +95,7 @@ class TemplateRenderer {
       totalBet: `₱${parseFloat(ticket.totalAmount).toFixed(2)}`,
       agentName: user.fullName || user.username,
       timestamp: new Date(ticket.createdAt).toLocaleString(),
-      qrCode: qrCodeData,
-      qrCodeData: qrCodeData,
+      qrCode: qrCodeUrl,
       barcode: `|||${ticket.ticketNumber}|||`,
       betCount: bets.length.toString(),
       allBets: allBetsDetail,
@@ -134,7 +146,7 @@ class TemplateRenderer {
   /**
    * Render individual element
    */
-  static async renderElement(element, dynamicData) {
+  static renderElement(element, dynamicData) {
     const { type, x, y, width, height, style, content, fieldId, label, src, alt, shapeType, zIndex } = element;
     
     const elementStyle = this.generateElementStyle(style, x, y, width, height, zIndex);
@@ -145,26 +157,7 @@ class TemplateRenderer {
         elementContent = content || '';
         break;
       case 'dynamic':
-        if (fieldId === 'qrCode') {
-          // Generate QR code for qrCode field
-          const qrData = dynamicData.qrCodeData || dynamicData.ticketNumber || 'sample';
-          try {
-            const qrCodeDataURL = await QRCode.toDataURL(qrData, { 
-              width: width || 80, 
-              margin: 0,
-              color: {
-                dark: '#000000',
-                light: '#FFFFFF'
-              }
-            });
-            elementContent = `<img src="${qrCodeDataURL}" alt="QR Code" style="width:100%; height:100%; object-fit:contain;" />`;
-          } catch (error) {
-            console.error('QR Code generation error:', error);
-            elementContent = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:8px; border:1px solid #ccc;">QR: ${qrData}</div>`;
-          }
-        } else {
-          elementContent = dynamicData[fieldId] || content || '';
-        }
+        elementContent = dynamicData[fieldId] || content || '';
         break;
       case 'image':
         if (src) {

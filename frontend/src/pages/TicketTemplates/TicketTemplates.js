@@ -1856,13 +1856,14 @@ const TicketTemplates = () => {
       name: 'Mobile POS Template',
       design: {
         elements: mobilePOSElements,
-        canvasSize: { width: 220, height: 370 }, // Optimized for POS
+        canvasSize: { width: 220, height: 400 }, // Increased height for dynamic content
         backgroundColor: '#ffffff',
-        templateType: 'mobile-pos'
+        templateType: 'mobile-pos',
+        dynamicHeight: true // Flag for dynamic height adjustment
       }
     });
     setCanvasElements(mobilePOSElements);
-    setCanvasSize({ width: 220, height: 370 });
+    setCanvasSize({ width: 220, height: 400 });
     setTemplateType('mobile-pos');
     setShowDesigner(true);
     setDesignerMode('select');
@@ -2473,6 +2474,7 @@ const TicketTemplates = () => {
       setTemplateType(selectedTemplate.design.templateType || 'standard');
       setDesignerMode('select');
       setSelectedElement(null);
+      setShowDesigner(true);
       toast.success('Template loaded for editing!');
     } else {
       toast.error('No template selected for editing');
@@ -3092,13 +3094,13 @@ const TicketTemplates = () => {
                 </div>
                 <button
                   onClick={saveTemplate}
-                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded"
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded mr-2"
                 >
                   Save Template
                 </button>
                 <button
                   onClick={() => editCurrentTemplate()}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mr-2"
+                  className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded mr-2"
                 >
                   Edit Template
                 </button>
