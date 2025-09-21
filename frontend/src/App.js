@@ -38,6 +38,7 @@ import AgentResults from './pages/AgentResults/AgentResults';
 import WinningTickets from './pages/WinningTickets/WinningTickets';
 import PrizeConfiguration from './pages/PrizeConfiguration/PrizeConfiguration';
 import MobileTicketShare from './pages/Tickets/MobileTicketShare';
+import WebShareTest from './pages/Test/WebShareTest';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -190,6 +191,9 @@ function AppRoutes() {
 
         {/* Mobile Ticket Share - Public route */}
         <Route path="/ticket/:ticketNumber" element={<MobileTicketShare />} />
+
+        {/* Test Routes */}
+        <Route path="/test/webshare" element={<WebShareTest />} />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -3,6 +3,57 @@
 export class MobileTicketUtils {
   
   /**
+   * Debug Web Share API support and capabilities
+   */
+  static debugWebShareSupport() {
+    const debug = {
+      userAgent: navigator.userAgent,
+      hasNavigatorShare: !!navigator.share,
+      hasNavigatorCanShare: !!navigator.canShare,
+      hasClipboard: !!navigator.clipboard,
+      hasClipboardWriteText: !!(navigator.clipboard && navigator.clipboard.writeText),
+      isSecureContext: window.isSecureContext,
+      protocol: window.location.protocol,
+      hostname: window.location.hostname
+    };
+    
+    console.log('Web Share API Debug Info:', debug);
+    return debug;
+  }
+
+  /**
+   * Test Web Share API with sample data
+   */
+  static async testWebShare() {
+    const testData = {
+      title: 'Test Share',
+      text: 'This is a test of the Web Share API',
+      url: window.location.origin
+    };
+
+    console.log('Testing Web Share API with:', testData);
+    
+    try {
+      if (navigator.share) {
+        if (navigator.canShare && !navigator.canShare(testData)) {
+          console.error('Web Share API: canShare returned false');
+          return { success: false, error: 'canShare returned false' };
+        }
+        
+        await navigator.share(testData);
+        console.log('Web Share API test successful');
+        return { success: true, method: 'web-share' };
+      } else {
+        console.log('Web Share API not available');
+        return { success: false, error: 'Web Share API not available' };
+      }
+    } catch (error) {
+      console.error('Web Share API test failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+  
+  /**
    * Generate mobile-optimized ticket HTML for 58mm thermal printers
    */
   static generateMobileTicketHTML(ticket, user) {
@@ -274,27 +325,59 @@ export class MobileTicketUtils {
    * Share ticket via Web Share API or fallback methods
    */
   static async shareTicket(ticket, user) {
+    // Debug Web Share API support first
+    const debugInfo = this.debugWebShareSupport();
+    
     const shareData = {
       title: `Lottery Ticket #${ticket.ticketNumber}`,
       text: `Check out my lottery ticket for ${ticket.draw?.drawTime || 'upcoming'} draw!`,
       url: window.location.origin + `/ticket/${ticket.ticketNumber}`
     };
 
+    console.log('Attempting to share ticket:', shareData);
+
     try {
-      // Try Web Share API first (mobile browsers)
-      if (navigator.share) {
+      // Check if Web Share API is supported and available
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        console.log('Using Web Share API');
+        await navigator.share(shareData);
+        return { success: true, method: 'web-share' };
+      } else if (navigator.share) {
+        // Try Web Share API even if canShare is not available
+        console.log('Trying Web Share API without canShare check');
         await navigator.share(shareData);
         return { success: true, method: 'web-share' };
       }
       
       // Fallback to clipboard
-      await navigator.clipboard.writeText(
-        `${shareData.title}\n${shareData.text}\n${shareData.url}`
-      );
-      return { success: true, method: 'clipboard' };
+      console.log('Falling back to clipboard');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(
+          `${shareData.title}\n${shareData.text}\n${shareData.url}`
+        );
+        return { success: true, method: 'clipboard' };
+      } else {
+        // Final fallback - show alert with text to copy
+        const shareText = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
+        alert(`Copy this text to share:\n\n${shareText}`);
+        return { success: true, method: 'alert' };
+      }
       
     } catch (error) {
       console.error('Share failed:', error);
+      
+      // Try clipboard fallback if Web Share API failed
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(
+            `${shareData.title}\n${shareData.text}\n${shareData.url}`
+          );
+          return { success: true, method: 'clipboard-fallback' };
+        }
+      } catch (clipboardError) {
+        console.error('Clipboard fallback also failed:', clipboardError);
+      }
+      
       return { success: false, error: error.message };
     }
   }

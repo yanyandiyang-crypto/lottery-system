@@ -1,7 +1,11 @@
 import React from 'react';
 import QRCode from 'qrcode.react';
+import MobileTicketUtils from '../../utils/mobileTicketUtils';
 
 const MobileTicketTemplate = ({ ticket, user, onShare, onPrint }) => {
+  const handleDebugShare = () => {
+    MobileTicketUtils.debugWebShareSupport();
+  };
   const formatDrawTimeForTicket = (drawTime) => {
     if (!drawTime) return 'No Time';
     const timeMap = {
@@ -110,6 +114,12 @@ const MobileTicketTemplate = ({ ticket, user, onShare, onPrint }) => {
           className="action-btn print-btn"
         >
           🖨️ Print Ticket
+        </button>
+        <button 
+          onClick={handleDebugShare}
+          className="action-btn debug-btn"
+        >
+          🔧 Debug Share
         </button>
       </div>
 
@@ -297,6 +307,16 @@ const MobileTicketTemplate = ({ ticket, user, onShare, onPrint }) => {
 
         .print-btn:hover {
           background: #059669;
+          transform: translateY(-2px);
+        }
+
+        .debug-btn {
+          background: #f59e0b;
+          color: white;
+        }
+
+        .debug-btn:hover {
+          background: #d97706;
           transform: translateY(-2px);
         }
 
