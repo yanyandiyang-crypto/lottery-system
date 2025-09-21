@@ -320,10 +320,29 @@ const BettingInterface = () => {
         return;
       }
 
+      // Get agent's assigned template
+      let templateId = null;
+      try {
+        const templatesResponse = await api.get(`/ticket-templates/agent/${user.id}`);
+        const templates = templatesResponse.data.data || [];
+        console.log('Available templates for agent:', templates);
+        
+        const assignedTemplate = templates.find(t => t.isActive);
+        if (assignedTemplate) {
+          templateId = assignedTemplate.id;
+          console.log('Using assigned template:', assignedTemplate.name, 'ID:', templateId);
+        } else {
+          console.log('No active template assigned, using default template');
+        }
+      } catch (error) {
+        console.log('Error fetching templates, using default:', error);
+      }
+
       // Create a single ticket with multiple bets
       const ticketData = {
         drawId: targetDraw.id,
         userId: user.id,
+        templateId: templateId, // Pass the template ID
         bets: addedBets.map(bet => ({
           betCombination: bet.number,
           betType: bet.type,
@@ -337,6 +356,9 @@ const BettingInterface = () => {
       // Set the created ticket and show mobile ticket modal
       setCreatedTicket(ticket);
       setShowMobileTicket(true);
+      
+      // Log template information for debugging
+      console.log('Ticket created with template ID:', ticket.templateId || 'default');
 
       toast.success(`Ticket with ${addedBets.length} bets created successfully!`);
       
@@ -1057,12 +1079,35 @@ const BettingInterface = () => {
                   </button>
                 </div>
                 
-                <MobileTicketTemplate
-                  ticket={createdTicket}
-                  user={user}
-                  onShare={() => handleShareTicket(createdTicket)}
-                  onPrint={() => generateAndPrintTicket(createdTicket)}
-                />
+                {/* Debug template information */}
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800">Template Information:</p>
+                  <p className="text-xs text-blue-600">Template ID: {createdTicket.templateId || 'Default (1)'}</p>
+                  <p className="text-xs text-blue-600">Ticket Number: {createdTicket.ticketNumber}</p>
+                </div>
+
+                {/* Check if we should use custom template or default mobile template */}
+                {createdTicket.templateId && createdTicket.templateId !== 1 ? (
+                  <div className="ticket-preview">
+                    <div className="text-center mb-4">
+                      <p className="text-sm text-gray-600">Custom Template Preview</p>
+                      <p className="text-xs text-gray-500">Template ID: {createdTicket.templateId}</p>
+                    </div>
+                    <div className="border-2 border-dashed border-gray-300 p-4 rounded-lg">
+                      <p className="text-center text-gray-500">Custom template preview would be rendered here</p>
+                      <p className="text-xs text-center text-gray-400 mt-2">
+                        Ticket #{createdTicket.ticketNumber} | Total: ₱{parseFloat(createdTicket.totalAmount).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <MobileTicketTemplate
+                    ticket={createdTicket}
+                    user={user}
+                    onShare={() => handleShareTicket(createdTicket)}
+                    onPrint={() => generateAndPrintTicket(createdTicket)}
+                  />
+                )}
                 
                 <div className="mt-4 flex space-x-2">
                   <button
