@@ -38,7 +38,8 @@ const WebShareTest = () => {
           betType: 'standard',
           betCombination: '123',
           betAmount: 10.00
-        }]
+        }],
+        createdAt: new Date().toISOString()
       };
 
       const mockUser = {
@@ -48,6 +49,52 @@ const WebShareTest = () => {
 
       const result = await MobileTicketUtils.shareTicket(mockTicket, mockUser);
       setTestResult(result);
+    } catch (error) {
+      setTestResult({ success: false, error: error.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const testImageShare = async () => {
+    setIsLoading(true);
+    try {
+      // Create a mock ticket for testing image generation
+      const mockTicket = {
+        ticketNumber: '12345678901234567',
+        draw: {
+          drawTime: '14:00',
+          drawDate: new Date().toISOString()
+        },
+        totalAmount: 10.00,
+        bets: [{
+          betType: 'standard',
+          betCombination: '123',
+          betAmount: 10.00
+        }],
+        createdAt: new Date().toISOString()
+      };
+
+      const mockUser = {
+        fullName: 'Test Agent',
+        username: 'testagent'
+      };
+
+      // Test image blob creation
+      const imageBlob = await MobileTicketUtils.createTicketImageBlob(mockTicket, mockUser);
+      const fileName = `test-ticket-${mockTicket.ticketNumber}.png`;
+      const file = new File([imageBlob], fileName, { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Test Ticket #${mockTicket.ticketNumber}`,
+          text: 'This is a test ticket image share'
+        });
+        setTestResult({ success: true, method: 'web-share-image' });
+      } else {
+        setTestResult({ success: false, error: 'Image sharing not supported' });
+      }
     } catch (error) {
       setTestResult({ success: false, error: error.message });
     } finally {
@@ -83,21 +130,31 @@ const WebShareTest = () => {
           <h2 className="text-xl font-semibold mb-4">Web Share API Tests</h2>
           
           <div className="space-y-4">
-            <button
-              onClick={testWebShare}
-              disabled={isLoading}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 mr-4"
-            >
-              {isLoading ? 'Testing...' : 'Test Web Share API'}
-            </button>
-            
-            <button
-              onClick={testTicketShare}
-              disabled={isLoading}
-              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50"
-            >
-              {isLoading ? 'Testing...' : 'Test Ticket Share'}
-            </button>
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={testWebShare}
+                disabled={isLoading}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+              >
+                {isLoading ? 'Testing...' : 'Test Web Share API'}
+              </button>
+              
+              <button
+                onClick={testImageShare}
+                disabled={isLoading}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+              >
+                {isLoading ? 'Testing...' : 'Test Image Share'}
+              </button>
+              
+              <button
+                onClick={testTicketShare}
+                disabled={isLoading}
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50"
+              >
+                {isLoading ? 'Testing...' : 'Test Ticket Share'}
+              </button>
+            </div>
           </div>
           
           {testResult && (
@@ -128,10 +185,20 @@ const WebShareTest = () => {
             <div className="bg-blue-100 p-3 rounded-lg">
               <h3 className="font-semibold text-blue-800">Supported Browsers:</h3>
               <ul className="list-disc list-inside text-blue-700 mt-2">
-                <li>Chrome Mobile (Android)</li>
-                <li>Safari Mobile (iOS)</li>
-                <li>Samsung Internet (Android)</li>
-                <li>Edge Mobile (Android)</li>
+                <li>Chrome Mobile (Android) - Full support</li>
+                <li>Safari Mobile (iOS) - URL sharing only</li>
+                <li>Samsung Internet (Android) - Full support</li>
+                <li>Edge Mobile (Android) - Full support</li>
+              </ul>
+            </div>
+            
+            <div className="bg-purple-100 p-3 rounded-lg">
+              <h3 className="font-semibold text-purple-800">Image Sharing Support:</h3>
+              <ul className="list-disc list-inside text-purple-700 mt-2">
+                <li>Chrome Mobile (Android) - ✅ Images supported</li>
+                <li>Safari Mobile (iOS) - ❌ Images not supported</li>
+                <li>Samsung Internet (Android) - ✅ Images supported</li>
+                <li>Edge Mobile (Android) - ✅ Images supported</li>
               </ul>
             </div>
             

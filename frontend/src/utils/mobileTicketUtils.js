@@ -35,6 +35,39 @@ export class MobileTicketUtils {
     
     try {
       if (navigator.share) {
+        // Test file sharing first
+        if (navigator.canShare) {
+          try {
+            // Create a simple test image
+            const canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(0, 0, 100, 100);
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('TEST', 50, 50);
+            
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            const file = new File([blob], 'test.png', { type: 'image/png' });
+            
+            if (navigator.canShare({ files: [file] })) {
+              console.log('Testing file sharing...');
+              await navigator.share({
+                files: [file],
+                title: 'Test Image Share',
+                text: 'This is a test image share'
+              });
+              return { success: true, method: 'web-share-file' };
+            }
+          } catch (fileError) {
+            console.log('File sharing test failed:', fileError);
+          }
+        }
+        
+        // Test URL sharing
         if (navigator.canShare && !navigator.canShare(testData)) {
           console.error('Web Share API: canShare returned false');
           return { success: false, error: 'canShare returned false' };
@@ -42,7 +75,7 @@ export class MobileTicketUtils {
         
         await navigator.share(testData);
         console.log('Web Share API test successful');
-        return { success: true, method: 'web-share' };
+        return { success: true, method: 'web-share-url' };
       } else {
         console.log('Web Share API not available');
         return { success: false, error: 'Web Share API not available' };
@@ -322,7 +355,7 @@ export class MobileTicketUtils {
   }
 
   /**
-   * Share ticket via Web Share API or fallback methods
+   * Share ticket via Web Share API with image or fallback methods
    */
   static async shareTicket(ticket, user) {
     // Debug Web Share API support first
@@ -337,16 +370,41 @@ export class MobileTicketUtils {
     console.log('Attempting to share ticket:', shareData);
 
     try {
-      // Check if Web Share API is supported and available
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        console.log('Using Web Share API');
-        await navigator.share(shareData);
-        return { success: true, method: 'web-share' };
+      // Try to share with image first
+      if (navigator.share && navigator.canShare) {
+        console.log('Attempting to share with image...');
+        
+        try {
+          // Generate ticket image
+          const imageBlob = await this.createTicketImageBlob(ticket, user);
+          const fileName = `ticket-${ticket.ticketNumber}.png`;
+          const file = new File([imageBlob], fileName, { type: 'image/png' });
+          
+          // Check if browser supports file sharing
+          if (navigator.canShare({ files: [file] })) {
+            console.log('Sharing ticket image via Web Share API');
+            await navigator.share({
+              files: [file],
+              title: shareData.title,
+              text: shareData.text
+            });
+            return { success: true, method: 'web-share-image' };
+          }
+        } catch (imageError) {
+          console.log('Image sharing failed, trying URL sharing:', imageError);
+        }
+        
+        // Fallback to URL sharing
+        if (navigator.canShare(shareData)) {
+          console.log('Sharing ticket URL via Web Share API');
+          await navigator.share(shareData);
+          return { success: true, method: 'web-share-url' };
+        }
       } else if (navigator.share) {
         // Try Web Share API even if canShare is not available
         console.log('Trying Web Share API without canShare check');
         await navigator.share(shareData);
-        return { success: true, method: 'web-share' };
+        return { success: true, method: 'web-share-url' };
       }
       
       // Fallback to clipboard
@@ -407,6 +465,129 @@ export class MobileTicketUtils {
    */
   static generateShareURL(ticketNumber, baseURL = window.location.origin) {
     return `${baseURL}/ticket/${ticketNumber}`;
+  }
+
+  /**
+   * Create ticket image as blob for sharing
+   */
+  static async createTicketImageBlob(ticket, user) {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Set canvas size for mobile sharing (higher resolution)
+      canvas.width = 400;
+      canvas.height = 600;
+      
+      // White background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Black border
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+      
+      // Set font
+      ctx.font = '16px Courier New';
+      ctx.fillStyle = 'black';
+      
+      let y = 40;
+      
+      // Header
+      ctx.font = 'bold 24px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('🎲 NEWBETTING', canvas.width / 2, y);
+      y += 30;
+      
+      ctx.font = 'bold 20px Courier New';
+      ctx.fillText('3D LOTTO TICKET', canvas.width / 2, y);
+      y += 30;
+      
+      ctx.font = '16px Courier New';
+      ctx.fillText(`#${ticket.ticketNumber}`, canvas.width / 2, y);
+      y += 40;
+      
+      // Draw info
+      ctx.font = 'bold 20px Courier New';
+      ctx.fillText(ticket.draw?.drawTime || 'No Time', canvas.width / 2, y);
+      y += 30;
+      
+      ctx.font = '16px Courier New';
+      ctx.fillStyle = '#666';
+      ctx.fillText(ticket.draw?.drawDate || 'No Date', canvas.width / 2, y);
+      y += 40;
+      
+      // Bets
+      const bets = ticket.bets || [];
+      bets.forEach((bet, index) => {
+        const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
+        const sequence = String.fromCharCode(65 + index); // A, B, C, etc.
+        
+        ctx.font = 'bold 18px Courier New';
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'left';
+        ctx.fillText(betType, 20, y);
+        y += 25;
+        
+        ctx.font = 'bold 28px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(bet.betCombination.split('').join('   '), canvas.width / 2, y);
+        y += 35;
+        
+        ctx.font = '16px Courier New';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${sequence} - ₱${parseFloat(bet.betAmount || 0).toFixed(2)}`, canvas.width - 20, y);
+        y += 30;
+      });
+      
+      // Total
+      ctx.font = 'bold 20px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'black';
+      ctx.fillText('TOTAL AMOUNT', canvas.width / 2, y);
+      y += 30;
+      
+      ctx.font = 'bold 32px Courier New';
+      ctx.fillText(`₱${parseFloat(ticket.totalAmount || 0).toFixed(2)}`, canvas.width / 2, y);
+      y += 50;
+      
+      // Agent
+      ctx.font = '16px Courier New';
+      ctx.fillText('AGENT', canvas.width / 2, y);
+      y += 25;
+      
+      ctx.font = 'bold 18px Courier New';
+      ctx.fillText(user.fullName || user.username, canvas.width / 2, y);
+      y += 50;
+      
+      // QR Code placeholder (you can add actual QR code here)
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(canvas.width / 2 - 60, y, 120, 120);
+      ctx.fillStyle = 'black';
+      ctx.font = '12px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('QR CODE', canvas.width / 2, y + 60);
+      
+      // Footer
+      y += 140;
+      ctx.font = '14px Courier New';
+      ctx.fillText('GOOD LUCK! 🍀', canvas.width / 2, y);
+      y += 20;
+      
+      ctx.font = '12px Courier New';
+      ctx.fillStyle = '#666';
+      ctx.fillText(new Date(ticket.createdAt).toLocaleString(), canvas.width / 2, y);
+      
+      // Convert to blob
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Failed to create image blob'));
+        }
+      }, 'image/png', 1.0);
+    });
   }
 
   /**
