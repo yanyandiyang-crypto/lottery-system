@@ -20,6 +20,7 @@ import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate'
 import MobileTicketUtils from '../../utils/mobileTicketUtils';
 import EnhancedMobileTicketUtils from '../../utils/enhancedMobileTicketUtils';
 import MobilePOSUtils from '../../utils/mobilePOSUtils';
+import TicketEditor from '../../components/Tickets/TicketEditor';
 
 // Custom Template Preview Component
 const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
@@ -163,6 +164,8 @@ const BettingInterface = () => {
   const [showViewBets, setShowViewBets] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
+  const [showTicketEditor, setShowTicketEditor] = useState(false);
+  const [editingTicket, setEditingTicket] = useState(null);
 
   // Fetch active draws
   const { data: draws, isLoading: drawsLoading } = useQuery(
@@ -536,23 +539,75 @@ const BettingInterface = () => {
 
   const handleShareTicket = async (ticket) => {
     try {
+      // Open ticket editor for sharing
+      setEditingTicket(ticket);
+      setShowTicketEditor(true);
+    } catch (error) {
+      console.error('Error opening ticket editor:', error);
+      toast.error('Failed to open ticket editor');
+    }
+  };
+
+  const handleTicketEditorSave = async (editedData) => {
+    try {
+      const { ticket: editedTicket, user: editedUser, customMessage } = editedData;
+      
       // Get user's assigned template
       const template = await getUserTemplate(user.id);
       
-      const result = await EnhancedMobileTicketUtils.shareTicket(ticket, user, template);
-      if (result.success) {
-        if (result.method === 'web-share') {
+      // Create enhanced share data with custom message
+      const shareData = {
+        title: `🎲 NEWBETTING - Ticket #${editedTicket.ticketNumber}`,
+        text: `Check out my lottery ticket!\n\nTicket: #${editedTicket.ticketNumber}\nDraw: ${editedTicket.draw?.drawTime || 'No Time'}\nTotal: ₱${parseFloat(editedTicket.totalAmount).toFixed(2)}${customMessage ? `\n\n"${customMessage}"` : ''}\n\nGood luck! 🍀`,
+        url: EnhancedMobileTicketUtils.generateShareURL(editedTicket.ticketNumber)
+      };
+
+      // Generate high-quality ticket image with edited data
+      const imageBlob = await EnhancedMobileTicketUtils.createTicketImageBlob(editedTicket, editedUser, template);
+      
+      // Try Web Share API first
+      if ('share' in navigator) {
+        try {
+          const file = new File([imageBlob], `ticket-${editedTicket.ticketNumber}.png`, {
+            type: 'image/png'
+          });
+          
+          shareData.files = [file];
+          
+          await navigator.share(shareData);
           toast.success('Ticket shared successfully!');
-        } else {
-          toast.success('Ticket link copied to clipboard!');
+          setShowTicketEditor(false);
+          return;
+        } catch (error) {
+          console.log('Web Share failed, trying fallback:', error.message);
         }
-      } else {
-        toast.error('Failed to share ticket');
       }
+
+      // Fallback to clipboard
+      if ('clipboard' in navigator) {
+        try {
+          await navigator.clipboard.writeText(shareData.text + '\n\n' + shareData.url);
+          toast.success('Ticket info copied to clipboard!');
+          setShowTicketEditor(false);
+          return;
+        } catch (error) {
+          console.log('Clipboard failed:', error.message);
+        }
+      }
+
+      // Final fallback
+      toast.success('Ticket ready for sharing!');
+      setShowTicketEditor(false);
+      
     } catch (error) {
-      console.error('Error sharing ticket:', error);
+      console.error('Error sharing edited ticket:', error);
       toast.error('Failed to share ticket');
     }
+  };
+
+  const handleTicketEditorCancel = () => {
+    setShowTicketEditor(false);
+    setEditingTicket(null);
   };
 
   const handleDownloadTicket = async (ticket) => {
@@ -1188,6 +1243,16 @@ const BettingInterface = () => {
             </div>
           </div>
         )}
+
+        {/* Ticket Editor Modal */}
+        <TicketEditor
+          ticket={editingTicket}
+          user={user}
+          template={null} // Will be fetched in the editor
+          onSave={handleTicketEditorSave}
+          onCancel={handleTicketEditorCancel}
+          isOpen={showTicketEditor}
+        />
       </div>
     </div>
   );

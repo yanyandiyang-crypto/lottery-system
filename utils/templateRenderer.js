@@ -68,12 +68,9 @@ class TemplateRenderer {
       return `${betType.padEnd(20)}${numbers}\n${sequence.padEnd(20)}Price: ₱${parseFloat(bet.betAmount).toFixed(2)}`;
     }).join('\n\n');
 
-    // Generate QR code URL
-    const qrCodeUrl = await TicketGenerator.generateQRCode({
-      ticketNumber: ticket.ticketNumber,
-      drawTime: draw.drawTime,
-      totalAmount: ticket.totalAmount
-    });
+    // Generate QR code URL - use simple ticket number for QR
+    const qrCodeData = ticket.qrCode || ticket.ticketNumber;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeData)}&size=100x100`;
 
     return {
       ticketNumber: ticket.ticketNumber,

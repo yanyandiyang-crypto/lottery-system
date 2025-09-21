@@ -187,17 +187,25 @@ export class EnhancedMobileTicketUtils {
       ctx.fillText(user.fullName || user.username, canvas.width / scale / 2, y);
       y += 30;
       
-      // QR Code placeholder
-      ctx.font = '10px Courier New';
-      ctx.fillText('QR CODE', canvas.width / scale / 2, y);
-      y += 15;
+      // QR Code
+      const qrCodeValue = ticket.qrCode || ticket.ticketNumber;
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeValue)}&size=80x80`;
       
-      // Draw QR code placeholder
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 1;
-      ctx.strokeRect((canvas.width / scale / 2) - 40, y, 80, 80);
-      ctx.font = '8px Courier New';
-      ctx.fillText('QR', canvas.width / scale / 2, y + 45);
+      // Create QR code image
+      const qrImg = new Image();
+      qrImg.crossOrigin = 'anonymous';
+      qrImg.onload = () => {
+        ctx.drawImage(qrImg, (canvas.width / scale / 2) - 40, y, 80, 80);
+      };
+      qrImg.onerror = () => {
+        // Fallback if QR code fails to load
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 1;
+        ctx.strokeRect((canvas.width / scale / 2) - 40, y, 80, 80);
+        ctx.font = '8px Courier New';
+        ctx.fillText('QR', canvas.width / scale / 2, y + 45);
+      };
+      qrImg.src = qrCodeUrl;
       y += 100;
       
       // Footer
