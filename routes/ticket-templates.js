@@ -351,12 +351,10 @@ router.post('/assign', requireAuth, [
     }
 
     // Check if assignment already exists
-    const existingAssignment = await prisma.agentTicketTemplate.findUnique({
+    const existingAssignment = await prisma.agentTicketTemplate.findFirst({
       where: {
-        agentId_templateId: {
-          agentId: userId,
-          templateId
-        }
+        agentId: userId,
+        templateId
       }
     });
 
