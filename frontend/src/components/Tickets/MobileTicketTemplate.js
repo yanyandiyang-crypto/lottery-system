@@ -6,6 +6,24 @@ const MobileTicketTemplate = ({ ticket, user, onShare, onPrint }) => {
   const handleDebugShare = () => {
     MobileTicketUtils.debugWebShareSupport();
   };
+
+  const handleShareClick = async () => {
+    if (onShare) {
+      await onShare();
+    } else {
+      // Fallback to direct sharing
+      try {
+        const result = await MobileTicketUtils.shareTicket(ticket, user);
+        if (result.success) {
+          console.log('Ticket shared successfully:', result.method);
+        } else {
+          console.error('Failed to share ticket:', result.error);
+        }
+      } catch (error) {
+        console.error('Error sharing ticket:', error);
+      }
+    }
+  };
   const formatDrawTimeForTicket = (drawTime) => {
     if (!drawTime) return 'No Time';
     const timeMap = {
@@ -104,7 +122,7 @@ const MobileTicketTemplate = ({ ticket, user, onShare, onPrint }) => {
       {/* Action Buttons */}
       <div className="ticket-actions">
         <button 
-          onClick={onShare}
+          onClick={handleShareClick}
           className="action-btn share-btn"
         >
           📱 Share Ticket

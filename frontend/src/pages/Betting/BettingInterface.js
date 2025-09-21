@@ -334,8 +334,9 @@ const BettingInterface = () => {
       const response = await api.post('/tickets', ticketData);
       const ticket = response.data.data;
 
-      // Generate and print the single ticket
-      await generateAndPrintTicket(ticket);
+      // Set the created ticket and show mobile ticket modal
+      setCreatedTicket(ticket);
+      setShowMobileTicket(true);
 
       toast.success(`Ticket with ${addedBets.length} bets created successfully!`);
       
