@@ -20,6 +20,119 @@ import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate'
 import MobileTicketUtils from '../../utils/mobileTicketUtils';
 import EnhancedMobileTicketUtils from '../../utils/enhancedMobileTicketUtils';
 
+// Custom Template Preview Component
+const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
+  const [templateHtml, setTemplateHtml] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const generatePreview = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Get user's assigned template
+        const response = await api.get(`/ticket-templates/user-assignment/${user.id}`);
+        const template = response.data.data?.template;
+        
+        if (!template) {
+          throw new Error('No template assigned to user');
+        }
+
+        // Generate template HTML
+        const htmlResponse = await api.post('/ticket-templates/generate', {
+          ticketId: ticket.id,
+          templateId: template.id
+        });
+        
+        setTemplateHtml(htmlResponse.data.data.html);
+      } catch (err) {
+        console.error('Error generating template preview:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    generatePreview();
+  }, [ticket, user]);
+
+  if (loading) {
+    return (
+      <div className="ticket-preview">
+        <div className="text-center mb-4">
+          <p className="text-sm text-gray-600">Custom Template Preview</p>
+          <p className="text-xs text-gray-500">Template ID: {ticket.templateId}</p>
+        </div>
+        <div className="border-2 border-dashed border-gray-300 p-8 rounded-lg">
+          <div className="flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-500">Loading template...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="ticket-preview">
+        <div className="text-center mb-4">
+          <p className="text-sm text-gray-600">Custom Template Preview</p>
+          <p className="text-xs text-gray-500">Template ID: {ticket.templateId}</p>
+        </div>
+        <div className="border-2 border-dashed border-red-300 p-4 rounded-lg bg-red-50">
+          <p className="text-center text-red-500">Error loading template: {error}</p>
+          <p className="text-xs text-center text-red-400 mt-2">
+            Ticket #{ticket.ticketNumber} | Total: ₱{parseFloat(ticket.totalAmount).toFixed(2)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ticket-preview">
+      <div className="text-center mb-4">
+        <p className="text-sm text-gray-600">Custom Template Preview</p>
+        <p className="text-xs text-gray-500">Template ID: {ticket.templateId}</p>
+      </div>
+      
+      {/* Template Preview Container */}
+      <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white">
+        <div 
+          className="template-preview-container"
+          style={{
+            maxHeight: '600px',
+            overflow: 'auto',
+            transform: 'scale(0.8)',
+            transformOrigin: 'top left',
+            width: '125%' // Compensate for scale
+          }}
+          dangerouslySetInnerHTML={{ __html: templateHtml }}
+        />
+      </div>
+      
+      {/* Action Buttons */}
+      <div className="mt-4 flex space-x-2">
+        <button
+          onClick={onShare}
+          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+        >
+          📱 Share Ticket
+        </button>
+        <button
+          onClick={onPrint}
+          className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+        >
+          🖨️ Print Ticket
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const BettingInterface = () => {
   const { user } = useAuth();
   const { emit } = useSocket();
@@ -989,18 +1102,12 @@ const BettingInterface = () => {
 
                 {/* Check if we should use custom template or default mobile template */}
                 {createdTicket.templateId && createdTicket.templateId !== 1 ? (
-                  <div className="ticket-preview">
-                    <div className="text-center mb-4">
-                      <p className="text-sm text-gray-600">Custom Template Preview</p>
-                      <p className="text-xs text-gray-500">Template ID: {createdTicket.templateId}</p>
-                    </div>
-                    <div className="border-2 border-dashed border-gray-300 p-4 rounded-lg">
-                      <p className="text-center text-gray-500">Custom template preview would be rendered here</p>
-                      <p className="text-xs text-center text-gray-400 mt-2">
-                        Ticket #{createdTicket.ticketNumber} | Total: ₱{parseFloat(createdTicket.totalAmount).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
+                  <CustomTemplatePreview
+                    ticket={createdTicket}
+                    user={user}
+                    onShare={() => handleShareTicket(createdTicket)}
+                    onPrint={() => generateAndPrintTicket(createdTicket)}
+                  />
                 ) : (
                   <MobileTicketTemplate
                     ticket={createdTicket}
