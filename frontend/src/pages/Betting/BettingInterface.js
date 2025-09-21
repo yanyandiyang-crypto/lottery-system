@@ -189,15 +189,18 @@ const BettingInterface = () => {
         refetchBalance(); // Force immediate balance refresh
         
         // Emit real-time notification
-        emit('ticket-created', {
+        const notificationData = {
           ticketId: data.data.id,
           ticketNumber: data.data.ticketNumber,
-          agentName: user.fullName,
-          betType: data.data.betType,
-          betDigits: data.data.betDigits,
-          betAmount: data.data.betAmount,
-          drawTime: data.data.draw.drawTime
-        });
+          agentName: user.fullName || user.username || 'Unknown Agent',
+          betCount: data.data.bets?.length || 0,
+          totalAmount: data.data.totalAmount || 0,
+          drawTime: data.data.draw?.drawTime || 'Unknown Draw',
+          bets: data.data.bets || []
+        };
+        
+        console.log('Emitting ticket-created notification:', notificationData);
+        emit('ticket-created', notificationData);
         
         // Reset form
         setBetDigits(['?', '?', '?']);

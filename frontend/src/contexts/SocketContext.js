@@ -87,8 +87,15 @@ export const SocketProvider = ({ children }) => {
       // Listen for new tickets
       newSocket.on('new-ticket', (data) => {
         if (['coordinator', 'admin', 'superadmin'].includes(user.role)) {
+          // Handle multiple bets format
+          const betInfo = data.bets && data.bets.length > 0 
+            ? `${data.bets.length} bet(s) totaling ₱${data.totalAmount || 0}`
+            : `₱${data.totalAmount || 0}`;
+          
+          const drawTime = data.drawTime || 'unknown draw';
+          
           toast.success(
-            `New ticket: ${data.agentName} - ${data.betType} ₱${data.betAmount} on ${data.betDigits}`,
+            `New ticket: ${data.agentName || 'Unknown Agent'} - ${betInfo} for ${drawTime}`,
             {
               duration: 5000,
               icon: '🎫',
