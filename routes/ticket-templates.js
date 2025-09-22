@@ -404,6 +404,147 @@ router.post('/assign', requireAuth, [
   }
 });
 
+// @route   POST /api/ticket-templates/assignments
+// @desc    Assign template to user (alternative endpoint)
+// @access  Private (Admin/SuperAdmin)
+router.post('/assignments', requireAuth, [
+  body('userId').isInt().withMessage('Valid user ID is required'),
+  body('templateId').isInt().withMessage('Valid template ID is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: errors.array()
+      });
+    }
+
+    const { userId, templateId } = req.body;
+
+    // Check if template exists
+    const template = await prisma.ticketTemplate.findUnique({
+      where: { id: templateId }
+    });
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: 'Template not found'
+      });
+    }
+
+    // Check if user exists and is an agent
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || user.role !== 'agent') {
+      return res.status(400).json({
+        success: false,
+        message: 'User not found or is not an agent'
+      });
+    }
+
+    // Check if assignment already exists
+    const existingAssignment = await prisma.agentTicketTemplate.findFirst({
+      where: {
+        agentId: userId,
+        templateId
+      }
+    });
+
+    if (existingAssignment) {
+      return res.status(400).json({
+        success: false,
+        message: 'Template already assigned to this user'
+      });
+    }
+
+    const assignment = await prisma.agentTicketTemplate.create({
+      data: {
+        agentId: userId,
+        templateId
+      },
+      include: {
+        agent: {
+          select: {
+            id: true,
+            fullName: true
+          }
+        },
+        template: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Template assigned successfully',
+      data: assignment
+    });
+
+  } catch (error) {
+    console.error('Assign template error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// @route   DELETE /api/ticket-templates/assignments
+// @desc    Remove template assignment (alternative endpoint)
+// @access  Private (Admin/SuperAdmin)
+router.delete('/assignments', requireAuth, async (req, res) => {
+  try {
+    const { userId, templateId } = req.body;
+
+    if (!userId || !templateId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID and Template ID are required'
+      });
+    }
+
+    // Find assignment by userId and templateId
+    const assignment = await prisma.agentTicketTemplate.findFirst({
+      where: {
+        agentId: parseInt(userId),
+        templateId: parseInt(templateId)
+      }
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found'
+      });
+    }
+
+    await prisma.agentTicketTemplate.delete({
+      where: { id: assignment.id }
+    });
+
+    res.json({
+      success: true,
+      message: 'Template assignment removed successfully'
+    });
+
+  } catch (error) {
+    console.error('Remove template assignment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // @route   DELETE /api/ticket-templates/assignments/:id
 // @desc    Remove template assignment
 // @access  Private (Admin/SuperAdmin)
@@ -475,19 +616,28 @@ router.get('/agent/:agentId', requireAuth, async (req, res) => {
       }
     });
 
-    // Extract active templates
+    // Extract active templates and ensure isActive property is set correctly
     const activeTemplates = assignments
       .filter(assignment => assignment.template.isActive)
-      .map(assignment => assignment.template);
+      .map(assignment => ({
+        ...assignment.template,
+        isActive: true // Ensure isActive is explicitly set
+      }));
 
     // If no templates assigned, get default template (ID: 1)
     if (activeTemplates.length === 0) {
-      const defaultTemplate = await prisma.ticketTemplate.findUnique({
-        where: { id: 1 }
+      const defaultTemplate = await prisma.ticketTemplate.findFirst({
+        where: { 
+          id: 1,
+          isActive: true 
+        }
       });
       
       if (defaultTemplate) {
-        activeTemplates.push(defaultTemplate);
+        activeTemplates.push({
+          ...defaultTemplate,
+          isActive: true
+        });
       }
     }
 
@@ -586,18 +736,32 @@ router.get('/user-assignment/:userId', requireAuth, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Get template assignment for user
+    // Get template assignment for user with active template only
     const assignment = await prisma.agentTicketTemplate.findFirst({
-      where: { agentId: parseInt(userId) },
+      where: { 
+        agentId: parseInt(userId),
+        template: { isActive: true }
+      },
       include: {
         template: true
       }
     });
 
     if (!assignment) {
+      // If no active template assigned, return default template (Design 1)
+      const defaultTemplate = await prisma.ticketTemplate.findFirst({
+        where: { 
+          design: { templateDesign: 1 },
+          isActive: true 
+        }
+      });
+      
       return res.json({
         success: true,
-        data: { template: null }
+        data: { 
+          template: defaultTemplate,
+          assignment: null
+        }
       });
     }
 
@@ -614,6 +778,95 @@ router.get('/user-assignment/:userId', requireAuth, async (req, res) => {
 
   } catch (error) {
     console.error('Get user template assignment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// @route   POST /api/ticket-templates/assign-design
+// @desc    Assign template design (1-5) to agent
+// @access  Private (Admin/SuperAdmin)
+router.post('/assign-design', requireAuth, [
+  body('userId').isInt().withMessage('Valid user ID is required'),
+  body('templateDesign').isInt({ min: 1, max: 5 }).withMessage('Template design must be between 1 and 5')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { userId, templateDesign } = req.body;
+
+    // Check if user exists and is an agent
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || user.role !== 'agent') {
+      return res.status(400).json({
+        success: false,
+        message: 'User not found or is not an agent'
+      });
+    }
+
+    // Find template with the specified design number
+    const template = await prisma.ticketTemplate.findFirst({
+      where: { 
+        design: { templateDesign },
+        isActive: true 
+      }
+    });
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: `Template Design ${templateDesign} not found`
+      });
+    }
+
+    // Remove existing assignments for this agent
+    await prisma.agentTicketTemplate.deleteMany({
+      where: { agentId: userId }
+    });
+
+    // Create new assignment
+    const assignment = await prisma.agentTicketTemplate.create({
+      data: {
+        agentId: userId,
+        templateId: template.id
+      },
+      include: {
+        agent: {
+          select: {
+            id: true,
+            fullName: true
+          }
+        },
+        template: {
+          select: {
+            id: true,
+            name: true,
+            design: true
+          }
+        }
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Template Design ${templateDesign} assigned successfully`,
+      data: assignment
+    });
+
+  } catch (error) {
+    console.error('Assign template design error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

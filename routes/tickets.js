@@ -107,28 +107,12 @@ router.post('/', requireAgent, createTicketLimiter, async (req, res) => {
       }
     }
 
-    const { templateId, userId } = req.body;
+    const { userId } = req.body;
     const agentId = userId || req.user.id;
 
-    // Get agent's assigned template or use default
-    let selectedTemplateId = templateId || 1;
-    
-    if (!templateId) {
-      // Check if agent has assigned templates
-      const agentTemplate = await prisma.agentTicketTemplate.findFirst({
-        where: { 
-          agentId,
-          template: { isActive: true }
-        },
-        include: {
-          template: true
-        }
-      });
-      
-      if (agentTemplate) {
-        selectedTemplateId = agentTemplate.templateId;
-      }
-    }
+    // Use default template (Design 1)
+    const selectedTemplateId = 1;
+    const selectedTemplateDesign = 1;
 
     // Check if draw exists and is open
     const draw = await prisma.draw.findUnique({
@@ -257,7 +241,6 @@ router.post('/', requireAgent, createTicketLimiter, async (req, res) => {
           agentId: agentId,
           betDate: new Date(),
           qrCode: qrCodeResult.qrCodeData,
-          templateId: selectedTemplateId,
           status: 'pending'
         },
         include: {

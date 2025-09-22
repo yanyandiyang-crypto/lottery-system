@@ -12,7 +12,10 @@ class TemplateRenderer {
     try {
       const design = template.design || {};
       const elements = design.elements || [];
-      let canvasSize = design.canvasSize || { width: 400, height: 600 };
+      let canvasSize = { 
+        width: design.canvasWidth || 400, 
+        height: design.canvasHeight || 600 
+      };
       const backgroundColor = design.backgroundColor || '#ffffff';
       const templateType = design.templateType || 'standard';
 
@@ -85,6 +88,13 @@ class TemplateRenderer {
       totalAmount: ticket.totalAmount
     });
 
+    // Format bets for simple template
+    const betsList = bets.map(bet => {
+      const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
+      const numbers = bet.betCombination.split('').join(' ');
+      return `${betType} ${numbers} - ₱${parseFloat(bet.betAmount).toFixed(2)}`;
+    }).join('\n');
+
     return {
       ticketNumber: ticket.ticketNumber,
       drawTime: draw.drawTime || '14:00',
@@ -93,12 +103,21 @@ class TemplateRenderer {
       betType: bets[0]?.betType || 'Standard',
       betAmount: bets[0]?.betAmount || '0.00',
       totalBet: `₱${parseFloat(ticket.totalAmount).toFixed(2)}`,
+      totalAmount: `₱${parseFloat(ticket.totalAmount).toFixed(2)}`,
       agentName: user.fullName || user.username,
       timestamp: new Date(ticket.createdAt).toLocaleString(),
       qrCode: qrCodeUrl,
+      qrCodeData: JSON.stringify({
+        ticketId: ticket.id,
+        ticketNumber: ticket.ticketNumber,
+        totalBet: ticket.totalAmount,
+        drawDate: draw.drawDate,
+        drawTime: draw.drawTime,
+      }),
       barcode: `|||${ticket.ticketNumber}|||`,
       betCount: bets.length.toString(),
       allBets: allBetsDetail,
+      betsList: betsList,
       // Individual bet details
       bet1Type: bets[0]?.betType || '',
       bet1Numbers: bets[0]?.betCombination.split('').join('    ') || '',
@@ -147,17 +166,18 @@ class TemplateRenderer {
    * Render individual element
    */
   static renderElement(element, dynamicData) {
-    const { type, x, y, width, height, style, content, fieldId, label, src, alt, shapeType, zIndex } = element;
+    const { type, position, style, content, fieldId, label, src, alt, shapeType, zIndex } = element;
+    const { x, y, width, height } = position || {};
     
     const elementStyle = this.generateElementStyle(style, x, y, width, height, zIndex);
     let elementContent = '';
 
     switch (type) {
       case 'text':
-        elementContent = content || '';
+        elementContent = this.replaceTemplateVariables(content || '', dynamicData);
         break;
       case 'dynamic':
-        elementContent = dynamicData[fieldId] || content || '';
+        elementContent = dynamicData[fieldId] || this.replaceTemplateVariables(content || '', dynamicData);
         break;
       case 'image':
         if (src) {
@@ -170,8 +190,17 @@ class TemplateRenderer {
         const shapeStyle = shapeType === 'circle' ? 'border-radius: 50%;' : '';
         elementContent = `<div style="width: 100%; height: 100%; ${shapeStyle}"></div>`;
         break;
+      case 'qr':
+        const qrData = dynamicData.qrCodeData || dynamicData.qrCode || this.replaceTemplateVariables(content || '', dynamicData);
+        elementContent = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f0f0f0; border: 1px dashed #000;">
+          <div style="text-align: center; font-size: 10px; color: #666;">
+            QR Code<br/>
+            ${qrData.substring(0, 20)}...
+          </div>
+        </div>`;
+        break;
       default:
-        elementContent = content || '';
+        elementContent = this.replaceTemplateVariables(content || '', dynamicData);
     }
 
     return `
@@ -182,31 +211,50 @@ class TemplateRenderer {
   }
 
   /**
+   * Replace template variables in content
+   */
+  static replaceTemplateVariables(content, dynamicData) {
+    if (!content || typeof content !== 'string') return content;
+    
+    let result = content;
+    
+    // Replace all {{variable}} patterns
+    Object.keys(dynamicData).forEach(key => {
+      const pattern = new RegExp(`{{${key}}}`, 'g');
+      result = result.replace(pattern, dynamicData[key] || '');
+    });
+    
+    return result;
+  }
+
+  /**
    * Generate element CSS style
    */
   static generateElementStyle(style, x, y, width, height, zIndex) {
     const cssStyle = {
       position: 'absolute',
-      left: `${x}px`,
-      top: `${y}px`,
-      width: `${width}px`,
-      height: `${height}px`,
+      left: `${x || 0}px`,
+      top: `${y || 0}px`,
+      width: `${width || 100}px`,
+      height: `${height || 20}px`,
       zIndex: zIndex || 1,
-      fontSize: style.fontSize || '12px',
-      fontFamily: style.fontFamily || 'Arial',
-      color: style.color || '#000000',
-      fontWeight: style.fontWeight || 'normal',
-      textAlign: style.textAlign || 'left',
-      letterSpacing: style.letterSpacing || '0px',
-      backgroundColor: style.backgroundColor || 'transparent',
-      border: style.border || 'none',
-      borderRadius: style.borderRadius || '0px',
-      padding: style.padding || '0px',
-      lineHeight: style.lineHeight || 'normal',
+      fontSize: style?.fontSize || '12px',
+      fontFamily: style?.fontFamily || 'Arial, sans-serif',
+      color: style?.color || '#000000',
+      fontWeight: style?.fontWeight || 'normal',
+      textAlign: style?.textAlign || 'left',
+      letterSpacing: style?.letterSpacing || '0px',
+      backgroundColor: style?.backgroundColor || 'transparent',
+      border: style?.border || 'none',
+      borderRadius: style?.borderRadius || '0px',
+      padding: style?.padding || '0px',
+      lineHeight: style?.lineHeight || '1.2',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: style.textAlign === 'center' ? 'center' : 'flex-start',
-      overflow: 'hidden'
+      justifyContent: style?.textAlign === 'center' ? 'center' : style?.textAlign === 'right' ? 'flex-end' : 'flex-start',
+      overflow: 'hidden',
+      wordWrap: 'break-word',
+      whiteSpace: 'pre-wrap'
     };
 
     return Object.entries(cssStyle)
@@ -240,8 +288,13 @@ class TemplateRenderer {
       }
 
       .ticket-container.mobile {
-        width: 220px !important;
-        height: 340px !important;
+        /* Remove hardcoded dimensions - use template design dimensions */
+      }
+
+      .ticket-container.simple {
+        /* Remove hardcoded dimensions - use template design dimensions */
+        padding: 20px;
+        font-family: Arial, sans-serif;
       }
 
       .ticket-element {

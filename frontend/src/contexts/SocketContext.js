@@ -132,7 +132,7 @@ export const SocketProvider = ({ children }) => {
         
         // Show notification for user deletion/deactivation
         if (data.type === 'user-deleted' || data.type === 'user-deactivated') {
-          toast.info('Dashboard data updated - user changes detected', {
+          toast.success('Dashboard data updated - user changes detected', {
             duration: 3000,
             icon: '🔄'
           });

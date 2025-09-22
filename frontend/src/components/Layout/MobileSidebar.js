@@ -16,7 +16,6 @@ import {
   CurrencyDollarIcon,
   ExclamationTriangleIcon,
   TrophyIcon,
-  DocumentTextIcon,
   ClockIcon,
   ChartPieIcon
 } from '@heroicons/react/24/outline';
@@ -54,7 +53,6 @@ const dynamicNavigation = [
   { name: 'Balance Management', href: '/balance-management', icon: CurrencyDollarIcon, functionKey: 'balance_management' },
   { name: 'Bet Limits', href: '/bet-limits', icon: ExclamationTriangleIcon, functionKey: 'bet_limits' },
   { name: 'Draw Results', href: '/draw-results', icon: TrophyIcon, functionKey: 'draw_results' },
-  { name: 'Ticket Templates', href: '/ticket-templates', icon: DocumentTextIcon, functionKey: 'ticket_templates' },
   // Use the same Tickets page used by agents
   { name: 'Tickets', href: '/agent-tickets', icon: TicketIcon, functionKey: 'tickets' },
   { name: 'Sales Reports', href: '/reports/sales', icon: DocumentChartBarIcon, functionKey: 'sales_reports' },

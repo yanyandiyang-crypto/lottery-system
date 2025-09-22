@@ -30,8 +30,6 @@ import SalesReports from './pages/Reports/SalesReports';
 import TicketReprint from './pages/Tickets/TicketReprint';
 import BetHistory from './pages/BetHistory/BetHistory';
 import SalesPerDraw from './pages/SalesPerDraw/SalesPerDraw';
-import TicketTemplates from './pages/TicketTemplates/TicketTemplates';
-import MobilePOSTemplates from './pages/TicketTemplates/MobilePOSTemplates';
 import FunctionManagement from './pages/FunctionManagement/FunctionManagement';
 import AgentSales from './pages/AgentSales/AgentSales';
 import AgentTickets from './pages/AgentTickets/AgentTickets';
@@ -132,11 +130,7 @@ function AppRoutes() {
         {/* Bet Limits - Area Coordinator and above */}
         <Route path="/bet-limits" element={<ManagementRoute><BetLimits /></ManagementRoute>} />
 
-        {/* Ticket Templates - Admin only */}
-        <Route path="/ticket-templates" element={<AdminRoute><TicketTemplates /></AdminRoute>} />
-        
-        {/* Mobile POS Templates - SuperAdmin only */}
-        <Route path="/mobile-pos-templates" element={<SuperAdminRoute><MobilePOSTemplates /></SuperAdminRoute>} />
+        {/* Simple Tickets - All authenticated users */}
 
         {/* User Management - SuperAdmin only */}
         <Route path="/admin-management" element={<SuperAdminRoute><AdminManagement /></SuperAdminRoute>} />
@@ -146,6 +140,8 @@ function AppRoutes() {
 
         {/* Prize Configuration - SuperAdmin only */}
         <Route path="/prize-configuration" element={<SuperAdminRoute><PrizeConfiguration /></SuperAdminRoute>} />
+
+
 
         {/* Operator Dashboard - Operator only */}
         <Route path="/operator-dashboard" element={<OperatorRoute><OperatorDashboard /></OperatorRoute>} />

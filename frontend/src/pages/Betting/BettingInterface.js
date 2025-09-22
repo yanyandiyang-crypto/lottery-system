@@ -1,28 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSocket } from '../../contexts/SocketContext';
-import axios from 'axios';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { formatDrawTime, getDrawTimeLabel } from '../../utils/drawTimeFormatter';
+import TicketGenerator from '../../utils/ticketGenerator';
 import {
   ClockIcon,
-  ExclamationTriangleIcon,
   XMarkIcon,
-  TicketIcon,
   BackspaceIcon,
   PlusIcon,
   MinusIcon
 } from '@heroicons/react/24/outline';
-import QRCode from 'qrcode.react';
-import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate';
-import MobileTicketUtils from '../../utils/mobileTicketUtils';
-import EnhancedMobileTicketUtils from '../../utils/enhancedMobileTicketUtils';
-import MobilePOSUtils from '../../utils/mobilePOSUtils';
 
-// Custom Template Preview Component
-const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
+// Default Template Preview Component
+const DefaultTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
   const [templateHtml, setTemplateHtml] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,22 +24,11 @@ const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Get user's assigned template
-        const response = await api.get(`/ticket-templates/user-assignment/${user.id}`);
-        const template = response.data.data?.template;
-        
-        if (!template) {
-          throw new Error('No template assigned to user');
-        }
 
-        // Generate template HTML
-        const htmlResponse = await api.post('/ticket-templates/generate', {
-          ticketId: ticket.id,
-          templateId: template.id
-        });
+        // Use the same ticket format as the actual printed ticket
+        const ticketHtml = TicketGenerator.generateTicketHTML(ticket, user);
         
-        setTemplateHtml(htmlResponse.data.data.html);
+        setTemplateHtml(ticketHtml);
       } catch (err) {
         console.error('Error generating template preview:', err);
         setError(err.message);
@@ -63,13 +44,12 @@ const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
     return (
       <div className="ticket-preview">
         <div className="text-center mb-4">
-          <p className="text-sm text-gray-600">Custom Template Preview</p>
-          <p className="text-xs text-gray-500">Template ID: {ticket.templateId}</p>
+          <p className="text-sm text-gray-600">Default Ticket Template</p>
         </div>
         <div className="border-2 border-dashed border-gray-300 p-8 rounded-lg">
           <div className="flex justify-center items-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-gray-500">Loading template...</span>
+            <span className="ml-2 text-gray-500">Loading ticket...</span>
           </div>
         </div>
       </div>
@@ -80,11 +60,10 @@ const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
     return (
       <div className="ticket-preview">
         <div className="text-center mb-4">
-          <p className="text-sm text-gray-600">Custom Template Preview</p>
-          <p className="text-xs text-gray-500">Template ID: {ticket.templateId}</p>
+          <p className="text-sm text-gray-600">Default Ticket Template</p>
         </div>
         <div className="border-2 border-dashed border-red-300 p-4 rounded-lg bg-red-50">
-          <p className="text-center text-red-500">Error loading template: {error}</p>
+          <p className="text-center text-red-500">Error loading ticket: {error}</p>
           <p className="text-xs text-center text-red-400 mt-2">
             Ticket #{ticket.ticketNumber} | Total: ₱{parseFloat(ticket.totalAmount).toFixed(2)}
           </p>
@@ -96,47 +75,27 @@ const CustomTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
   return (
     <div className="ticket-preview">
       <div className="text-center mb-4">
-        <p className="text-sm text-gray-600">Custom Template Preview</p>
-        <p className="text-xs text-gray-500">Template ID: {ticket.templateId}</p>
+        <p className="text-sm text-gray-600">Default Ticket Template</p>
       </div>
       
       {/* Template Preview Container */}
       <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white">
         <div 
-          className="template-preview-container"
+          className="template-preview-container w-full flex justify-center"
           style={{
-            maxHeight: '600px',
-            overflow: 'auto',
-            transform: 'scale(0.8)',
-            transformOrigin: 'top left',
-            width: '125%' // Compensate for scale
+            transform: 'scale(1)',
+            transformOrigin: 'center center'
           }}
           dangerouslySetInnerHTML={{ __html: templateHtml }}
         />
       </div>
       
-      {/* Action Buttons */}
-      <div className="mt-4 flex space-x-2">
-        <button
-          onClick={onShare}
-          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-        >
-          📱 Share Ticket
-        </button>
-        <button
-          onClick={onPrint}
-          className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
-        >
-          🖨️ Print Ticket
-        </button>
-      </div>
     </div>
   );
 };
 
 const BettingInterface = () => {
   const { user } = useAuth();
-  const { emit } = useSocket();
   const queryClient = useQueryClient();
 
   // Helper function to format draw time (using utility function)
@@ -285,53 +244,7 @@ const BettingInterface = () => {
   }, [selectedDraw]);
 
   // Create ticket mutation
-  const createTicketMutation = useMutation(
-    async (ticketData) => {
-      const response = await api.post('/tickets', ticketData);
-      return response.data;
-    },
-    {
-      onSuccess: (data) => {
-        toast.success('Ticket created successfully!');
-        
-        // Show mobile ticket preview
-        setCreatedTicket(data.data);
-        setShowMobileTicket(true);
-        
-        // Refresh balance and tickets
-        queryClient.invalidateQueries(['balance', user.id]);
-        queryClient.invalidateQueries('tickets');
-        refetchBalance(); // Force immediate balance refresh
-        
-        // Emit real-time notification
-        const notificationData = {
-          ticketId: data.data.id,
-          ticketNumber: data.data.ticketNumber,
-          agentName: user.fullName || user.username || 'Unknown Agent',
-          betCount: data.data.bets?.length || 0,
-          totalAmount: data.data.totalAmount || 0,
-          drawTime: data.data.draw?.drawTime || 'Unknown Draw',
-          bets: data.data.bets || []
-        };
-        
-        console.log('Emitting ticket-created notification:', notificationData);
-        emit('ticket-created', notificationData);
-        
-        // Reset form
-        setBetDigits(['?', '?', '?']);
-        setCurrentDigitIndex(0);
-        setBetAmount(10);
-      },
-      onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to create ticket');
-      }
-    }
-  );
 
-  const handleBetTypeChange = (type) => {
-    setBetType(type);
-    setBetDigits(''); // Clear digits when changing bet type
-  };
 
   const handleDigitInput = (digit) => {
     if (currentDigitIndex < 3) {
@@ -438,29 +351,10 @@ const BettingInterface = () => {
         return;
       }
 
-      // Get agent's assigned template
-      let templateId = null;
-      try {
-        const templatesResponse = await api.get(`/ticket-templates/agent/${user.id}`);
-        const templates = templatesResponse.data.data || [];
-        console.log('Available templates for agent:', templates);
-        
-        const assignedTemplate = templates.find(t => t.isActive);
-        if (assignedTemplate) {
-          templateId = assignedTemplate.id;
-          console.log('Using assigned template:', assignedTemplate.name, 'ID:', templateId);
-        } else {
-          console.log('No active template assigned, using default template');
-        }
-      } catch (error) {
-        console.log('Error fetching templates, using default:', error);
-      }
-
-      // Create a single ticket with multiple bets
+      // Create a single ticket with multiple bets using default template
       const ticketData = {
         drawId: targetDraw.id,
         userId: user.id,
-        templateId: templateId, // Pass the template ID
         bets: addedBets.map(bet => ({
           betCombination: bet.number,
           betType: bet.type,
@@ -474,9 +368,6 @@ const BettingInterface = () => {
       // Set the created ticket and show mobile ticket modal
       setCreatedTicket(ticket);
       setShowMobileTicket(true);
-      
-      // Log template information for debugging
-      console.log('Ticket created with template ID:', ticket.templateId || 'default');
 
       toast.success(`Ticket with ${addedBets.length} bets created successfully!`);
       
@@ -500,34 +391,9 @@ const BettingInterface = () => {
 
   const generateAndPrintTicket = async (ticket) => {
     try {
-      // Check if agent has assigned templates
-      const templatesResponse = await api.get(`/ticket-templates/agent/${user.id}`);
-      const templates = templatesResponse.data.data || [];
-      
-      // Find mobile template first, then any other assigned template
-      const mobileTemplate = templates.find(t => t.design?.templateType === 'mobile');
-      const selectedTemplate = mobileTemplate || templates[0];
-      
-      if (selectedTemplate) {
-        // Use assigned template
-        const ticketHtml = await generateCustomTicketTemplate(ticket, selectedTemplate);
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(ticketHtml);
-        printWindow.document.close();
-        
-        printWindow.onload = () => {
-          setTimeout(() => {
-            printWindow.focus();
-            printWindow.print();
-            setTimeout(() => printWindow.close(), 1000);
-          }, 500);
-        };
-        toast.success(`${selectedTemplate.design?.templateType === 'mobile' ? 'Mobile' : 'Custom'} ticket sent to printer`);
-      } else {
-        // Fallback to mobile-optimized ticket
-        MobileTicketUtils.printMobileTicket(ticket, user);
-        toast.success('Default ticket sent to printer');
-      }
+      // Use shared ticket generator
+      TicketGenerator.printTicket(ticket, user);
+      toast.success('Ticket sent to printer!');
     } catch (error) {
       console.error('Error printing ticket:', error);
       toast.error('Failed to print ticket');
@@ -536,10 +402,22 @@ const BettingInterface = () => {
 
   const handleShareTicket = async (ticket) => {
     try {
-      // Get user's assigned template
-      const template = await getUserTemplate(user.id);
+      // Simple share functionality without template system
+      const ticketUrl = `${window.location.origin}/ticket/${ticket.id}`;
+      let result;
       
-      const result = await EnhancedMobileTicketUtils.shareTicket(ticket, user, template);
+      if (navigator.share) {
+        await navigator.share({
+          title: `Lottery Ticket ${ticket.ticketNumber}`,
+          text: `Ticket for lottery draw`,
+          url: ticketUrl
+        });
+        result = { success: true, method: 'web-share' };
+      } else {
+        await navigator.clipboard.writeText(ticketUrl);
+        result = { success: true, method: 'clipboard' };
+      }
+      
       if (result.success) {
         if (result.method === 'web-share') {
           toast.success('Ticket shared successfully!');
@@ -555,248 +433,15 @@ const BettingInterface = () => {
     }
   };
 
-  const handleDownloadTicket = async (ticket) => {
-    try {
-      // Get user's assigned template
-      const template = await getUserTemplate(user.id);
-      
-      // Check if it's a mobile POS template
-      if (template && template.design?.templateType === 'mobile-pos') {
-        await MobilePOSUtils.downloadMobilePOSTicket(ticket, user, template);
-        toast.success('Mobile POS ticket downloaded as image!');
-      } else {
-        await EnhancedMobileTicketUtils.downloadTicketImage(ticket, user, template);
-        toast.success('Ticket downloaded as image!');
-      }
-    } catch (error) {
-      console.error('Error downloading ticket:', error);
-      toast.error('Failed to download ticket');
-    }
-  };
 
-  const handleMobilePOSPrint = async (ticket) => {
-    try {
-      // Get user's assigned template
-      const template = await getUserTemplate(user.id);
-      
-      await MobilePOSUtils.printMobilePOSTicket(ticket, user, template);
-      toast.success('Mobile POS ticket sent to printer!');
-    } catch (error) {
-      console.error('Error printing mobile POS ticket:', error);
-      toast.error('Failed to print mobile POS ticket');
-    }
-  };
 
-  const handleMobilePOSShare = async (ticket) => {
-    try {
-      // Get user's assigned template
-      const template = await getUserTemplate(user.id);
-      
-      const result = await MobilePOSUtils.shareMobilePOSTicket(ticket, user, template);
-      if (result.success) {
-        if (result.method === 'web-share') {
-          toast.success('Mobile POS ticket shared successfully!');
-        } else {
-          toast.success('Mobile POS ticket link copied to clipboard!');
-        }
-      } else {
-        toast.error('Failed to share mobile POS ticket');
-      }
-    } catch (error) {
-      console.error('Error sharing mobile POS ticket:', error);
-      toast.error('Failed to share mobile POS ticket');
-    }
-  };
-
-  // Get user's assigned template
-  const getUserTemplate = async (userId) => {
-    try {
-      const response = await api.get(`/ticket-templates/user-assignment/${userId}`);
-      return response.data.data?.template || null;
-    } catch (error) {
-      console.error('Error getting user template:', error);
-      return null;
-    }
-  };
-
-  const generateCustomTicketTemplate = async (ticket, template) => {
-    try {
-      // Use backend template generation for better consistency
-      const response = await api.post('/ticket-templates/generate', {
-        ticketId: ticket.id,
-        templateId: template.id
-      });
-      
-      return response.data.data.html;
-    } catch (error) {
-      console.error('Error generating custom template:', error);
-      // Fallback to default template
-      return generateTicketTemplate(ticket);
-    }
-  };
-
-  const generateTicketTemplate = (ticket) => {
-    // Handle multiple bets
-    const bets = ticket.bets || [];
-    const betListHtml = bets.length > 0 
-      ? bets.map((bet, index) => {
-          const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
-          const sequence = String.fromCharCode(65 + index); // A, B, C, etc.
-          return `<div class="bet-item" style="margin: 5px 0; padding: 5px; border-left: 2px solid #333; font-family: monospace;">
-            <div>${betType} (Bet Type)                                                ${bet.betCombination.split('').join('   ')} (Bet Combination)</div>
-            <div>${sequence} (Bet Sequence)                                                                           Price: ₱${parseFloat(bet.betAmount).toFixed(2)} (Bet Price)</div>
-          </div>`;
-        }).join('')
-      : '<div class="content">No bets found</div>';
-    
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>3D Lotto Ticket</title>
-        <style>
-          body { font-family: monospace; font-size: 12px; margin: 0; padding: 10px; }
-          .ticket { width: 300px; border: 1px solid #000; padding: 10px; }
-          .header { text-align: center; font-weight: bold; margin-bottom: 10px; }
-          .content { margin: 5px 0; }
-          .footer { text-align: center; margin-top: 10px; font-size: 10px; }
-          .qr-code { text-align: center; margin: 10px 0; }
-          .bet-item { font-size: 11px; }
-          .total-amount { font-weight: bold; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ccc; }
-        </style>
-      </head>
-      <body>
-        <div class="ticket">
-          <div class="header">3D LOTTO TICKET</div>
-          <div class="content">Ticket #: ${ticket.ticketNumber}</div>
-          <div class="content">Draw: ${formatDrawTimeForTicket(ticket.draw?.drawTime)} - ${ticket.draw?.drawDate ? new Date(ticket.draw.drawDate).toLocaleDateString() : 'No Date'}</div>
-          <div class="content">Bets (${bets.length}):</div>
-          ${betListHtml}
-          <div class="content total-amount">Total Amount: ₱${ticket.totalAmount}</div>
-          <div class="content">Agent: ${user.fullName || user.username}</div>
-          <div class="content">Date: ${new Date(ticket.createdAt).toLocaleString()}</div>
-          <div class="qr-code">
-            <img src="${ticket.qrCode}" alt="QR Code" style="width: 100px; height: 100px;" />
-          </div>
-          <div class="footer">Good luck!</div>
-        </div>
-      </body>
-      </html>
-    `;
-  };
 
   const availableAmounts = [1, 5, 10, 20, 30, 40, 50, 100, 200, 500];
 
-  const getDrawInfo = () => {
-    if (drawParam && timeParam) {
-      return {
-        id: drawParam,
-        time: decodeURIComponent(timeParam),
-        date: '2025-09-15',
-        status: 'Betting Open',
-        timeLeft: '19m left'
-      };
-    }
-    return null;
-  };
 
-  const drawInfo = getDrawInfo();
 
-  const validateBet = () => {
-    const hasAllDigits = betDigits.every(digit => digit !== '?');
-    
-    if (!hasAllDigits) {
-      toast.error('Please enter exactly 3 digits');
-      return false;
-    }
 
-    if (betType === 'rambolito') {
-      // Check for triple numbers (not allowed)
-      const uniqueDigits = [...new Set(betDigits)];
-      if (uniqueDigits.length === 1) {
-        toast.error('Triple numbers (000, 111, 222, etc.) are not allowed for Rambolito betting');
-        return false;
-      }
-    }
 
-    if (betAmount < 10) {
-      toast.error('Minimum bet amount is ₱10');
-      return false;
-    }
-
-    if (balance && balance.currentBalance < betAmount) {
-      toast.error('Insufficient balance');
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateBet()) {
-      return;
-    }
-
-    // Check if draws are loaded
-    if (!draws || !Array.isArray(draws)) {
-      toast.error('Draw information is still loading. Please wait and try again.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    try {
-      // Ensure we use an open draw
-      const targetDraw = selectedDraw?.status === 'open' ? selectedDraw : 
-                        (Array.isArray(draws) ? draws.find(draw => draw.status === 'open') : null);
-      
-      if (!targetDraw) {
-        toast.error('No open draws available for betting');
-        return;
-      }
-
-      await createTicketMutation.mutateAsync({
-        betType,
-        betDigits: betDigits.join(''),
-        betAmount,
-        drawId: targetDraw.id
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getDrawStatus = (draw) => {
-    const now = new Date();
-    const cutoffTime = new Date(draw.cutoffTime);
-    const drawTime = new Date(draw.drawDatetime);
-    
-    if (now > drawTime) {
-      return { status: 'closed', color: 'red', text: 'Draw Completed' };
-    } else if (now > cutoffTime) {
-      return { status: 'cutoff', color: 'yellow', text: 'Betting Closed' };
-    } else {
-      return { status: 'open', color: 'green', text: 'Betting Open' };
-    }
-  };
-
-  const getBettingWindowStatus = (draw) => {
-    if (!draw.bettingWindow) return null;
-    
-    const now = new Date();
-    const startTime = new Date(draw.bettingWindow.startTime);
-    const endTime = new Date(draw.bettingWindow.endTime);
-    
-    if (now < startTime) {
-      return { status: 'upcoming', text: `Opens at ${startTime.toLocaleTimeString()}` };
-    } else if (now > endTime) {
-      return { status: 'closed', text: 'Betting window closed' };
-    } else {
-      return { status: 'open', text: draw.bettingWindow.description };
-    }
-  };
 
   if (drawsLoading || balanceLoading) {
     return (
@@ -1141,35 +786,21 @@ const BettingInterface = () => {
                   <p className="text-xs text-blue-600">Ticket Number: {createdTicket.ticketNumber}</p>
                 </div>
 
-                {/* Check if we should use custom template or default mobile template */}
-                {createdTicket.templateId && createdTicket.templateId !== 1 ? (
-                  <CustomTemplatePreview
-                    ticket={createdTicket}
-                    user={user}
-                    onShare={() => handleShareTicket(createdTicket)}
-                    onPrint={() => generateAndPrintTicket(createdTicket)}
-                  />
-                ) : (
-                  <MobileTicketTemplate
-                    ticket={createdTicket}
-                    user={user}
-                    onShare={() => handleShareTicket(createdTicket)}
-                    onPrint={() => generateAndPrintTicket(createdTicket)}
-                  />
-                )}
+                {/* Unified Ticket Display */}
+                <DefaultTemplatePreview
+                  ticket={createdTicket}
+                  user={user}
+                  onShare={() => handleShareTicket(createdTicket)}
+                  onPrint={() => generateAndPrintTicket(createdTicket)}
+                />
                 
+                {/* Simplified Action Buttons */}
                 <div className="mt-4 flex space-x-2">
                   <button
                     onClick={() => handleShareTicket(createdTicket)}
                     className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
                   >
                     📱 Share Ticket
-                  </button>
-                  <button
-                    onClick={() => handleMobilePOSShare(createdTicket)}
-                    className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
-                  >
-                    📤 POS Share
                   </button>
                   <button
                     onClick={() => setShowMobileTicket(false)}

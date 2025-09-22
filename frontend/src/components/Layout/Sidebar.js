@@ -15,7 +15,6 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   ChartPieIcon,
-  DocumentTextIcon,
   PrinterIcon
 } from '@heroicons/react/24/outline';
 
@@ -53,7 +52,6 @@ const dynamicNavigation = [
   { name: 'Balance Management', href: '/balance-management', icon: CurrencyDollarIcon, functionKey: 'balance_management' },
   { name: 'Bet Limits', href: '/bet-limits', icon: ExclamationTriangleIcon, functionKey: 'bet_limits' },
   { name: 'Draw Results', href: '/draw-results', icon: TrophyIcon, functionKey: 'draw_results' },
-  { name: 'Ticket Templates', href: '/ticket-templates', icon: DocumentTextIcon, functionKey: 'ticket_templates' },
   { name: 'Agent Tickets', href: '/agent-tickets', icon: TicketIcon, functionKey: 'agent_tickets' },
   { name: 'Sales Reports', href: '/reports/sales', icon: DocumentChartBarIcon, functionKey: 'sales_reports' },
   { name: 'Notifications', href: '/notifications', icon: BellIcon, functionKey: 'notifications' },
@@ -247,6 +245,8 @@ const Sidebar = () => {
         'Area Coordinator Management',
         'Bet Limits',
         'Agent Tickets',
+        'Template Designer',
+        'Template Assignment',
         'Mobile POS Templates',
         'Notifications',
         'Account Info'
