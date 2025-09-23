@@ -15,7 +15,8 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   ChartPieIcon,
-  PrinterIcon
+  PrinterIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 // Static navigation items that are always visible based on role
@@ -27,6 +28,7 @@ const staticNavigation = [
   { name: 'Function Management', href: '/function-management', icon: CogIcon, roles: ['superadmin'] },
   { name: 'Prize Configuration', href: '/prize-configuration', icon: CurrencyDollarIcon, roles: ['superadmin'] },
   { name: 'Mobile POS Templates', href: '/mobile-pos-templates', icon: PrinterIcon, roles: ['superadmin'] },
+  { name: 'Security Audit', href: '/admin/audit', icon: ShieldCheckIcon, roles: ['superadmin', 'admin'] },
   
   // Operator Features
   { name: 'Operator Dashboard', href: '/operator-dashboard', icon: ChartPieIcon, roles: ['operator'] },
@@ -41,6 +43,7 @@ const staticNavigation = [
   
   // General Features
   { name: 'Account Info', href: '/account/info', icon: CogIcon, roles: ['superadmin', 'admin', 'area_coordinator', 'coordinator', 'agent', 'operator'] },
+  { name: 'Transaction History', href: '/account/transactions', icon: CurrencyDollarIcon, roles: ['superadmin', 'admin', 'area_coordinator', 'coordinator', 'agent', 'operator'] },
 ];
 
 // Dynamic navigation items controlled by function management

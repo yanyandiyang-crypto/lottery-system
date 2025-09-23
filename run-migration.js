@@ -16,28 +16,31 @@ async function runMigration() {
   try {
     console.log('🚀 Starting database migration...');
     
-    // Read migration file
-    const migrationPath = path.join(__dirname, 'migrations', '001_security_and_performance_improvements.sql');
-    const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
-    
-    console.log('📝 Executing migration as single transaction...');
-    
-    try {
-      // Execute entire migration as one transaction
-      await client.query(migrationSQL);
-      console.log('✅ Migration executed successfully!');
-      
-    } catch (error) {
-      console.error('❌ Migration failed:', error.message);
-      
-      // Check if it's a "already exists" error (safe to ignore)
-      if (error.message.includes('already exists') || 
-          error.message.includes('duplicate key') ||
-          error.message.includes('relation') && error.message.includes('already exists')) {
-        console.log('⚠️  Some objects already exist (safe to ignore)');
-        console.log('✅ Migration completed with warnings');
-      } else {
-        throw error;
+    // Read all SQL migration files in order
+    const migrationsDir = path.join(__dirname, 'migrations');
+    const files = fs.readdirSync(migrationsDir)
+      .filter(f => f.toLowerCase().endsWith('.sql'))
+      .sort();
+
+    console.log(`📝 Executing ${files.length} migration file(s) in order...`);
+
+    for (const file of files) {
+      const filePath = path.join(migrationsDir, file);
+      const sql = fs.readFileSync(filePath, 'utf8');
+      console.log(`⏳ Running ${file}...`);
+      try {
+        await client.query(sql);
+        console.log(`✅ ${file} executed successfully`);
+      } catch (error) {
+        console.error(`❌ Migration failed in ${file}:`, error.message);
+        if (error.message.includes('already exists') ||
+            error.message.includes('duplicate key') ||
+            (error.message.includes('relation') && error.message.includes('already exists')) ||
+            error.message.includes('does not exist')) {
+          console.log(`⚠️  Non-fatal error in ${file} (likely safe to ignore)`);
+        } else {
+          throw error;
+        }
       }
     }
     

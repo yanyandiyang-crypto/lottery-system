@@ -35,6 +35,8 @@ const prizeConfigurationRoutes = require('./routes/prize-configuration');
 const healthRoutes = require('./routes/health');
 const backupRoutes = require('./routes/backup');
 const setupRoutes = require('./routes/setup');
+const auditRoutes = require('./routes/audit');
+const transactionsRoutes = require('./routes/transactions');
 
 // Import middleware
 const authMiddleware = require('./middleware/auth');
@@ -42,6 +44,7 @@ const roleMiddleware = require('./middleware/roleCheck');
 const errorHandler = require('./middleware/errorHandler');
 const { apiVersioning, versionSecurity, getVersionInfo, listVersions } = require('./middleware/apiVersioning');
 const { createSecurityMiddleware, auditLogger, requestSizeLimit } = require('./middleware/security');
+const { apiLimiter, roleBasedLimiter } = require('./middleware/rateLimiting');
 
 // Import services
 const drawScheduler = require('./services/drawScheduler');
@@ -233,6 +236,12 @@ app.use('/api/v1', setupRoutes);
 
 // Backup management routes (protected)
 app.use('/api/v1/backup', authMiddleware, backupRoutes);
+
+// Audit routes (protected with role-based rate limiting)
+app.use('/api/v1/audit', authMiddleware, roleBasedLimiter, auditRoutes);
+
+// Transactions routes (protected)
+app.use('/api/v1/transactions', authMiddleware, transactionsRoutes);
 
 // Metrics endpoint (no authentication required)
 app.get('/metrics', async (req, res) => {

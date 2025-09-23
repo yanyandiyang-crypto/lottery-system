@@ -6,6 +6,8 @@ const { body, validationResult } = require('express-validator');
 const { requireAdmin, requireSuperAdmin } = require('../middleware/roleCheck');
 const { requireAuth } = require('../middleware/auth');
 const transactionService = require('../services/transactionService');
+const PasswordValidator = require('../utils/passwordValidator');
+const { authLimiter, passwordResetLimiter } = require('../middleware/rateLimiting');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -13,9 +15,9 @@ const prisma = new PrismaClient();
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', [
+router.post('/login', authLimiter, [
   body('username').notEmpty().withMessage('Username is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+  body('password').isLength({ min: 1 }).withMessage('Password is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -580,6 +582,217 @@ router.get('/stats', requireAuth, async (req, res) => {
 
   } catch (error) {
     console.error('Get account stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// @route   POST /api/auth/change-password
+// @desc    Change user password
+// @access  Private
+router.post('/change-password', requireAuth, [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.userId;
+
+    // Validate new password strength
+    const passwordValidation = PasswordValidator.validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password does not meet security requirements',
+        errors: passwordValidation.errors,
+        strength: passwordValidation.strength
+      });
+    }
+
+    // Get current user
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await PasswordValidator.comparePassword(currentPassword, user.passwordHash);
+    if (!isCurrentPasswordValid) {
+      // Log failed password change attempt
+      await transactionService.logLoginAttempt(
+        userId,
+        req.ip,
+        req.get('User-Agent'),
+        false,
+        'Invalid current password for password change'
+      );
+
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await PasswordValidator.hashPassword(newPassword);
+
+    // Update password
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: hashedNewPassword }
+    });
+
+    // Log successful password change
+    await transactionService.logLoginAttempt(
+      userId,
+      req.ip,
+      req.get('User-Agent'),
+      true,
+      'Password changed successfully'
+    );
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+      strength: passwordValidation.strength
+    });
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset user password (admin only)
+// @access  Private (Admin/SuperAdmin)
+router.post('/reset-password', requireAuth, requireAdmin, passwordResetLimiter, [
+  body('userId').isInt().withMessage('User ID is required'),
+  body('newPassword').optional().isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { userId, newPassword } = req.body;
+    const adminId = req.user.userId;
+
+    // Get target user
+    const targetUser = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Generate new password if not provided
+    const finalPassword = newPassword || PasswordValidator.generateSecurePassword(12);
+
+    // Validate password strength
+    const passwordValidation = PasswordValidator.validatePassword(finalPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Generated password does not meet security requirements',
+        errors: passwordValidation.errors
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await PasswordValidator.hashPassword(finalPassword);
+
+    // Update password
+    await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { passwordHash: hashedPassword }
+    });
+
+    // Log password reset
+    await transactionService.logLoginAttempt(
+      adminId,
+      req.ip,
+      req.get('User-Agent'),
+      true,
+      `Password reset for user ${targetUser.username}`
+    );
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      newPassword: newPassword ? undefined : finalPassword, // Only return if generated
+      strength: passwordValidation.strength
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// @route   POST /api/auth/validate-password
+// @desc    Validate password strength
+// @access  Public
+router.post('/validate-password', [
+  body('password').notEmpty().withMessage('Password is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { password } = req.body;
+    const validation = PasswordValidator.validatePassword(password);
+    const strengthInfo = PasswordValidator.getStrengthDescription(validation.strength);
+
+    res.json({
+      success: true,
+      isValid: validation.isValid,
+      errors: validation.errors,
+      strength: validation.strength,
+      strengthInfo: strengthInfo,
+      isCompromised: PasswordValidator.isCompromised(password)
+    });
+
+  } catch (error) {
+    console.error('Password validation error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

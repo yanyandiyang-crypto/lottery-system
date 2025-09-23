@@ -362,14 +362,21 @@ const BettingInterface = () => {
         }))
       };
 
-      const response = await api.post('/tickets', ticketData);
-      const ticket = response.data.data;
+      // Use atomic endpoint for safer ticket creation
+      const response = await api.post('/tickets/atomic', ticketData);
+      
+      if (response.data.success) {
+        const ticket = response.data.ticket;
+        
+        // Set the created ticket and show mobile ticket modal
+        setCreatedTicket(ticket);
+        setShowMobileTicket(true);
 
-      // Set the created ticket and show mobile ticket modal
-      setCreatedTicket(ticket);
-      setShowMobileTicket(true);
-
-      toast.success(`Ticket with ${addedBets.length} bets created successfully!`);
+        toast.success(`Ticket with ${addedBets.length} bets created successfully! Remaining balance: ₱${response.data.remainingBalance.toFixed(2)}`);
+      } else {
+        toast.error(response.data.message || 'Failed to create ticket');
+        return;
+      }
       
       // Reset form
       setAddedBets([]);
@@ -383,7 +390,19 @@ const BettingInterface = () => {
       
     } catch (error) {
       console.error('Error creating tickets:', error);
-      toast.error(error.response?.data?.message || 'Failed to create tickets');
+      const errorMessage = error.response?.data?.message || 'Failed to create tickets';
+      toast.error(errorMessage);
+      
+      // Show specific error messages for common issues
+      if (errorMessage.includes('Insufficient balance')) {
+        toast.error('Please check your balance and try again');
+      } else if (errorMessage.includes('Duplicate bet')) {
+        toast.error('You have already placed this bet for this draw');
+      } else if (errorMessage.includes('Bet limit exceeded')) {
+        toast.error('You have reached your betting limit for this draw');
+      } else if (errorMessage.includes('Draw is not open')) {
+        toast.error('This draw is no longer open for betting');
+      }
     } finally {
       setIsSubmitting(false);
     }

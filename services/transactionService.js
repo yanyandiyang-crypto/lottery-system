@@ -23,7 +23,7 @@ class TransactionService {
       
       // 1. Lock user balance row for update
       const balanceResult = await client.query(
-        'SELECT current_balance, total_loaded FROM user_balances WHERE user_id = $1 FOR UPDATE',
+        'SELECT current_balance FROM user_balances WHERE user_id = $1 FOR UPDATE',
         [userData.id]
       );
       
@@ -31,7 +31,7 @@ class TransactionService {
         throw new Error('User balance not found');
       }
       
-      const { current_balance, total_loaded } = balanceResult.rows[0];
+      const { current_balance } = balanceResult.rows[0];
       
       // 2. Check sufficient balance
       if (current_balance < ticketData.totalAmount) {
@@ -40,8 +40,9 @@ class TransactionService {
       
       // 3. Check for duplicate bets (same user, draw, number, type)
       const duplicateCheck = await client.query(
-        `SELECT id FROM tickets 
-         WHERE user_id = $1 AND draw_id = $2 AND bet_combination = $3 AND bet_type = $4`,
+        `SELECT t.id FROM tickets t
+         INNER JOIN bets b ON b.ticket_id = t.id
+         WHERE t.user_id = $1 AND t.draw_id = $2 AND b.bet_combination = $3 AND b.bet_type = $4`,
         [userData.id, ticketData.drawId, ticketData.betCombination, ticketData.betType]
       );
       
@@ -66,15 +67,14 @@ class TransactionService {
       // 5. Insert balance transaction with pending status
       const transactionResult = await client.query(
         `INSERT INTO balance_transactions 
-         (user_id, amount, transaction_type, description, processed_by, status, ip_address)
-         VALUES ($1, $2, 'use', $3, $4, 'pending', $5)
+         (user_id, amount, transaction_type, description, processed_by, status)
+         VALUES ($1, $2, 'use', $3, $4, 'pending')
          RETURNING id`,
         [
           userData.id,
           ticketData.totalAmount,
           `Ticket purchase: ${ticketData.ticketNumber}`,
-          userData.id,
-          clientIP
+          userData.id
         ]
       );
       
@@ -83,8 +83,8 @@ class TransactionService {
       // 6. Insert ticket
       const ticketResult = await client.query(
         `INSERT INTO tickets 
-         (ticket_number, user_id, draw_id, total_amount, status, qr_code, template_id, agent_id, bet_date, bet_combination, bet_type)
-         VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, NOW(), $8, $9)
+         (ticket_number, user_id, draw_id, total_amount, status, qr_code, template_id, agent_id, bet_date, sequence_number, "updatedAt")
+         VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, NOW(), $8, NOW())
          RETURNING id, ticket_number`,
         [
           ticketData.ticketNumber,
@@ -94,8 +94,7 @@ class TransactionService {
           ticketData.qrCode,
           ticketData.templateId || 1,
           userData.id,
-          ticketData.betCombination,
-          ticketData.betType
+          'A'
         ]
       );
       
@@ -105,7 +104,6 @@ class TransactionService {
       await client.query(
         `UPDATE user_balances 
          SET current_balance = current_balance - $1,
-             total_used = total_used + $1,
              last_updated = NOW()
          WHERE user_id = $2`,
         [ticketData.totalAmount, userData.id]
@@ -135,9 +133,7 @@ class TransactionService {
           ticketId,
           JSON.stringify({
             ticket_number: ticketData.ticketNumber,
-            total_amount: ticketData.totalAmount,
-            bet_combination: ticketData.betCombination,
-            bet_type: ticketData.betType
+            total_amount: ticketData.totalAmount
           }),
           userData.id,
           clientIP
@@ -188,11 +184,20 @@ class TransactionService {
     
     try {
       const result = await this.pool.query(
-        `SELECT bt.*, u.username as processed_by_username
+        `SELECT 
+            bt.id,
+            bt.user_id,
+            bt.amount,
+            bt.transaction_type,
+            bt.description,
+            bt.processed_by,
+            bt.status,
+            COALESCE(bt."createdAt", bt.created_at) AS "createdAt",
+            u.username as processed_by_username
          FROM balance_transactions bt
          LEFT JOIN users u ON bt.processed_by = u.id
          WHERE bt.user_id = $1
-         ORDER BY bt.created_at DESC
+         ORDER BY COALESCE(bt."createdAt", bt.created_at) DESC
          LIMIT $2 OFFSET $3`,
         [userId, limit, offset]
       );
@@ -281,15 +286,14 @@ class TransactionService {
       // 4. Insert refund transaction
       const refundResult = await client.query(
         `INSERT INTO balance_transactions 
-         (user_id, amount, transaction_type, description, processed_by, status, ip_address)
-         VALUES ($1, $2, 'refund', $3, $4, 'pending', $5)
+         (user_id, amount, transaction_type, description, processed_by, status)
+         VALUES ($1, $2, 'refund', $3, $4, 'pending')
          RETURNING id`,
         [
           ticket.user_id,
           ticket.total_amount,
           `Ticket refund: ${ticket.ticket_number} - ${reason}`,
-          processedBy,
-          clientIP
+          processedBy
         ]
       );
       
@@ -299,7 +303,6 @@ class TransactionService {
       await client.query(
         `UPDATE user_balances 
          SET current_balance = current_balance + $1,
-             total_used = total_used - $1,
              last_updated = NOW()
          WHERE user_id = $2`,
         [ticket.total_amount, ticket.user_id]

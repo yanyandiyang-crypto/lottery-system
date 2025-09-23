@@ -45,11 +45,11 @@ router.post('/atomic', requireAgent, createTicketLimiter, async (req, res) => {
     
     // Validate each bet
     for (const bet of bets) {
-      const validation = validateBettingRules(bet);
-      if (!validation.isValid) {
+      const validation = validateBettingRules(bet.betType, bet.betCombination);
+      if (!validation.valid) {
         return res.status(400).json({
           success: false,
-          message: `Invalid bet: ${validation.errors.join(', ')}`
+          message: `Invalid bet: ${validation.message}`
         });
       }
     }

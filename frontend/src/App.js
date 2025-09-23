@@ -38,6 +38,8 @@ import WinningTickets from './pages/WinningTickets/WinningTickets';
 import PrizeConfiguration from './pages/PrizeConfiguration/PrizeConfiguration';
 import MobileTicketShare from './pages/Tickets/MobileTicketShare';
 import WebShareTest from './pages/Test/WebShareTest';
+import AuditDashboard from './pages/Admin/AuditDashboard';
+import TransactionHistory from './pages/Account/TransactionHistory';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -186,6 +188,9 @@ function AppRoutes() {
         {/* Account */}
         <Route path="/account" element={<Account />} />
 
+        {/* Transaction History */}
+        <Route path="/account/transactions" element={<TransactionHistory />} />
+
         {/* Account Info */}
         <Route path="/account/info" element={<AccountInfo />} />
 
@@ -194,6 +199,9 @@ function AppRoutes() {
 
         {/* Test Routes */}
         <Route path="/test/webshare" element={<WebShareTest />} />
+
+        {/* Security Audit Dashboard - Admins only */}
+        <Route path="/admin/audit" element={<AdminRoute><AuditDashboard /></AdminRoute>} />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
