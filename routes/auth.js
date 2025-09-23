@@ -5,6 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 const { body, validationResult } = require('express-validator');
 const { requireAdmin, requireSuperAdmin } = require('../middleware/roleCheck');
 const { requireAuth } = require('../middleware/auth');
+const transactionService = require('../services/transactionService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -43,6 +44,15 @@ router.post('/login', [
     });
 
     if (!user) {
+      // Log failed login attempt
+      await transactionService.logLoginAttempt(
+        null, // No user ID for failed login
+        req.ip,
+        req.get('User-Agent'),
+        false,
+        'User not found'
+      );
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -50,6 +60,15 @@ router.post('/login', [
     }
 
     if (user.status !== 'active') {
+      // Log failed login attempt
+      await transactionService.logLoginAttempt(
+        user.id,
+        req.ip,
+        req.get('User-Agent'),
+        false,
+        'Account inactive or suspended'
+      );
+      
       return res.status(401).json({
         success: false,
         message: 'Account is inactive or suspended'
@@ -59,6 +78,15 @@ router.post('/login', [
     // Check password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
+      // Log failed login attempt
+      await transactionService.logLoginAttempt(
+        user.id,
+        req.ip,
+        req.get('User-Agent'),
+        false,
+        'Invalid password'
+      );
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -74,6 +102,15 @@ router.post('/login', [
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    // Log successful login attempt
+    await transactionService.logLoginAttempt(
+      user.id,
+      req.ip,
+      req.get('User-Agent'),
+      true,
+      null
     );
 
     // Remove password from response

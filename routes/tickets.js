@@ -8,6 +8,7 @@ const { requireAuth } = require('../middleware/auth');
 const { requireAgent, requireCoordinator } = require('../middleware/roleCheck');
 const { validateBettingRules, checkBetLimits } = require('../utils/bettingValidator');
 const TicketGenerator = require('../utils/ticketGenerator');
+const transactionService = require('../services/transactionService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -20,8 +21,132 @@ const createTicketLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// @route   POST /api/tickets/atomic
+// @desc    Create new ticket with atomic transaction safety (Agent only)
+// @access  Private (Agent)
+router.post('/atomic', requireAgent, createTicketLimiter, async (req, res) => {
+  try {
+    const { bets, drawId } = req.body;
+    const drawIdNum = Number(drawId);
+    
+    if (!drawId || !Number.isInteger(drawIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Draw ID is required'
+      });
+    }
+    
+    if (!bets || !Array.isArray(bets) || bets.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one bet is required'
+      });
+    }
+    
+    // Validate each bet
+    for (const bet of bets) {
+      const validation = validateBettingRules(bet);
+      if (!validation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid bet: ${validation.errors.join(', ')}`
+        });
+      }
+    }
+    
+    // Check if draw exists and is open
+    const draw = await prisma.draw.findUnique({
+      where: { id: drawIdNum }
+    });
+    
+    if (!draw) {
+      return res.status(404).json({
+        success: false,
+        message: 'Draw not found'
+      });
+    }
+    
+    if (draw.status !== 'open') {
+      return res.status(400).json({
+        success: false,
+        message: 'Draw is not open for betting'
+      });
+    }
+    
+    // Calculate total amount
+    const totalAmount = bets.reduce((sum, bet) => sum + bet.betAmount, 0);
+    
+    // Generate ticket number
+    const ticketNumber = `T${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    
+    // Generate QR code
+    const qrCodeData = `Ticket: ${ticketNumber}\nAmount: ₱${totalAmount.toFixed(2)}\nDate: ${new Date().toLocaleDateString()}`;
+    const qrCode = await QRCode.toDataURL(qrCodeData);
+    
+    // Prepare ticket data for atomic transaction
+    const ticketData = {
+      ticketNumber,
+      drawId: drawIdNum,
+      totalAmount,
+      qrCode,
+      betCombination: bets[0].betCombination, // Primary bet combination
+      betType: bets[0].betType
+    };
+    
+    // Use atomic transaction service
+    const result = await transactionService.createTicketWithBalanceDeduction(
+      ticketData,
+      req.user,
+      req.ip
+    );
+    
+    if (result.success) {
+      // Create bet records
+      const betRecords = bets.map(bet => ({
+        ticketId: result.ticketId,
+        betType: bet.betType,
+        betCombination: bet.betCombination,
+        betAmount: bet.betAmount
+      }));
+      
+      await prisma.bet.createMany({
+        data: betRecords
+      });
+      
+      // Get the complete ticket with bets
+      const completeTicket = await prisma.ticket.findUnique({
+        where: { id: result.ticketId },
+        include: {
+          bets: true,
+          draw: true,
+          user: true
+        }
+      });
+      
+      res.json({
+        success: true,
+        message: 'Ticket created successfully',
+        ticket: completeTicket,
+        remainingBalance: result.remainingBalance
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to create ticket'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Atomic ticket creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error'
+    });
+  }
+});
+
 // @route   POST /api/tickets
-// @desc    Create new ticket with multiple bets (Agent only)
+// @desc    Create new ticket with multiple bets (Agent only) - Legacy method
 // @access  Private (Agent)
 router.post('/', requireAgent, createTicketLimiter, async (req, res) => {
   try {
