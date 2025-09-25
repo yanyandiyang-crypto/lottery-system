@@ -5,7 +5,19 @@ class TicketGenerator {
   static generateWithTemplate(ticket, user, template, assets) {
     try {
       const renderer = TemplateAssigner.getTemplateRenderer(template);
-      return renderer(ticket, user, assets);
+      // Ensure logos resolve in new windows and across domains by using absolute URLs when possible
+      let resolvedAssets = assets || {};
+      try {
+        const origin = typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '';
+        if (origin) {
+          resolvedAssets = {
+            logoDataUrl: resolvedAssets.logoDataUrl || `${origin}/logos/pisting-logo.png`,
+            logo3dDataUrl: resolvedAssets.logo3dDataUrl || `${origin}/logos/3d-lotto.png`,
+            logoUmatikDataUrl: resolvedAssets.logoUmatikDataUrl || `${origin}/logos/umatik.png`,
+          };
+        }
+      } catch (_) {}
+      return renderer(ticket, user, resolvedAssets);
     } catch (e) {
       console.warn('Template generation failed, using default:', e);
       return this.generateTicketHTML(ticket, user);
