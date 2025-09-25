@@ -93,7 +93,7 @@ model BalanceTransaction {
 }
 
 model BetLimitsPerDraw {
-  id             Int      @id @default(autoincrement())
+  id             Int      @id @default(autoincrement()) @map("bet_limits_per_draw_id")
   draw           Draw     @relation(fields: [drawId], references: [id])
   drawId         Int      @map("draw_id")
   betCombination String   @map("bet_combination") @db.VarChar(3)
@@ -118,7 +118,7 @@ model Draw {
   createdAt        DateTime           @default(now()) @map("created_at")
   updatedAt        DateTime           @updatedAt @map("updated_at")
   cutoffTime       DateTime           @map("cutoff_time")
-  betLimitsPerDraw BetLimit[]
+  betLimitsPerDraw BetLimitsPerDraw[]
   commissions      Commission[]
   currentBetTotals CurrentBetTotal[]
   drawResult       DrawResult?
@@ -307,7 +307,7 @@ model DrawResult {
   @@map("draw_results")
 }
 
-model BetLimitPerDraw {
+model BetLimitPerDrawLegacy {
   id             Int      @id @default(autoincrement())
   drawId         Int      @map("draw_id")
   betCombination String   @map("bet_combination")
@@ -319,7 +319,7 @@ model BetLimitPerDraw {
   draw           Draw     @relation(fields: [drawId], references: [id])
 
   @@unique([drawId, betCombination, betType])
-  @@map("bet_limits_per_draw")
+  @@map("bet_limits_per_draw_legacy")
 }
 
 model WinningPrize {
