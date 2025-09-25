@@ -48,10 +48,10 @@ const Header = ({ onMenuClick }) => {
     }
   };
 
-  // Refresh balance every 15 seconds for more live updates
+  // Refresh balance every 5 seconds for more live updates
   useEffect(() => {
     if (canViewBalance) {
-      const interval = setInterval(fetchUserBalance, 15000);
+      const interval = setInterval(fetchUserBalance, 5000);
       return () => clearInterval(interval);
     }
   }, [canViewBalance]);
@@ -64,7 +64,7 @@ const Header = ({ onMenuClick }) => {
     }
   }, [user?.id]);
 
-  // Listen for real-time balance update events
+  // Listen for real-time balance update events from SocketContext (window event)
   useEffect(() => {
     const handleBalanceUpdate = (event) => {
       if (canViewBalance) {

@@ -5,11 +5,10 @@ import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
 import TicketGenerator from '../../utils/ticketGenerator';
+import TemplateAssigner from '../../utils/templateAssigner';
 import {
   PrinterIcon,
-  EyeIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   ArrowPathIcon,
   ChevronLeftIcon,
   ChevronRightIcon
@@ -20,6 +19,11 @@ const AgentTickets = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [drawTimeFilter, setDrawTimeFilter] = useState('all');
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -69,7 +73,10 @@ const AgentTickets = () => {
       page: pageParam,
       limit: pagination.itemsPerPage,
       search: searchTerm,
-      status: statusFilter
+      status: statusFilter,
+      drawTime: drawTimeFilter,
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate
     });
 
     const response = await api.get(`/tickets?${params}`);
@@ -86,7 +93,7 @@ const AgentTickets = () => {
   };
 
   const { data: ticketsData, isLoading, refetch } = useQuery(
-    ['tickets', pagination.currentPage, searchTerm, statusFilter],
+    ['tickets', pagination.currentPage, searchTerm, statusFilter, drawTimeFilter, dateRange.startDate, dateRange.endDate],
     () => fetchTickets({ pageParam: pagination.currentPage }),
     {
       keepPreviousData: true,
@@ -118,8 +125,79 @@ const AgentTickets = () => {
 
   const generateAndPrintTicket = async (ticket) => {
     try {
-      // Use shared ticket generator
-      TicketGenerator.printTicket(ticket, ticket.user || user);
+      // Get assigned template for the ticket's agent
+      let template = null;
+      try {
+        template = await TemplateAssigner.fetchAssignedTemplate(ticket.user?.id || ticket.agentId);
+      } catch (error) {
+        console.warn('Could not fetch assigned template, using default:', error);
+      }
+
+      // Use template-aware ticket generator
+      const ticketHtml = TicketGenerator.generateWithTemplate(ticket, ticket.user || user, template);
+      
+      // Create print window with template-aware HTML scaled to 58mm (≈384px)
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<title>Ticket ${ticket.ticketNumber}</title>
+<style>
+  @page { size: auto; margin: 0; }
+  html, body { width: 100%; height: 100%; }
+  body { font-family: Arial, sans-serif; margin: 0; padding: 6px 0; background: #fff; }
+  /* Outer width targets 58mm printers (~384px at 203dpi) */
+  .print-wrap { width: 384px; margin: 0 auto; }
+  /* Scale 600px templates down to 384px (0.64) while keeping layout */
+  .scale-600 { width: 600px; transform: scale(0.64); transform-origin: top left; }
+  img { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+  <div class="print-wrap">
+    <div class="scale-600">${ticketHtml}</div>
+  </div>
+</body>
+</html>`);
+      printWindow.document.close();
+      
+      // Wait for images to load before printing
+      const triggerPrintWhenReady = () => {
+        try {
+          const images = Array.from(printWindow.document.images || []);
+          if (images.length === 0) {
+            printWindow.print();
+            return;
+          }
+          let loadedCount = 0;
+          const onImgDone = () => {
+            loadedCount += 1;
+            if (loadedCount >= images.length) {
+              printWindow.print();
+            }
+          };
+          images.forEach((img) => {
+            if (img.complete) {
+              onImgDone();
+            } else {
+              img.addEventListener('load', onImgDone, { once: true });
+              img.addEventListener('error', onImgDone, { once: true });
+            }
+          });
+          setTimeout(() => {
+            try { printWindow.print(); } catch (_) { /* noop */ }
+          }, 1500);
+        } catch (_) {
+          try { printWindow.print(); } catch (__) { /* noop */ }
+        }
+      };
+      
+      if (printWindow.document.readyState === 'complete') {
+        triggerPrintWhenReady();
+      } else {
+        printWindow.addEventListener('load', triggerPrintWhenReady, { once: true });
+      }
+      
       toast.success('Ticket printed successfully!');
     } catch (error) {
       console.error('Error printing ticket:', error);
@@ -155,14 +233,43 @@ const AgentTickets = () => {
     );
   };
 
+  // Compute effective ticket status: if draw is closed/settled and ticket is still pending, mark as won/lost based on winnings
+  const deriveTicketStatus = (ticket) => {
+    // Prefer backend-provided derived status if present
+    if (ticket.derivedStatus) return ticket.derivedStatus;
+
+    const baseStatus = ticket.status || 'pending';
+    const drawStatus = ticket.draw?.status;
+    const winningNumber = ticket.draw?.winningNumber;
+    const hasWinnings = (Array.isArray(ticket.winningTickets) && ticket.winningTickets.length > 0)
+      || (typeof ticket.winAmount === 'number' && ticket.winAmount > 0)
+      || (typeof ticket.winningPrize === 'number' && ticket.winningPrize > 0);
+
+    // If explicitly resolved, trust backend
+    if (baseStatus === 'cancelled' || baseStatus === 'won' || baseStatus === 'lost') {
+      return baseStatus;
+    }
+
+    // Consider draw finished if status closed/settled OR there is a winningNumber
+    const drawFinished = (drawStatus === 'closed' || drawStatus === 'settled') || Boolean(winningNumber);
+    if (drawFinished && baseStatus === 'pending') {
+      return hasWinnings ? 'won' : 'lost';
+    }
+
+    return baseStatus;
+  };
+
   // Filter tickets by search term
   const filteredTickets = ticketsData?.tickets?.filter(ticket => {
     const matchesSearch = !searchTerm || 
       ticket.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.agent?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.agent?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.user?.username?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
+    const effectiveStatus = deriveTicketStatus(ticket);
+    const matchesStatus = statusFilter === 'all' || effectiveStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
   }) || [];
@@ -197,7 +304,22 @@ const AgentTickets = () => {
           </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dateRange.startDate}
+              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+              className="px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+            <span className="text-gray-500 text-sm">to</span>
+            <input
+              type="date"
+              value={dateRange.endDate}
+              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+              className="px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -208,6 +330,16 @@ const AgentTickets = () => {
             <option value="won">Won</option>
             <option value="lost">Lost</option>
             <option value="cancelled">Cancelled</option>
+          </select>
+          <select
+            value={drawTimeFilter}
+            onChange={(e) => setDrawTimeFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="all">All Draw Times</option>
+            <option value="twoPM">2:00 PM</option>
+            <option value="fivePM">5:00 PM</option>
+            <option value="ninePM">9:00 PM</option>
           </select>
           
           <button
@@ -259,10 +391,10 @@ const AgentTickets = () => {
                     {ticket.ticketNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {ticket.user?.fullName || ticket.user?.username || 'Unknown'}
+                    {ticket.agent?.fullName || ticket.agent?.username || 'Unknown'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {ticket.draw?.drawDate} {formatDrawTimeForTicket(ticket.draw?.drawTime)}
+                    {ticket.draw?.drawDate ? new Date(ticket.draw.drawDate).toLocaleDateString() : ''} {formatDrawTimeForTicket(ticket.draw?.drawTime)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {ticket.bets?.length || 0} bet(s)
@@ -271,7 +403,7 @@ const AgentTickets = () => {
                     {formatCurrency(ticket.totalAmount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(ticket.status)}
+                  {getStatusBadge(deriveTicketStatus(ticket))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {new Date(ticket.createdAt).toLocaleDateString()}

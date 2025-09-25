@@ -15,7 +15,7 @@ class TransactionService {
    * Safely create a ticket with atomic balance deduction
    * Uses database transactions with FOR UPDATE locking
    */
-  async createTicketWithBalanceDeduction(ticketData, userData, clientIP = null) {
+  async createTicketWithBalanceDeduction(ticketData, userData, clientIP = null, userAgent = null) {
     const client = await this.pool.connect();
     
     try {
@@ -38,33 +38,10 @@ class TransactionService {
         throw new Error(`Insufficient balance. Required: ₱${ticketData.totalAmount}, Available: ₱${current_balance}`);
       }
       
-      // 3. Check for duplicate bets (same user, draw, number, type)
-      const duplicateCheck = await client.query(
-        `SELECT t.id FROM tickets t
-         INNER JOIN bets b ON b.ticket_id = t.id
-         WHERE t.user_id = $1 AND t.draw_id = $2 AND b.bet_combination = $3 AND b.bet_type = $4`,
-        [userData.id, ticketData.drawId, ticketData.betCombination, ticketData.betType]
-      );
+      // 3. Check bet limits per draw - REMOVED: Using per-number limits instead of per-user limits
+      // The per-number bet limits are handled in the main ticket creation logic
       
-      if (duplicateCheck.rows.length > 0) {
-        throw new Error('Duplicate bet detected. Same number already placed for this draw.');
-      }
-      
-      // 4. Check bet limits per draw
-      const limitCheck = await client.query(
-        `SELECT current_amount, max_amount FROM user_bet_limits 
-         WHERE user_id = $1 AND draw_id = $2 AND bet_type = $3`,
-        [userData.id, ticketData.drawId, ticketData.betType]
-      );
-      
-      if (limitCheck.rows.length > 0) {
-        const { current_amount, max_amount } = limitCheck.rows[0];
-        if (current_amount + ticketData.totalAmount > max_amount) {
-          throw new Error(`Bet limit exceeded. Max: ₱${max_amount}, Current: ₱${current_amount}, Requested: ₱${ticketData.totalAmount}`);
-        }
-      }
-      
-      // 5. Insert balance transaction with pending status
+      // 4. Insert balance transaction with pending status
       const transactionResult = await client.query(
         `INSERT INTO balance_transactions 
          (user_id, amount, transaction_type, description, processed_by, status)
@@ -126,17 +103,19 @@ class TransactionService {
       
       // 10. Log audit trail
       await client.query(
-        `INSERT INTO audit_log (table_name, record_id, operation, new_values, user_id, ip_address)
-         VALUES ($1, $2, 'INSERT', $3, $4, $5)`,
+        `INSERT INTO audit_log (table_name, record_id, action, details, user_id, ip_address, user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           'tickets',
           ticketId,
+          'INSERT',
           JSON.stringify({
             ticket_number: ticketData.ticketNumber,
             total_amount: ticketData.totalAmount
           }),
           userData.id,
-          clientIP
+          clientIP || '127.0.0.1',
+          userAgent || 'Unknown'
         ]
       );
       
@@ -161,18 +140,50 @@ class TransactionService {
   }
 
   /**
-   * Log user login attempt
+   * Log user login attempt to login_audit using current DB schema
+   * Schema columns: user_id, username, ip_address, user_agent, reason, created_at, status
    */
-  async logLoginAttempt(userId, ipAddress, userAgent, success, failureReason = null) {
+  async logLoginAttempt(userId, username, ipAddress, userAgent, status, reason = null) {
     try {
       await this.pool.query(
-        `INSERT INTO login_audit (user_id, ip_address, user_agent, login_success, failure_reason)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [userId, ipAddress, userAgent, success, failureReason]
+        `INSERT INTO login_audit (user_id, username, ip_address, user_agent, reason, status)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [userId, username, ipAddress, userAgent, reason, status]
       );
     } catch (error) {
       logger.error('Failed to log login attempt:', error.message);
       // Don't throw - login logging shouldn't break the login flow
+    }
+  }
+
+  /**
+   * Get recent failed login attempts for throttling/lockout
+   * - recentFailures: failed attempts in the last 30 seconds
+   * - totalFailures: failed attempts in the last 24 hours
+   */
+  async getRecentLoginFailures(userId) {
+    try {
+      const recentResult = await this.pool.query(
+        `SELECT COUNT(*)::int AS count
+         FROM login_audit
+         WHERE user_id = $1 AND status = 'failed' AND created_at >= NOW() - INTERVAL '30 seconds'`,
+        [userId]
+      );
+
+      const totalResult = await this.pool.query(
+        `SELECT COUNT(*)::int AS count
+         FROM login_audit
+         WHERE user_id = $1 AND status = 'failed' AND created_at >= NOW() - INTERVAL '24 hours'`,
+        [userId]
+      );
+
+      return {
+        recentFailures: recentResult.rows[0]?.count || 0,
+        totalFailures: totalResult.rows[0]?.count || 0
+      };
+    } catch (error) {
+      logger.error('Failed to get recent login failures:', error.message);
+      return { recentFailures: 0, totalFailures: 0 };
     }
   }
 
@@ -322,15 +333,20 @@ class TransactionService {
       
       // 8. Log audit trail
       await client.query(
-        `INSERT INTO audit_log (table_name, record_id, operation, old_values, new_values, user_id, ip_address)
-         VALUES ($1, $2, 'UPDATE', $3, $4, $5, $6)`,
+        `INSERT INTO audit_log (table_name, record_id, action, details, user_id, ip_address, user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           'tickets',
           ticketId,
-          JSON.stringify({ status: 'pending' }),
-          JSON.stringify({ status: 'cancelled', refund_reason: reason }),
+          'UPDATE',
+          JSON.stringify({ 
+            old_status: 'pending',
+            new_status: 'cancelled', 
+            refund_reason: reason 
+          }),
           processedBy,
-          clientIP
+          clientIP || '127.0.0.1',
+          'System'
         ]
       );
       

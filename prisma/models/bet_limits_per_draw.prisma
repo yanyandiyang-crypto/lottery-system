@@ -1,0 +1,17 @@
+// Add BetLimitsPerDraw model and relations
+model BetLimitsPerDraw {
+  id             Int      @id @default(autoincrement())
+  draw           Draw     @relation(fields: [drawId], references: [id])
+  drawId         Int      @map("draw_id")
+  betCombination String   @map("bet_combination") @db.VarChar(3)
+  betType        BetType  @map("bet_type")
+  limitAmount    Decimal  @map("limit_amount") @db.Decimal(12,2) @default(10000.00)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      User?    @relation(fields: [createdById], references: [id])
+  createdById    Int?     @map("created_by")
+
+  @@index([drawId])
+  @@index([betCombination])
+  @@map("bet_limits_per_draw")
+}

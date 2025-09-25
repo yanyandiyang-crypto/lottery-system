@@ -1,0 +1,67 @@
+{
+  "name": "newbetting-lottery-system",
+  "description": "3-Digit Lottery System with Web + Mobile POS Support",
+  "repository": "https://github.com/your-username/newbetting-lottery-system",
+  "logo": "https://via.placeholder.com/150x150/4F46E5/FFFFFF?text=NB",
+  "keywords": ["lottery", "betting", "pos", "mobile", "web", "nodejs", "react"],
+  "success_url": "/",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    },
+    "JWT_SECRET": {
+      "description": "Secret key for JWT tokens",
+      "generator": "secret"
+    },
+    "JWT_EXPIRES_IN": {
+      "description": "JWT token expiration time",
+      "value": "24h"
+    },
+    "TZ": {
+      "description": "Timezone",
+      "value": "Asia/Manila"
+    },
+    "CORS_ORIGIN": {
+      "description": "CORS origin for frontend",
+      "value": "https://your-app-name.herokuapp.com"
+    },
+    "MIN_BET_AMOUNT": {
+      "description": "Minimum bet amount",
+      "value": "1.00"
+    },
+    "STANDARD_PRIZE": {
+      "description": "Standard prize amount",
+      "value": "4500.00"
+    },
+    "RAMBOLITO_PRIZE_6": {
+      "description": "Rambolito 6-digit prize",
+      "value": "750.00"
+    },
+    "RAMBOLITO_PRIZE_3": {
+      "description": "Rambolito 3-digit prize",
+      "value": "1500.00"
+    }
+  },
+  "scripts": {
+    "postdeploy": "npx prisma migrate deploy && npx prisma generate"
+  }
+}
+

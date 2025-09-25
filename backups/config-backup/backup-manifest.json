@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-09-25T05:01:47.067Z",
+  "backupType": "configuration_files",
+  "totalFiles": 33,
+  "skippedFiles": 0,
+  "files": [
+    "package.json",
+    "package-lock.json",
+    ".env",
+    "env.example",
+    "database_schema.sql",
+    "database_schema_fixed.sql",
+    "prisma/schema.prisma",
+    "docker-compose.yml",
+    "Dockerfile.backend",
+    "nginx.conf",
+    "Procfile",
+    "render.yaml",
+    "app.json",
+    "README.md",
+    "QUICK_START.md",
+    "API_DOCUMENTATION.md",
+    "CURRENT_STATUS.md",
+    "FINAL_STATUS.md",
+    "SYSTEM_READY.md",
+    "run-system.bat",
+    "run-system.sh",
+    "setup-db.bat",
+    "start-server.js",
+    "server.js",
+    "frontend/package.json",
+    "frontend/package-lock.json",
+    "frontend/public",
+    "frontend/src",
+    "routes",
+    "services",
+    "middleware",
+    "utils",
+    "logs"
+  ],
+  "systemInfo": {
+    "nodeVersion": "v22.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "cwd": "C:\\Users\\Administrator\\Desktop\\pisting yawa 2"
+  },
+  "databaseInfo": {
+    "url": "NOT_SET",
+    "urlPreview": "NOT_SET"
+  }
+}

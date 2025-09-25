@@ -1,0 +1,19 @@
+{
+  "backupFile": "C:\\Users\\Administrator\\Desktop\\pisting yawa 2\\backups\\database-backup-2025-09-25.json",
+  "timestamp": "2025-09-25T04:59:44.247Z",
+  "summary": {
+    "users": 4,
+    "draws": 45,
+    "tickets": 9,
+    "bets": 9,
+    "sales": 2,
+    "userBalances": 4,
+    "balanceTransactions": 12,
+    "winningTickets": 0,
+    "regions": 1,
+    "templates": 0,
+    "currentBetTotals": 9,
+    "userBetLimits": 0,
+    "prizeConfigurations": 2
+  }
+}

@@ -1,0 +1,1052 @@
+{
+  "timestamp": "2025-09-25T04:59:44.129Z",
+  "version": "1.0",
+  "tables": {
+    "users": [
+      {
+        "id": 1,
+        "username": "superadmin",
+        "passwordHash": "$2a$12$c/5PJ5zQY9cbCT49StBliOw33OqdBBnd6I0QOylAlvcOrsmS1U/Kq",
+        "email": "admin@lottery.com",
+        "fullName": "Super Administrator",
+        "address": null,
+        "phone": null,
+        "regionId": null,
+        "coordinatorId": null,
+        "createdById": null,
+        "createdAt": "2025-09-24T15:56:08.303Z",
+        "updatedAt": "2025-09-24T15:56:08.303Z",
+        "agentId": null,
+        "role": "superadmin",
+        "status": "active"
+      },
+      {
+        "id": 2,
+        "username": "areacor",
+        "passwordHash": "$2a$12$7t11eu4GfmWiwWSIaBfNTOcwq5MGtLMVkDnmXsNLV1vw6cTKUn7ni",
+        "email": "test@test.com",
+        "fullName": "test",
+        "address": null,
+        "phone": "12312",
+        "regionId": 1,
+        "coordinatorId": null,
+        "createdById": 1,
+        "createdAt": "2025-09-24T16:23:28.400Z",
+        "updatedAt": "2025-09-24T16:23:28.400Z",
+        "agentId": null,
+        "role": "area_coordinator",
+        "status": "active"
+      },
+      {
+        "id": 3,
+        "username": "cor1",
+        "passwordHash": "$2a$12$OMYBbtUExFWVQYvnsdR.jeB1fqQ5bQKpxm/7j/QuF1eSUh3y9I2VS",
+        "email": "cor1@test.com",
+        "fullName": "cor1",
+        "address": null,
+        "phone": "12312",
+        "regionId": null,
+        "coordinatorId": 2,
+        "createdById": 1,
+        "createdAt": "2025-09-24T16:23:46.755Z",
+        "updatedAt": "2025-09-24T16:23:56.323Z",
+        "agentId": null,
+        "role": "coordinator",
+        "status": "active"
+      },
+      {
+        "id": 4,
+        "username": "agent1",
+        "passwordHash": "$2a$12$AD2K8hrX/MJ7vfLVTBESNeyB9ZZjkptLGAqRcGBnvxcMrFlBzrJYG",
+        "email": "agent1@test.com",
+        "fullName": "agent1",
+        "address": null,
+        "phone": "12312",
+        "regionId": null,
+        "coordinatorId": 3,
+        "createdById": 1,
+        "createdAt": "2025-09-24T16:24:18.149Z",
+        "updatedAt": "2025-09-24T16:24:18.149Z",
+        "agentId": null,
+        "role": "agent",
+        "status": "active"
+      }
+    ],
+    "draws": [
+      {
+        "id": 4,
+        "drawDate": "2025-09-25T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.419Z",
+        "updatedAt": "2025-09-24T15:51:03.419Z",
+        "cutoffTime": "2025-09-25T13:55:00.000Z"
+      },
+      {
+        "id": 5,
+        "drawDate": "2025-09-25T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.420Z",
+        "updatedAt": "2025-09-24T15:51:03.420Z",
+        "cutoffTime": "2025-09-25T16:55:00.000Z"
+      },
+      {
+        "id": 6,
+        "drawDate": "2025-09-25T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.421Z",
+        "updatedAt": "2025-09-24T15:51:03.421Z",
+        "cutoffTime": "2025-09-25T20:55:00.000Z"
+      },
+      {
+        "id": 7,
+        "drawDate": "2025-09-26T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.423Z",
+        "updatedAt": "2025-09-24T15:51:03.423Z",
+        "cutoffTime": "2025-09-26T13:55:00.000Z"
+      },
+      {
+        "id": 8,
+        "drawDate": "2025-09-26T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.424Z",
+        "updatedAt": "2025-09-24T15:51:03.424Z",
+        "cutoffTime": "2025-09-26T16:55:00.000Z"
+      },
+      {
+        "id": 9,
+        "drawDate": "2025-09-26T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.425Z",
+        "updatedAt": "2025-09-24T15:51:03.425Z",
+        "cutoffTime": "2025-09-26T20:55:00.000Z"
+      },
+      {
+        "id": 10,
+        "drawDate": "2025-09-27T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.426Z",
+        "updatedAt": "2025-09-24T15:51:03.426Z",
+        "cutoffTime": "2025-09-27T13:55:00.000Z"
+      },
+      {
+        "id": 11,
+        "drawDate": "2025-09-27T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.427Z",
+        "updatedAt": "2025-09-24T15:51:03.427Z",
+        "cutoffTime": "2025-09-27T16:55:00.000Z"
+      },
+      {
+        "id": 12,
+        "drawDate": "2025-09-27T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.428Z",
+        "updatedAt": "2025-09-24T15:51:03.428Z",
+        "cutoffTime": "2025-09-27T20:55:00.000Z"
+      },
+      {
+        "id": 13,
+        "drawDate": "2025-09-28T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.430Z",
+        "updatedAt": "2025-09-24T15:51:03.430Z",
+        "cutoffTime": "2025-09-28T13:55:00.000Z"
+      },
+      {
+        "id": 14,
+        "drawDate": "2025-09-28T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.430Z",
+        "updatedAt": "2025-09-24T15:51:03.430Z",
+        "cutoffTime": "2025-09-28T16:55:00.000Z"
+      },
+      {
+        "id": 15,
+        "drawDate": "2025-09-28T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.431Z",
+        "updatedAt": "2025-09-24T15:51:03.431Z",
+        "cutoffTime": "2025-09-28T20:55:00.000Z"
+      },
+      {
+        "id": 16,
+        "drawDate": "2025-09-29T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.433Z",
+        "updatedAt": "2025-09-24T15:51:03.433Z",
+        "cutoffTime": "2025-09-29T13:55:00.000Z"
+      },
+      {
+        "id": 17,
+        "drawDate": "2025-09-29T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.434Z",
+        "updatedAt": "2025-09-24T15:51:03.434Z",
+        "cutoffTime": "2025-09-29T16:55:00.000Z"
+      },
+      {
+        "id": 18,
+        "drawDate": "2025-09-29T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.436Z",
+        "updatedAt": "2025-09-24T15:51:03.436Z",
+        "cutoffTime": "2025-09-29T20:55:00.000Z"
+      },
+      {
+        "id": 19,
+        "drawDate": "2025-09-30T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.438Z",
+        "updatedAt": "2025-09-24T15:51:03.438Z",
+        "cutoffTime": "2025-09-30T13:55:00.000Z"
+      },
+      {
+        "id": 20,
+        "drawDate": "2025-09-30T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.438Z",
+        "updatedAt": "2025-09-24T15:51:03.438Z",
+        "cutoffTime": "2025-09-30T16:55:00.000Z"
+      },
+      {
+        "id": 21,
+        "drawDate": "2025-09-30T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.439Z",
+        "updatedAt": "2025-09-24T15:51:03.439Z",
+        "cutoffTime": "2025-09-30T20:55:00.000Z"
+      },
+      {
+        "id": 22,
+        "drawDate": "2025-10-01T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.440Z",
+        "updatedAt": "2025-09-24T15:51:03.440Z",
+        "cutoffTime": "2025-10-01T13:55:00.000Z"
+      },
+      {
+        "id": 23,
+        "drawDate": "2025-10-01T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.441Z",
+        "updatedAt": "2025-09-24T15:51:03.441Z",
+        "cutoffTime": "2025-10-01T16:55:00.000Z"
+      },
+      {
+        "id": 24,
+        "drawDate": "2025-10-01T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.442Z",
+        "updatedAt": "2025-09-24T15:51:03.442Z",
+        "cutoffTime": "2025-10-01T20:55:00.000Z"
+      },
+      {
+        "id": 25,
+        "drawDate": "2025-10-02T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.444Z",
+        "updatedAt": "2025-09-24T15:51:03.444Z",
+        "cutoffTime": "2025-10-02T13:55:00.000Z"
+      },
+      {
+        "id": 26,
+        "drawDate": "2025-10-02T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.444Z",
+        "updatedAt": "2025-09-24T15:51:03.444Z",
+        "cutoffTime": "2025-10-02T16:55:00.000Z"
+      },
+      {
+        "id": 27,
+        "drawDate": "2025-10-02T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.445Z",
+        "updatedAt": "2025-09-24T15:51:03.445Z",
+        "cutoffTime": "2025-10-02T20:55:00.000Z"
+      },
+      {
+        "id": 28,
+        "drawDate": "2025-10-03T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.446Z",
+        "updatedAt": "2025-09-24T15:51:03.446Z",
+        "cutoffTime": "2025-10-03T13:55:00.000Z"
+      },
+      {
+        "id": 29,
+        "drawDate": "2025-10-03T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.447Z",
+        "updatedAt": "2025-09-24T15:51:03.447Z",
+        "cutoffTime": "2025-10-03T16:55:00.000Z"
+      },
+      {
+        "id": 30,
+        "drawDate": "2025-10-03T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.448Z",
+        "updatedAt": "2025-09-24T15:51:03.448Z",
+        "cutoffTime": "2025-10-03T20:55:00.000Z"
+      },
+      {
+        "id": 31,
+        "drawDate": "2025-10-04T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.450Z",
+        "updatedAt": "2025-09-24T15:51:03.450Z",
+        "cutoffTime": "2025-10-04T13:55:00.000Z"
+      },
+      {
+        "id": 32,
+        "drawDate": "2025-10-04T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.451Z",
+        "updatedAt": "2025-09-24T15:51:03.451Z",
+        "cutoffTime": "2025-10-04T16:55:00.000Z"
+      },
+      {
+        "id": 33,
+        "drawDate": "2025-10-04T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.452Z",
+        "updatedAt": "2025-09-24T15:51:03.452Z",
+        "cutoffTime": "2025-10-04T20:55:00.000Z"
+      },
+      {
+        "id": 34,
+        "drawDate": "2025-10-05T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.454Z",
+        "updatedAt": "2025-09-24T15:51:03.454Z",
+        "cutoffTime": "2025-10-05T13:55:00.000Z"
+      },
+      {
+        "id": 35,
+        "drawDate": "2025-10-05T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.455Z",
+        "updatedAt": "2025-09-24T15:51:03.455Z",
+        "cutoffTime": "2025-10-05T16:55:00.000Z"
+      },
+      {
+        "id": 36,
+        "drawDate": "2025-10-05T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.455Z",
+        "updatedAt": "2025-09-24T15:51:03.455Z",
+        "cutoffTime": "2025-10-05T20:55:00.000Z"
+      },
+      {
+        "id": 37,
+        "drawDate": "2025-10-06T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.457Z",
+        "updatedAt": "2025-09-24T15:51:03.457Z",
+        "cutoffTime": "2025-10-06T13:55:00.000Z"
+      },
+      {
+        "id": 38,
+        "drawDate": "2025-10-06T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.457Z",
+        "updatedAt": "2025-09-24T15:51:03.457Z",
+        "cutoffTime": "2025-10-06T16:55:00.000Z"
+      },
+      {
+        "id": 39,
+        "drawDate": "2025-10-06T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.458Z",
+        "updatedAt": "2025-09-24T15:51:03.458Z",
+        "cutoffTime": "2025-10-06T20:55:00.000Z"
+      },
+      {
+        "id": 40,
+        "drawDate": "2025-10-07T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.460Z",
+        "updatedAt": "2025-09-24T15:51:03.460Z",
+        "cutoffTime": "2025-10-07T13:55:00.000Z"
+      },
+      {
+        "id": 41,
+        "drawDate": "2025-10-07T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.460Z",
+        "updatedAt": "2025-09-24T15:51:03.460Z",
+        "cutoffTime": "2025-10-07T16:55:00.000Z"
+      },
+      {
+        "id": 42,
+        "drawDate": "2025-10-07T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T15:51:03.461Z",
+        "updatedAt": "2025-09-24T15:51:03.461Z",
+        "cutoffTime": "2025-10-07T20:55:00.000Z"
+      },
+      {
+        "id": 1,
+        "drawDate": "2025-09-24T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "closed",
+        "createdAt": "2025-09-24T15:51:03.412Z",
+        "updatedAt": "2025-09-24T15:52:00.500Z",
+        "cutoffTime": "2025-09-24T13:55:00.000Z"
+      },
+      {
+        "id": 2,
+        "drawDate": "2025-09-24T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "closed",
+        "createdAt": "2025-09-24T15:51:03.415Z",
+        "updatedAt": "2025-09-24T15:52:00.505Z",
+        "cutoffTime": "2025-09-24T16:55:00.000Z"
+      },
+      {
+        "id": 3,
+        "drawDate": "2025-09-24T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "closed",
+        "createdAt": "2025-09-24T15:51:03.416Z",
+        "updatedAt": "2025-09-24T15:52:00.507Z",
+        "cutoffTime": "2025-09-24T20:55:00.000Z"
+      },
+      {
+        "id": 43,
+        "drawDate": "2025-10-08T00:00:00.000Z",
+        "drawTime": "twoPM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T16:06:09.643Z",
+        "updatedAt": "2025-09-24T16:06:09.643Z",
+        "cutoffTime": "2025-10-08T13:55:00.000Z"
+      },
+      {
+        "id": 44,
+        "drawDate": "2025-10-08T00:00:00.000Z",
+        "drawTime": "fivePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T16:06:09.645Z",
+        "updatedAt": "2025-09-24T16:06:09.645Z",
+        "cutoffTime": "2025-10-08T16:55:00.000Z"
+      },
+      {
+        "id": 45,
+        "drawDate": "2025-10-08T00:00:00.000Z",
+        "drawTime": "ninePM",
+        "winningNumber": null,
+        "status": "open",
+        "createdAt": "2025-09-24T16:06:09.647Z",
+        "updatedAt": "2025-09-24T16:06:09.647Z",
+        "cutoffTime": "2025-10-08T20:55:00.000Z"
+      }
+    ],
+    "tickets": [
+      {
+        "id": 10,
+        "ticketNumber": "T1758768087136I57R",
+        "userId": 4,
+        "drawId": 4,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,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",
+        "templateId": 1,
+        "createdAt": "2025-09-25T19:41:27.256Z",
+        "updatedAt": "2025-09-25T04:18:01.909Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T19:41:27.256Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      },
+      {
+        "id": 11,
+        "ticketNumber": "T1758768464610VJ9P",
+        "userId": 4,
+        "drawId": 5,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,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",
+        "templateId": 1,
+        "createdAt": "2025-09-25T19:47:44.729Z",
+        "updatedAt": "2025-09-25T04:18:01.909Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T19:47:44.729Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      },
+      {
+        "id": 13,
+        "ticketNumber": "T1758769726514TZ3L",
+        "userId": 4,
+        "drawId": 4,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKQAAACkCAYAAAAZtYVBAAAAAklEQVR4AewaftIAAAYuSURBVO3BQY4cSRLAQDLQ//8yV0c/JZCoak1o4Wb2B2td4rDWRQ5rXeSw1kUOa13ksNZFDmtd5LDWRQ5rXeSw1kUOa13ksNZFDmtd5LDWRQ5rXeSw1kV++JDK31TxRGWqeKIyVUwqTyreUHlS8UTlScWk8jdVfOKw1kUOa13ksNZFfviyim9S+S9VPFF5o2JSmVR+U8U3qXzTYa2LHNa6yGGti/zwy1TeqPhExaTypOKJylTxRsUbFW+ofELljYrfdFjrIoe1LnJY6yI//J9R+YTKVDGpTBWTyhsVT1Smiqni/8lhrYsc1rrIYa2L/PB/pmJSeaIyVTypmFSmiknlN6lMFf+yw1oXOax1kcNaF/nhl1X8JpVvUnlSMVU8qXii8obKVPGJipsc1rrIYa2LHNa6yA9fpvJfqphUpopJZaqYVJ6oTBWTylTxpGJSmSomlaniicrNDmtd5LDWRQ5rXcT+4P+IylQxqbxR8YbKVPEJlTcq/mWHtS5yWOsih7UuYn/wAZWp4onKVDGpPKmYVD5R8YbKVPFEZar4hMpUMalMFZPKVHGTw1oXOax1kcNaF/nhl6l8omJSeVIxqUwV36QyVUwVk8qTijdUnqi8ofJGxTcd1rrIYa2LHNa6iP3BB1SmiicqU8UTlU9UTCpTxRsqb1Q8UflExaTypGJSeaPiNx3WushhrYsc1rqI/cEXqXxTxaQyVUwqn6iYVJ5UTCpTxaTypGJS+S9VTCpTxTcd1rrIYa2LHNa6yA9/WcWkMlVMKt9UMak8qZhUnlT8TRVPVKaKSWWqeFLxmw5rXeSw1kUOa13khw+pTBVPVJ6oTBWfqJhUnqhMFU9UpoonFTep+ITKVPGJw1oXOax1kcNaF/nhl6k8qXiiMlV8ouINlaniicqTiicqTyreqHii8omKbzqsdZHDWhc5rHWRH75MZap4ovKk4hMqU8Wk8qRiUpkqflPFpDJVTCpTxaQyVTxR+ZsOa13ksNZFDmtd5Icvq5hUnlQ8UXlS8YbKVDGpPKmYVKaKSWVS+UTFpDJVTCpPVKaKJxWTylTxicNaFzmsdZHDWhexP/gilaniicpU8UTlScWk8qTiicpU8ZtUpopJZap4ovKk4g2VJxWfOKx1kcNaFzmsdRH7gw+ovFExqUwVk8pUMam8UfEJlaniicpU8YbKGxVvqDypeKIyVXzisNZFDmtd5LDWRX74UMWk8kbFpDJVTCpPKiaVSWWqmFSmijdU/ksqU8UbFf+lw1oXOax1kcNaF/nhQypvqEwVT1T+popJZaqYVL5JZaqYVKaKb1KZKv6mw1oXOax1kcNaF/nhQxWTyjdVTCqfqJhU3lD5TRVvqEwVn6h4o+KbDmtd5LDWRQ5rXeSHD6k8qXijYlJ5UvGJiicqTyreUJkqnqg8qXiiMlVMFU9UpopJZar4xGGtixzWushhrYv88KGKSeWJyhsVk8oTlTdUpoqp4onKGxVPVJ5UTCpvqNzssNZFDmtd5LDWRewPPqAyVUwqU8UTlU9UTCpPKp6oPKmYVN6oeKIyVUwq31QxqUwVv+mw1kUOa13ksNZF7A/+YSpPKiaVJxWTypOKJypTxaTypOKJylTxhsobFb/psNZFDmtd5LDWRX74kMrfVDFVPFGZKp6oTBWTyhsVb1RMKlPFGypTxZOKN1Smik8c1rrIYa2LHNa6yA9fVvFNKk9UnlQ8UZkqJpUnKlPFE5WpYlKZKiaVNyr+JYe1LnJY6yKHtS7ywy9TeaPijYo3VJ6o/KaKJxVPKiaVSeU3qfymw1oXOax1kcNaF/nhH6fyRsWkMlU8UZkqvkllqnhSMak8qZhUbnJY6yKHtS5yWOsiP/zjKiaVqWJSmSqeqEwVn1CZKqaKSWWqmFTeUHlDZaqYVL7psNZFDmtd5LDWRX74ZRX/JZWp4onKE5UnFZPKVDGpvKEyVXxCZVJ5o+KbDmtd5LDWRQ5rXeSHL1P5m1SmiicqU8VU8TdVTCpTxaTyRGWqmFSeVDxRmSq+6bDWRQ5rXeSw1kXsD9a6xGGtixzWushhrYsc1rrIYa2LHNa6yGGtixzWushhrYsc1rrIYa2LHNa6yGGtixzWushhrYv8D7muCGeRKFBxAAAAAElFTkSuQmCC",
+        "templateId": 1,
+        "createdAt": "2025-09-25T20:08:46.556Z",
+        "updatedAt": "2025-09-25T04:18:01.910Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T20:08:46.556Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      },
+      {
+        "id": 8,
+        "ticketNumber": "T1758767125963O0RH",
+        "userId": 4,
+        "drawId": 4,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,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",
+        "templateId": 1,
+        "createdAt": "2025-09-25T19:25:26.088Z",
+        "updatedAt": "2025-09-25T04:18:01.908Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T19:25:26.088Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      },
+      {
+        "id": 9,
+        "ticketNumber": "T1758767146358YRFN",
+        "userId": 4,
+        "drawId": 4,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKQAAACkCAYAAAAZtYVBAAAAAklEQVR4AewaftIAAAZFSURBVO3BQY4cSRLAQDLQ//8yV0c/JZCoam1o4Gb2B2td4rDWRQ5rXeSw1kUOa13ksNZFDmtd5LDWRQ5rXeSw1kUOa13ksNZFDmtd5LDWRQ5rXeSw1kV++JDK31TxROWNiicqTyreUHlSMam8UTGp/E0VnzisdZHDWhc5rHWRH76s4ptUnqi8UfFEZap4Q+UTKlPFpPKJim9S+abDWhc5rHWRw1oX+eGXqbxR8UbFE5VJ5UnFGypTxRsqU8XfpPJGxW86rHWRw1oXOax1kR/+Y1TeqJhUpopJZaqYVKaKJxVPVKaK/7LDWhc5rHWRw1oX+eEfp/KkYlKZVN6oeENlqphUnlQ8UZkq/mWHtS5yWOsih7Uu8sMvq/hNFZPKk4pJ5TdVPKmYVCaVqWKq+ETFTQ5rXeSw1kUOa13khy9T+ZtUpopJZap4UjGpTBWTylQxqUwVk8pUMak8UZkqnqjc7LDWRQ5rXeSw1kXsD/7DVN6oeEPlScWkMlW8ofKk4l92WOsih7UucljrIj98SGWqmFSmikllqphUpoo3Kp6oPFF5UjGpTCpTxROVJxXfpDJVPFGZKr7psNZFDmtd5LDWRewPPqDyRsU3qUwVv0nlScUTlaniDZVvqphU3qj4psNaFzmsdZHDWhf54ZdVTCpPKiaVN1SeVEwqTyqeVEwqU8VU8URlqnhS8URlqrjZYa2LHNa6yGGti9gffJHKVPFEZar4hMonKp6oTBVvqEwVT1SmiknlScWk8qTiicqTik8c1rrIYa2LHNa6yA+XU5kqPlExqfw/qUwVT1SmiicqU8Wk8kbFbzqsdZHDWhc5rHWRH/4ylaliUpkqJpWpYqqYVCaVJypTxW+qeFIxqTxR+U0qTyo+cVjrIoe1LnJY6yI/fFnFGypPVKaKSeUTFZPKk4o3VKaKSWWqmFTeqJhUPqHyNx3WushhrYsc1rrIDx9SeVIxVXxTxaTypGJSeUNlqphU3qj4JpWpYlKZKj5R8U2HtS5yWOsih7Uu8sOXVUwqU8WkMlVMKlPFpDJVTCqTylTxRsWTiknlicqTiicqT1R+k8pU8YnDWhc5rHWRw1oX+eFDFZPKVDGpvFExqUwVb1RMKlPFJ1SmiknlmyreUHmiMlVMKlPFNx3WushhrYsc1rrIDx9S+U0qT1TeUJkq3lCZKqaKSWWqeEPljYonFZPKGxWTylTxicNaFzmsdZHDWhexP/hFKp+oeKIyVTxRmSreUPlNFU9UnlT8JpUnFZ84rHWRw1oXOax1EfuDD6g8qZhUpoonKk8qnqhMFd+kMlVMKlPFpPKk4hMqU8WkMlX8Px3WushhrYsc1rrIDx+qmFQmlTdUpopJZVL5hMo3qbxR8YbKk4qp4l9yWOsih7UucljrIj98SGWq+ETFpDJVPFF5o2JS+UTFJ1SmiicVk8qTijdU3qj4xGGtixzWushhrYv88KGKSeWNikllqphUnlRMKpPKk4pJZaqYVJ6oTBWTyidUnlRMKp+o+E2HtS5yWOsih7Uu8sOHVKaKSeWJylQxqTypmFS+qWJSmSomlScqTyomlaliUnmi8i85rHWRw1oXOax1EfuDf5jKGxWTyjdVTCpTxaTyRsWkMlW8ofKJim86rHWRw1oXOax1EfuDD6j8TRVvqPymikllqviEyhsVk8pUMak8qfibDmtd5LDWRQ5rXeSHL6v4JpU3VKaKJypTxaTyRGWqeKIyVUwqU8Wk8kbFGxVvqEwVnzisdZHDWhc5rHWRH36ZyhsVb6hMFZPKVPFNFd9UMalMFZPKpPIvO6x1kcNaFzmsdZEf/nEVk8oTlScqn1CZKqaKSeVJxaQyVUwqU8UTlUllqphUpopvOqx1kcNaFzmsdZEf/nEqU8UTlaliUpkq3qh4ojJVPFGZKiaVJypvVEwqU8WkMlV84rDWRQ5rXeSw1kV++GUVv6niicpU8aRiUnlS8UTlicqTikllqphUpoo3VJ6oTBXfdFjrIoe1LnJY6yI/fJnK36QyVUwVb6g8qXii8qRiUnmj4g2VT1RMKpPKVPGJw1oXOax1kcNaF7E/WOsSh7UucljrIoe1LnJY6yKHtS5yWOsih7UucljrIoe1LnJY6yKHtS5yWOsih7UucljrIoe1LvI/hrYHmOIc3nwAAAAASUVORK5CYII=",
+        "templateId": 1,
+        "createdAt": "2025-09-25T19:25:46.369Z",
+        "updatedAt": "2025-09-25T04:18:01.909Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T19:25:46.369Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      },
+      {
+        "id": 12,
+        "ticketNumber": "T1758769375582BD3E",
+        "userId": 4,
+        "drawId": 4,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,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",
+        "templateId": 1,
+        "createdAt": "2025-09-25T20:02:55.696Z",
+        "updatedAt": "2025-09-25T04:18:01.910Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T20:02:55.696Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      },
+      {
+        "id": 14,
+        "ticketNumber": "T1758773915293PFNV",
+        "userId": 4,
+        "drawId": 4,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,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",
+        "templateId": 1,
+        "createdAt": "2025-09-25T21:18:35.362Z",
+        "updatedAt": "2025-09-25T04:22:43.216Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T21:18:35.362Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      },
+      {
+        "id": 15,
+        "ticketNumber": "T1758774067812J1GN",
+        "userId": 4,
+        "drawId": 4,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,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",
+        "templateId": 1,
+        "createdAt": "2025-09-25T21:21:07.867Z",
+        "updatedAt": "2025-09-25T04:22:43.219Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T21:21:07.867Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      },
+      {
+        "id": 16,
+        "ticketNumber": "T1758774087142YWBL",
+        "userId": 4,
+        "drawId": 4,
+        "totalAmount": 10,
+        "status": "pending",
+        "qrCode": "data:image/png;base64,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",
+        "templateId": 1,
+        "createdAt": "2025-09-25T21:21:27.158Z",
+        "updatedAt": "2025-09-25T04:22:43.224Z",
+        "agentId": 4,
+        "betDate": "2025-09-24T21:21:27.158Z",
+        "reprintCount": 0,
+        "sequenceNumber": "A"
+      }
+    ],
+    "bets": [
+      {
+        "id": 1,
+        "ticketId": 8,
+        "betType": "standard",
+        "betCombination": "852",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T02:25:26.151Z",
+        "updatedAt": "2025-09-25T02:25:26.151Z"
+      },
+      {
+        "id": 2,
+        "ticketId": 9,
+        "betType": "standard",
+        "betCombination": "523",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T02:25:46.402Z",
+        "updatedAt": "2025-09-25T02:25:46.402Z"
+      },
+      {
+        "id": 3,
+        "ticketId": 10,
+        "betType": "standard",
+        "betCombination": "322",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T02:41:27.326Z",
+        "updatedAt": "2025-09-25T02:41:27.326Z"
+      },
+      {
+        "id": 4,
+        "ticketId": 11,
+        "betType": "standard",
+        "betCombination": "236",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T02:47:44.815Z",
+        "updatedAt": "2025-09-25T02:47:44.815Z"
+      },
+      {
+        "id": 5,
+        "ticketId": 12,
+        "betType": "standard",
+        "betCombination": "123",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T03:02:55.715Z",
+        "updatedAt": "2025-09-25T03:02:55.715Z"
+      },
+      {
+        "id": 6,
+        "ticketId": 13,
+        "betType": "standard",
+        "betCombination": "422",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T03:08:46.567Z",
+        "updatedAt": "2025-09-25T03:08:46.567Z"
+      },
+      {
+        "id": 7,
+        "ticketId": 14,
+        "betType": "standard",
+        "betCombination": "522",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T04:18:35.375Z",
+        "updatedAt": "2025-09-25T04:18:35.375Z"
+      },
+      {
+        "id": 8,
+        "ticketId": 15,
+        "betType": "standard",
+        "betCombination": "222",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T04:21:07.880Z",
+        "updatedAt": "2025-09-25T04:21:07.880Z"
+      },
+      {
+        "id": 9,
+        "ticketId": 16,
+        "betType": "standard",
+        "betCombination": "552",
+        "betAmount": 10,
+        "createdAt": "2025-09-25T04:21:27.173Z",
+        "updatedAt": "2025-09-25T04:21:27.173Z"
+      }
+    ],
+    "sales": [
+      {
+        "id": 1,
+        "userId": 4,
+        "drawId": 4,
+        "betType": "standard",
+        "totalAmount": 80,
+        "ticketCount": 8,
+        "createdAt": "2025-09-25T00:00:00.000Z"
+      },
+      {
+        "id": 2,
+        "userId": 4,
+        "drawId": 5,
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "createdAt": "2025-09-25T00:00:00.000Z"
+      }
+    ],
+    "userBalances": [
+      {
+        "id": 1,
+        "userId": 1,
+        "currentBalance": 0,
+        "lastUpdated": "2025-09-24T15:56:08.305Z",
+        "createdAt": "2025-09-24T15:56:08.307Z"
+      },
+      {
+        "id": 3,
+        "userId": 3,
+        "currentBalance": 1000,
+        "lastUpdated": "2025-09-24T16:24:58.562Z",
+        "createdAt": "2025-09-24T16:23:46.761Z"
+      },
+      {
+        "id": 2,
+        "userId": 2,
+        "currentBalance": 1000,
+        "lastUpdated": "2025-09-24T16:25:01.592Z",
+        "createdAt": "2025-09-24T16:23:28.416Z"
+      },
+      {
+        "id": 4,
+        "userId": 4,
+        "currentBalance": 910,
+        "lastUpdated": "2025-09-24T21:21:27.158Z",
+        "createdAt": "2025-09-24T16:24:18.152Z"
+      }
+    ],
+    "balanceTransactions": [
+      {
+        "id": 1,
+        "userId": 3,
+        "amount": 1000,
+        "transactionType": "load",
+        "description": "Balance loaded by Super Administrator",
+        "referenceId": null,
+        "processedById": 1,
+        "createdAt": "2025-09-24T16:24:58.572Z"
+      },
+      {
+        "id": 2,
+        "userId": 2,
+        "amount": 1000,
+        "transactionType": "load",
+        "description": "Balance loaded by Super Administrator",
+        "referenceId": null,
+        "processedById": 1,
+        "createdAt": "2025-09-24T16:25:01.595Z"
+      },
+      {
+        "id": 3,
+        "userId": 4,
+        "amount": 1000,
+        "transactionType": "load",
+        "description": "Balance loaded by Super Administrator",
+        "referenceId": null,
+        "processedById": 1,
+        "createdAt": "2025-09-24T16:25:04.566Z"
+      },
+      {
+        "id": 11,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758767125963O0RH",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T19:25:26.088Z"
+      },
+      {
+        "id": 12,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758767146358YRFN",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T19:25:46.369Z"
+      },
+      {
+        "id": 13,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758768087136I57R",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T19:41:27.256Z"
+      },
+      {
+        "id": 14,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758768464610VJ9P",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T19:47:44.729Z"
+      },
+      {
+        "id": 15,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758769375582BD3E",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T20:02:55.696Z"
+      },
+      {
+        "id": 16,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758769726514TZ3L",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T20:08:46.556Z"
+      },
+      {
+        "id": 17,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758773915293PFNV",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T21:18:35.362Z"
+      },
+      {
+        "id": 18,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758774067812J1GN",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T21:21:07.867Z"
+      },
+      {
+        "id": 19,
+        "userId": 4,
+        "amount": 10,
+        "transactionType": "use",
+        "description": "Ticket purchase: T1758774087142YWBL",
+        "referenceId": null,
+        "processedById": 4,
+        "createdAt": "2025-09-24T21:21:27.158Z"
+      }
+    ],
+    "winningTickets": [],
+    "regions": [
+      {
+        "id": 1,
+        "name": "Mactan",
+        "areaCoordinatorId": 2,
+        "createdAt": "2025-09-24T16:23:28.392Z",
+        "updatedAt": "2025-09-24T16:23:28.411Z"
+      }
+    ],
+    "templates": [],
+    "currentBetTotals": [
+      {
+        "id": 1,
+        "drawId": 4,
+        "betCombination": "852",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T02:25:26.186Z"
+      },
+      {
+        "id": 2,
+        "drawId": 4,
+        "betCombination": "523",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T02:25:46.404Z"
+      },
+      {
+        "id": 3,
+        "drawId": 4,
+        "betCombination": "322",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T02:41:27.356Z"
+      },
+      {
+        "id": 4,
+        "drawId": 5,
+        "betCombination": "236",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T02:47:44.820Z"
+      },
+      {
+        "id": 5,
+        "drawId": 4,
+        "betCombination": "123",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T03:02:55.718Z"
+      },
+      {
+        "id": 6,
+        "drawId": 4,
+        "betCombination": "422",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T03:08:46.569Z"
+      },
+      {
+        "id": 7,
+        "drawId": 4,
+        "betCombination": "522",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T04:18:35.378Z"
+      },
+      {
+        "id": 8,
+        "drawId": 4,
+        "betCombination": "222",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T04:21:07.882Z"
+      },
+      {
+        "id": 9,
+        "drawId": 4,
+        "betCombination": "552",
+        "betType": "standard",
+        "totalAmount": 10,
+        "ticketCount": 1,
+        "updatedAt": "2025-09-25T04:21:27.176Z"
+      }
+    ],
+    "userBetLimits": [],
+    "prizeConfigurations": [
+      {
+        "id": 1,
+        "betType": "standard",
+        "multiplier": 450,
+        "baseAmount": 10,
+        "basePrize": 4500,
+        "description": "Standard betting: ₱10 bet = ₱4,500 prize (450x multiplier)",
+        "isActive": true,
+        "createdAt": "2025-09-24T16:33:38.099Z",
+        "createdById": 1,
+        "updatedAt": "2025-09-24T16:33:38.099Z",
+        "updatedById": null
+      },
+      {
+        "id": 2,
+        "betType": "rambolito",
+        "multiplier": 450,
+        "baseAmount": 10,
+        "basePrize": 750,
+        "description": "Rambolito betting: ₱10 bet = ₱750 prize (75x multiplier), Double: ₱1,500 (150x multiplier)",
+        "isActive": true,
+        "createdAt": "2025-09-24T16:33:38.105Z",
+        "createdById": 1,
+        "updatedAt": "2025-09-24T16:33:38.105Z",
+        "updatedById": null
+      }
+    ]
+  }
+}

@@ -104,20 +104,20 @@ initializeRateLimitTable();
 
 // Authentication rate limiter (stricter)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  windowMs: 30 * 1000, // 30 seconds
+  max: 5, // 5 attempts per 30s
   message: {
     success: false,
-    message: 'Too many login attempts. Please try again in 15 minutes.',
-    retryAfter: '15 minutes'
+    message: 'Too many login attempts. Please wait 30 seconds.',
+    retryAfter: '30 seconds'
   },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
     res.status(429).json({
       success: false,
-      message: 'Too many login attempts. Please try again in 15 minutes.',
-      retryAfter: '15 minutes'
+      message: 'Too many login attempts. Please wait 30 seconds.',
+      retryAfter: '30 seconds'
     });
   }
 });
@@ -193,8 +193,8 @@ const suspiciousActivityLimiter = rateLimit({
       
       try {
         await client.query(`
-          INSERT INTO login_audit (user_id, ip_address, user_agent, login_success, failure_reason)
-          VALUES (NULL, $1, $2, false, 'Rate limit exceeded - suspicious activity')
+          INSERT INTO login_audit (user_id, username, ip_address, user_agent, reason, status)
+          VALUES (NULL, 'anonymous', $1, $2, 'Rate limit exceeded - suspicious activity', 'failed')
         `, [req.ip, req.get('User-Agent')]);
       } finally {
         client.release();

@@ -8,6 +8,7 @@ const { requireAuth } = require('../middleware/auth');
 const transactionService = require('../services/transactionService');
 const PasswordValidator = require('../utils/passwordValidator');
 const { authLimiter, passwordResetLimiter } = require('../middleware/rateLimiting');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -15,7 +16,16 @@ const prisma = new PrismaClient();
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', authLimiter, [
+// Per-username limiter: adds a username-based cap separate from IP
+const usernameLimiter = rateLimit({
+  windowMs: 30 * 1000,
+  max: 5,
+  keyGenerator: (req) => req.body?.username || req.ip,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+router.post('/login', [authLimiter, usernameLimiter], [
   body('username').notEmpty().withMessage('Username is required'),
   body('password').isLength({ min: 1 }).withMessage('Password is required')
 ], async (req, res) => {
@@ -49,9 +59,10 @@ router.post('/login', authLimiter, [
       // Log failed login attempt
       await transactionService.logLoginAttempt(
         null, // No user ID for failed login
+        username,
         req.ip,
         req.get('User-Agent'),
-        false,
+        'failed',
         'User not found'
       );
       
@@ -65,9 +76,10 @@ router.post('/login', authLimiter, [
       // Log failed login attempt
       await transactionService.logLoginAttempt(
         user.id,
+        user.username,
         req.ip,
         req.get('User-Agent'),
-        false,
+        'failed',
         'Account inactive or suspended'
       );
       
@@ -77,15 +89,34 @@ router.post('/login', authLimiter, [
       });
     }
 
+    // Enforce incremental policy before password check
+    const { recentFailures, totalFailures } = await transactionService.getRecentLoginFailures(user.id);
+    if (totalFailures >= 10) {
+      await prisma.user.update({ where: { id: user.id }, data: { status: 'suspended' } });
+      await transactionService.logLoginAttempt(
+        user.id,
+        user.username,
+        req.ip,
+        req.get('User-Agent'),
+        'failed',
+        'Account locked after 10 failed attempts'
+      );
+      return res.status(423).json({ success: false, message: 'Account locked. Contact admin to unlock.' });
+    }
+    if (recentFailures >= 5) {
+      return res.status(429).json({ success: false, message: 'Too many attempts. Please wait 30 seconds.' });
+    }
+
     // Check password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       // Log failed login attempt
       await transactionService.logLoginAttempt(
         user.id,
+        user.username,
         req.ip,
         req.get('User-Agent'),
-        false,
+        'failed',
         'Invalid password'
       );
       
@@ -109,9 +140,10 @@ router.post('/login', authLimiter, [
     // Log successful login attempt
     await transactionService.logLoginAttempt(
       user.id,
+      user.username,
       req.ip,
       req.get('User-Agent'),
-      true,
+      'success',
       null
     );
 

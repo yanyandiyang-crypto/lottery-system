@@ -1,0 +1,39 @@
+
+NEWBETTING SYSTEM - CONFIGURATION BACKUP
+=========================================
+
+Backup Date: 9/25/2025, 1:01:47 PM
+Backup Location: C:\Users\Administrator\Desktop\pisting yawa 2\backups\config-backup
+
+FILES BACKED UP: 33
+FILES SKIPPED: 0
+
+IMPORTANT FILES INCLUDED:
+- package.json (dependencies)
+- .env (environment variables)
+- database_schema.sql (database structure)
+- prisma/schema.prisma (Prisma schema)
+- docker-compose.yml (Docker configuration)
+- All documentation files
+- All scripts and utilities
+- Frontend source code
+- Routes and services
+
+DATABASE CONNECTION INFO:
+- Database: lottery_system_local
+- Host: localhost
+- Port: 5432
+- Username: postgres
+- Password: admin123
+
+POSTGRESQL VERSION: 16
+
+RESTORATION NOTES:
+1. Install Node.js 18+
+2. Install PostgreSQL 16
+3. Restore database from SQL backups
+4. Run npm install in root and frontend directories
+5. Set up environment variables
+6. Run database migrations
+
+IMPORTANT: Keep this backup safe during Windows reinstall!
