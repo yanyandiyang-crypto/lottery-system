@@ -73,100 +73,95 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="mx-auto h-12 w-12 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">N</span>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to NewBetting
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Access your lottery management dashboard
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="username" className="sr-only">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
-                required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  errors.username ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
-                placeholder="Username"
-                value={formData.username}
-                onChange={handleChange}
-              />
-              {errors.username && (
-                <p className="mt-1 text-sm text-red-600">{errors.username}</p>
-              )}
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="bg-white/80 backdrop-blur border border-gray-100 shadow-xl rounded-2xl overflow-hidden">
+          <div className="px-6 sm:px-8 pt-8 pb-2 text-center">
+            <div className="mx-auto w-16 h-16 rounded-xl bg-primary-600/10 flex items-center justify-center ring-1 ring-primary-200">
+              <img src="/logos/pisting-logo.png" alt="Brand" className="w-10 h-10 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             </div>
-            
-            <div className="relative">
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 pr-10 border ${
-                  errors.password ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <EyeIcon className="h-5 w-5 text-gray-400" />
-                )}
-              </button>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
-            </div>
+            <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-gray-900">Welcome back</h1>
+            <p className="mt-1 text-sm text-gray-500">Sign in to continue to your dashboard</p>
           </div>
 
-          <div>
+          <form className="px-6 sm:px-8 pt-4 pb-8" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  className={`block w-full rounded-lg border ${errors.username ? 'border-red-300 ring-red-200' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'} px-3 py-2 shadow-sm focus:outline-none focus:ring-2 sm:text-sm`}
+                  placeholder="Enter your username"
+                  value={formData.username}
+                  onChange={handleChange}
+                />
+                {errors.username && (
+                  <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-xs text-primary-600 hover:text-primary-700 inline-flex items-center gap-1">
+                    {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    className={`block w-full rounded-lg border ${errors.password ? 'border-red-300 ring-red-200' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'} px-3 py-2 pr-10 shadow-sm focus:outline-none focus:ring-2 sm:text-sm`}
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                </div>
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="inline-flex items-center gap-2 text-xs text-gray-600 select-none">
+                  <input type="checkbox" className="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                  Remember me
+                </label>
+                <button type="button" className="text-xs font-medium text-primary-600 hover:text-primary-700">
+                  Forgot password?
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+              disabled={loading}
+              className="mt-6 w-full inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <LoadingSpinner />
+                <>
+                  <span className="mr-2 inline-block h-4 w-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
+                  Signing in...
+                </>
               ) : (
                 'Sign in'
               )}
             </button>
-          </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              NewBetting Lottery Management System
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Secure • Reliable • Efficient
-            </p>
-          </div>
-        </form>
+            <div className="mt-6 text-center text-xs text-gray-500">
+              <p>NewBetting Lottery Management System</p>
+              <p className="mt-1">Secure • Reliable • Efficient</p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
