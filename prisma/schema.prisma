@@ -38,7 +38,7 @@ model User {
   assignedTemplates     AgentTicketTemplate[]
   processedTransactions BalanceTransaction[]  @relation("TransactionProcessedBy")
   balanceTransactions   BalanceTransaction[]
-  createdBetLimits      BetLimit[]
+  createdBetLimitTypes  BetLimit[]
   commissions           Commission[]
   inputDrawResults      DrawResult[]
   notifications         Notification[]
