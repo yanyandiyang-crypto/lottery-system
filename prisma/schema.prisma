@@ -316,7 +316,6 @@ model BetLimitPerDrawLegacy {
   limitAmount    Float    @map("limit_amount")
   isSoldOut      Boolean  @default(false) @map("is_sold_out")
   updatedAt      DateTime @updatedAt
-  draw           Draw     @relation(fields: [drawId], references: [id])
 
   @@unique([drawId, betCombination, betType])
   @@map("bet_limits_per_draw_legacy")
