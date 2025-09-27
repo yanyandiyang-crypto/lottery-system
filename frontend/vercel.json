@@ -15,6 +15,14 @@
       "dest": "/static/$1"
     },
     {
+      "src": "/logos/(.*)",
+      "dest": "/logos/$1"
+    },
+    {
+      "src": "/templates/(.*)",
+      "dest": "/templates/$1"
+    },
+    {
       "src": "/favicon.ico",
       "dest": "/favicon.ico"
     },
@@ -32,8 +40,8 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://lottery-system-tna9.onrender.com",
-    "REACT_APP_SOCKET_URL": "https://lottery-system-tna9.onrender.com",
+    "REACT_APP_API_URL": "https://lottery-backend-l1k7.onrender.com",
+    "REACT_APP_SOCKET_URL": "https://lottery-backend-l1k7.onrender.com",
     "REACT_APP_API_VERSION": "v1",
     "REACT_APP_VERSION": "3.0.3",
     "GENERATE_SOURCEMAP": "false"
