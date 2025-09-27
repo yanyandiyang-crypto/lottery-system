@@ -1,6 +1,6 @@
 {
   "name": "newbetting-frontend",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "NewBetting 3-Digit Lottery System Frontend",
   "private": true,
   "dependencies": {
