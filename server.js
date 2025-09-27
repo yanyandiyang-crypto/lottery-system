@@ -279,6 +279,48 @@ app.use('/api/v1/prize-configuration', authMiddleware, prizeConfigurationRoutes)
 app.use('/api/v1/winning-reports', authMiddleware, winningReportsRoutes);
 app.use('/api/v1/claim-approvals', authMiddleware, claimApprovalsRoutes);
 
+// Direct health endpoints for Render (no authentication required)
+app.get('/v1/health', async (req, res) => {
+  const health = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    version: process.env.npm_package_version || '3.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    services: {}
+  };
+
+  try {
+    // Database health check
+    const start = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    const dbResponseTime = Date.now() - start;
+    
+    health.services.database = { 
+      status: 'healthy', 
+      responseTime: `${dbResponseTime}ms` 
+    };
+  } catch (error) {
+    health.services.database = { 
+      status: 'unhealthy', 
+      error: error.message 
+    };
+    health.status = 'unhealthy';
+  }
+
+  const statusCode = health.status === 'healthy' ? 200 : 503;
+  res.status(statusCode).json(health);
+});
+
+// Simple ping endpoint for Render
+app.get('/v1/ping', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // Health check routes (no authentication required)
 app.use('/api/v1/health', healthRoutes);
 
