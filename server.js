@@ -84,6 +84,11 @@ const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.
 
 console.log('CORS Allowed Origins:', allowedOrigins);
 
+// CORS: Explicit origin check for Vercel
+console.log('CORS: Environment CORS_ORIGIN:', process.env.CORS_ORIGIN);
+console.log('CORS: Final allowed origins:', allowedOrigins);
+console.log('CORS: Vercel origin included:', allowedOrigins.includes('https://lottery-system-gamma.vercel.app'));
+
 const io = socketIo(server, {
   cors: {
     origin: allowedOrigins,

@@ -248,7 +248,7 @@ router.get('/', requireAuth, async (req, res) => {
     let pendingAmount = 0;
     let approvedAmount = 0;
     let winnersCount = 0;
-    tickets.forEach(ticket => {
+    claimData.forEach(ticket => {
       if (ticket.status === 'pending_approval' || ticket.status === 'claimed') {
         const calculatedPrize = calculateTicketPrize(ticket);
         winnersCount++;
