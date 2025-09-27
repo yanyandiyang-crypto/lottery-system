@@ -22,7 +22,7 @@ router.get('/history', requireAuth, async (req, res) => {
     // - area_coordinator: can view coordinators/agents within same region
     // - coordinator: can view their agents
     // - others: only self
-    let userId = req.user.userId;
+    let userId = req.user.id;
     if (requestedUserId) {
       if (['superadmin', 'admin'].includes(req.user.role)) {
         userId = requestedUserId;
@@ -35,14 +35,14 @@ router.get('/history', requireAuth, async (req, res) => {
         }
       } else if (req.user.role === 'coordinator') {
         const target = await prisma.user.findUnique({ where: { id: requestedUserId }, select: { id: true, role: true, coordinatorId: true } });
-        if (target && target.coordinatorId === req.user.userId && target.role === 'agent') {
+        if (target && target.coordinatorId === req.user.id && target.role === 'agent') {
           userId = requestedUserId;
         } else {
           return res.status(403).json({ success: false, message: 'Not allowed to view this user\'s transactions' });
         }
       } else {
         // Other roles can only view self
-        if (requestedUserId !== req.user.userId) {
+        if (requestedUserId !== req.user.id) {
           return res.status(403).json({ success: false, message: 'Not allowed to view this user\'s transactions' });
         }
       }

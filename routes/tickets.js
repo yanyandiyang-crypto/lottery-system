@@ -30,7 +30,7 @@ router.post('/atomic', requireAgent, createTicketLimiter, async (req, res) => {
     const drawIdNum = Number(drawId);
     // Idempotency: if key provided, check existing
     if (idempotencyKey) {
-      const exists = await prisma.$queryRaw`SELECT ticket_id FROM idempotency_keys WHERE user_id = ${req.user.userId} AND idem_key = ${idempotencyKey}`;
+      const exists = await prisma.$queryRaw`SELECT ticket_id FROM idempotency_keys WHERE user_id = ${req.user.id} AND idem_key = ${idempotencyKey}`;
       if (Array.isArray(exists) && exists[0]?.ticket_id) {
         const existingTicket = await prisma.ticket.findUnique({ where: { id: exists[0].ticket_id }, include: { bets: true, draw: true, user: true } });
         if (existingTicket) {
@@ -138,7 +138,7 @@ router.post('/atomic', requireAgent, createTicketLimiter, async (req, res) => {
     // Generate QR code with secure hash format
     const crypto = require('crypto');
     const qrTimestamp = new Date().getTime();
-    const hashInput = `${ticketNumber}:${totalAmount}:${drawIdNum}:${req.user.userId}:${qrTimestamp}`;
+    const hashInput = `${ticketNumber}:${totalAmount}:${drawIdNum}:${req.user.id}:${qrTimestamp}`;
     const hash = crypto.createHash('sha256').update(hashInput).digest('hex').substring(0, 16);
     const qrCodeData = `${ticketNumber}|${hash}`;
     const qrCode = await QRCode.toDataURL(qrCodeData);
@@ -200,7 +200,7 @@ router.post('/atomic', requireAgent, createTicketLimiter, async (req, res) => {
       
       // Save idempotency record
       if (idempotencyKey) {
-        await prisma.$executeRaw`INSERT INTO idempotency_keys (user_id, idem_key, ticket_id) VALUES (${req.user.userId}, ${idempotencyKey}, ${result.ticketId}) ON CONFLICT (user_id, idem_key) DO NOTHING`;
+        await prisma.$executeRaw`INSERT INTO idempotency_keys (user_id, idem_key, ticket_id) VALUES (${req.user.id}, ${idempotencyKey}, ${result.ticketId}) ON CONFLICT (user_id, idem_key) DO NOTHING`;
       }
       
       // Get the complete ticket with bets

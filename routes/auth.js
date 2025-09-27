@@ -639,7 +639,7 @@ router.post('/change-password', requireAuth, [
     }
 
     const { currentPassword, newPassword } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     // Validate new password strength
     const passwordValidation = PasswordValidator.validatePassword(newPassword);
@@ -733,7 +733,7 @@ router.post('/reset-password', requireAuth, requireAdmin, passwordResetLimiter, 
     }
 
     const { userId, newPassword } = req.body;
-    const adminId = req.user.userId;
+    const adminId = req.user.id;
 
     // Get target user
     const targetUser = await prisma.user.findUnique({

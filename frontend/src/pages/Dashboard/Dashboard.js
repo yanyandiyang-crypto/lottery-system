@@ -5,6 +5,7 @@ import { useSocket } from '../../contexts/SocketContext';
 import api from '../../utils/api';
 import WinnerNotifications from '../../components/Notifications/WinnerNotifications';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
+import { getCurrentDatePH, getTodayRange } from '../../utils/dateUtils';
 import {
   ClockIcon,
   CheckCircleIcon,
@@ -28,13 +29,10 @@ const Dashboard = () => {
   // Check if user is an agent (only agents get the betting interface)
   const isAgent = user?.role === 'agent';
 
-  // Fetch dashboard data
-  const [dateRange, setDateRange] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
-  });
+  // Fetch dashboard data - Use Philippines timezone
+  const [dateRange, setDateRange] = useState(() => getTodayRange());
 
-  const isTodayRange = dateRange.startDate === dateRange.endDate && dateRange.startDate === new Date().toISOString().split('T')[0];
+  const isTodayRange = dateRange.startDate === dateRange.endDate && dateRange.startDate === getCurrentDatePH();
 
   const { data: dashboardData, isLoading, error, refetch } = useQuery(
     ['dashboard', dateRange.startDate, dateRange.endDate],

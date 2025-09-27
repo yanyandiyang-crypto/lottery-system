@@ -92,7 +92,7 @@ router.post('/create',
     try {
       // Main ticket creation logic
       const { bets, drawId, idempotencyKey } = req.body;
-      const userId = req.user.userId;
+      const userId = req.user.id;
 
       // Handle idempotency
       if (idempotencyKey) {
@@ -218,7 +218,7 @@ router.get('/',
   asyncHandler(async (req, res) => {
     const { page, limit, offset } = req.pagination;
     const { startDate, endDate, status, drawId } = req.query;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const userRole = req.user.role;
     
     console.log('GET /tickets called with:', {
@@ -361,7 +361,7 @@ router.post('/:ticketNumber/cancel',
   asyncHandler(async (req, res) => {
     try {
       const { ticketNumber } = req.params;
-      const userId = req.user.userId;
+      const userId = req.user.id;
       const userRole = req.user.role;
 
       const ticket = await TicketService.getTicketByNumber(ticketNumber);
@@ -419,7 +419,7 @@ router.get('/:ticketNumber/qr',
   requireAuth,
   asyncHandler(async (req, res) => {
     const { ticketNumber } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const userRole = req.user.role;
 
     const ticket = await TicketService.getTicketByNumber(ticketNumber);
@@ -445,7 +445,7 @@ router.get('/stats/summary',
   validateDateRange,
   asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const userRole = req.user.role;
 
     const filters = {
@@ -485,7 +485,7 @@ router.post('/bulk-create',
       return sendError(res, 'Maximum 100 tickets per bulk operation', 400);
     }
 
-    const results = await TicketService.createBulkTickets(tickets, req.user.userId);
+    const results = await TicketService.createBulkTickets(tickets, req.user.id);
 
     return sendSuccess(res, results, 'Bulk tickets created successfully', 201);
   })

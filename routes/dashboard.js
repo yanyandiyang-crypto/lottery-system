@@ -96,7 +96,7 @@ function checkIfBetIsWinning(betCombination, betType, winningNumbers) {
 router.get('/', requireAuth, async (req, res) => {
   try {
     console.log('🔍 Dashboard API called by user:', req.user);
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const userRole = req.user.role;
 
     // Support optional startDate/endDate query; default to today

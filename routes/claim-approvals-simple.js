@@ -85,6 +85,7 @@ router.get('/pending', async (req, res) => {
 // @desc    Approve a claim (simplified version)
 // @access  Protected (SuperAdmin, Admin)
 router.post('/:ticketId/approve', async (req, res) => {
+  console.log('🚨🚨🚨 APPROVAL ENDPOINT HIT! 🚨🚨🚨');
   try {
     const { ticketId } = req.params;
     const { notes, prizeAmount } = req.body;
@@ -103,8 +104,8 @@ router.post('/:ticketId/approve', async (req, res) => {
       });
     }
 
-    // Get user ID (try different possible property names)
-    const approverId = req.user.userId || req.user.id || req.user.user_id;
+    // Get user ID (auth middleware sets req.user to the full user object)
+    const approverId = req.user.id;
     const userRole = req.user.role;
 
     console.log('🔍 Approver ID:', approverId);
@@ -179,8 +180,10 @@ router.post('/:ticketId/approve', async (req, res) => {
       where: { id: ticketIdInt },
       data: {
         status: 'claimed',
-        // Store approval info in existing fields if available
-        ...(prizeAmount && { totalAmount: parseFloat(prizeAmount) })
+        approved_at: new Date(), // Use snake_case as per database schema
+        approvedBy: approverId,
+        approvalNotes: notes || 'Claim approved via admin panel',
+        ...(prizeAmount && { prizeAmount: parseFloat(prizeAmount) })
       },
       include: {
         user: {
@@ -225,7 +228,7 @@ router.post('/:ticketId/reject', async (req, res) => {
   try {
     const { ticketId } = req.params;
     const { notes, reason } = req.body;
-    const rejectorId = req.user.userId;
+    const rejectorId = req.user.id;
 
     console.log('❌ Rejecting claim for ticket:', ticketId);
     console.log('🔍 Rejector ID:', rejectorId);
