@@ -43,7 +43,6 @@ import TransactionHistory from './pages/Account/TransactionHistory';
 import TemplateAssignment from './pages/TicketTemplates/TemplateAssignment';
 import TicketSearch from './components/TicketSearch';
 import TicketClaiming from './components/TicketClaiming';
-import WinningDashboard from './pages/WinningReports/WinningDashboard';
 import ClaimApprovals from './pages/ClaimApprovals/ClaimApprovals';
 
 // Protected Route Component
@@ -149,8 +148,6 @@ function AppRoutes() {
         <Route path="/prize-configuration" element={<SuperAdminRoute><PrizeConfiguration /></SuperAdminRoute>} />
         {/* Template Assignment - SuperAdmin only */}
         <Route path="/template-assignment" element={<SuperAdminRoute><TemplateAssignment /></SuperAdminRoute>} />
-        {/* Winning Reports - Management roles */}
-        <Route path="/winning-reports" element={<ManagementRoute><WinningDashboard /></ManagementRoute>} />
         {/* Claim Approvals - SuperAdmin and Admin only */}
         <Route path="/claim-approvals" element={<AdminRoute><ClaimApprovals /></AdminRoute>} />
 

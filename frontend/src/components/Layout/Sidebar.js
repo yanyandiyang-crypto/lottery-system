@@ -29,7 +29,6 @@ const staticNavigation = [
   { name: 'Prize Configuration', href: '/prize-configuration', icon: CurrencyDollarIcon, roles: ['superadmin'] },
   { name: 'Template Assignment', href: '/template-assignment', icon: CogIcon, roles: ['superadmin'] },
   { name: 'Mobile POS Templates', href: '/mobile-pos-templates', icon: PrinterIcon, roles: ['superadmin'] },
-  { name: 'Winning Reports', href: '/winning-reports', icon: ChartBarIcon, roles: ['superadmin', 'admin', 'area_coordinator', 'coordinator'] },
   { name: 'Claim Approvals', href: '/claim-approvals', icon: ShieldCheckIcon, roles: ['superadmin', 'admin'] },
   { name: 'Security Audit', href: '/admin/audit', icon: ShieldCheckIcon, roles: ['superadmin', 'admin'] },
   

@@ -77,10 +77,15 @@ router.post('/:ticketId/approve', async (req, res) => {
   try {
     const { ticketId } = req.params;
     const { notes, prizeAmount } = req.body;
-    const approverId = req.user.userId;
+    
+    console.log('🔍 Debug - req.user:', req.user);
+    console.log('🔍 Debug - ticketId:', ticketId);
+    console.log('🔍 Debug - body:', req.body);
+    
+    const approverId = req.user?.userId || req.user?.id;
 
     // Verify user has approval permissions
-    if (!['superadmin', 'admin'].includes(req.user.role)) {
+    if (!['superadmin', 'admin'].includes(req.user?.role)) {
       return res.status(403).json({
         success: false,
         message: 'Insufficient permissions to approve claims'
@@ -142,7 +147,13 @@ router.post('/:ticketId/approve', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Approve claim error:', error);
+    console.error('❌ Approve claim error:', error);
+    console.error('❌ Full error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    });
     res.status(500).json({
       success: false,
       message: 'Error approving claim',

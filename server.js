@@ -76,10 +76,10 @@ const app = express();
 const server = http.createServer(app);
 
 // CORS configuration - Define allowed origins first
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [
-  "http://localhost:3000", 
-  "http://localhost:3002",
-  "https://lottery-system-gamma.vercel.app"
+const allowedOrigins = [
+  'https://lottery-system-gamma.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3002'
 ];
 
 console.log('CORS Allowed Origins:', allowedOrigins);
@@ -143,11 +143,17 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Define allowed origins
+    const allowedOrigins = [
+      'https://lottery-system-gamma.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:3002'
+    ];
+    
     console.log('CORS: Checking origin:', origin);
     console.log('CORS: Allowed origins:', allowedOrigins);
     
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin)) {
       console.log('CORS: Origin allowed:', origin);
       callback(null, true);
     } else {
@@ -158,8 +164,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-API-Version', 'API-Version', 'x-client-version'],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-API-Version', 'API-Version', 'x-client-version']
 }));
 
 // Global security middleware
@@ -167,6 +172,27 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
+
+// Explicit preflight handling for CORS
+app.options('*', (req, res) => {
+  console.log('CORS: Handling preflight request for:', req.headers.origin);
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://lottery-system-gamma.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3002'
+  ];
+  
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.status(200).end();
+  } else {
+    res.status(403).end();
+  }
+});
 // Handle preflight requests explicitly
 app.options('*', (req, res) => {
   console.log('CORS: Handling preflight request for:', req.headers.origin);
