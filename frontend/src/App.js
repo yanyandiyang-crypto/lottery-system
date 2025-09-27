@@ -37,7 +37,7 @@ import AgentResults from './pages/AgentResults/AgentResults';
 import WinningTickets from './pages/WinningTickets/WinningTickets';
 import PrizeConfiguration from './pages/PrizeConfiguration/PrizeConfiguration';
 import MobileTicketShare from './pages/Tickets/MobileTicketShare';
-import WebShareTest from './pages/Test/WebShareTest';
+// WebShareTest removed - test component no longer needed
 import AuditDashboard from './pages/Admin/AuditDashboard';
 import TransactionHistory from './pages/Account/TransactionHistory';
 import TemplateAssignment from './pages/TicketTemplates/TemplateAssignment';
@@ -209,8 +209,7 @@ function AppRoutes() {
         <Route path="/verify" element={<TicketSearch />} />
         <Route path="/claim" element={<TicketClaiming />} />
 
-        {/* Test Routes */}
-        <Route path="/test/webshare" element={<WebShareTest />} />
+        {/* Test Routes - WebShareTest removed */}
 
         {/* Security Audit Dashboard - Admins only */}
         <Route path="/admin/audit" element={<AdminRoute><AuditDashboard /></AdminRoute>} />

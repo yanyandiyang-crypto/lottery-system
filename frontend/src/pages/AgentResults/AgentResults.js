@@ -2,9 +2,73 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
-import './AgentResults.css';
+// AgentResults.css removed - using Tailwind classes
 
 const AgentResults = () => {
+  // Custom styles for components
+  const customStyles = {
+    statusBadge: {
+      display: 'inline-block',
+      padding: '2px 8px',
+      borderRadius: '12px',
+      color: 'white',
+      fontSize: '11px',
+      fontWeight: '500',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
+    },
+    loadingSpinner: {
+      width: '32px',
+      height: '32px',
+      border: '3px solid #f3f4f6',
+      borderTop: '3px solid #3b82f6',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite'
+    },
+    agentResults: {
+      padding: '16px',
+      maxWidth: '100%',
+      margin: '0 auto'
+    },
+    pageHeader: {
+      marginBottom: '24px',
+      borderBottom: '1px solid #e5e7eb',
+      paddingBottom: '16px'
+    },
+    tabsContainer: {
+      marginBottom: '24px'
+    },
+    tabs: {
+      display: 'flex',
+      borderBottom: '2px solid #e5e7eb',
+      gap: '0'
+    },
+    tab: {
+      padding: '12px 24px',
+      border: 'none',
+      background: 'transparent',
+      cursor: 'pointer',
+      borderBottom: '2px solid transparent',
+      transition: 'all 0.2s ease',
+      fontWeight: '500'
+    },
+    tabActive: {
+      borderBottomColor: '#3b82f6',
+      color: '#3b82f6',
+      backgroundColor: '#eff6ff'
+    },
+    section: {
+      marginBottom: '32px'
+    },
+    drawCard: {
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+    },
+    drawCardHover: {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+    }
+  };
+
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
   const [historyData, setHistoryData] = useState([]);
@@ -83,8 +147,10 @@ const AgentResults = () => {
     
     return (
       <span 
-        className="status-badge"
-        style={{ backgroundColor: config.color }}
+        style={{ 
+          ...customStyles.statusBadge,
+          backgroundColor: config.color 
+        }}
       >
         {config.text}
       </span>
@@ -112,30 +178,46 @@ const AgentResults = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading results...</p>
+      <div className="flex flex-col items-center justify-center py-12">
+        <div style={customStyles.loadingSpinner}></div>
+        <p className="text-gray-600 mt-4">Loading results...</p>
       </div>
     );
   }
 
   return (
-    <div className="agent-results">
-      <div className="page-header">
+    <div style={customStyles.agentResults}>
+      {/* Add CSS animation keyframes */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+      
+      <div style={customStyles.pageHeader}>
         <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Draw Results</h1>
         <p className="text-sm sm:text-base text-gray-600">View lottery draw results and winning numbers</p>
       </div>
 
-      <div className="tabs-container">
-        <div className="tabs">
+      <div style={customStyles.tabsContainer}>
+        <div style={customStyles.tabs}>
           <button
-            className={`tab text-xs sm:text-sm ${activeTab === 'dashboard' ? 'active' : ''}`}
+            style={{
+              ...customStyles.tab,
+              ...(activeTab === 'dashboard' ? customStyles.tabActive : {})
+            }}
+            className="text-xs sm:text-sm"
             onClick={() => setActiveTab('dashboard')}
           >
             Dashboard
           </button>
           <button
-            className={`tab text-xs sm:text-sm ${activeTab === 'history' ? 'active' : ''}`}
+            style={{
+              ...customStyles.tab,
+              ...(activeTab === 'history' ? customStyles.tabActive : {})
+            }}
+            className="text-xs sm:text-sm"
             onClick={() => setActiveTab('history')}
           >
             History
@@ -146,7 +228,7 @@ const AgentResults = () => {
       {activeTab === 'dashboard' && dashboardData && (
         <div className="dashboard-content">
           {/* Today's Draws */}
-          <div className="section">
+          <div style={customStyles.section}>
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Today's Draws</h2>
             <div className="draws-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {dashboardData.todayDraws.map(draw => (
@@ -168,7 +250,7 @@ const AgentResults = () => {
           </div>
 
           {/* Recent Results */}
-          <div className="section">
+          <div style={customStyles.section}>
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Recent Results</h2>
             <div className="results-table overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -243,8 +325,8 @@ const AgentResults = () => {
 
           {/* History Table */}
           {historyLoading ? (
-            <div className="loading-container flex flex-col items-center justify-center py-8">
-              <div className="loading-spinner"></div>
+            <div className="flex flex-col items-center justify-center py-8">
+              <div style={customStyles.loadingSpinner}></div>
               <p className="text-sm text-gray-600 mt-2">Loading history...</p>
             </div>
           ) : (

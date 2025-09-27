@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
-import './MonthlyDraws.css';
+// MonthlyDraws.css removed - using Tailwind classes
 
 const MonthlyDraws = () => {
   const [loading, setLoading] = useState(false);

@@ -20,8 +20,7 @@ const { register } = require('./utils/metrics');
 const metricsMiddleware = require('./middleware/metrics');
 
 // Import routes
-const authRoutes = require('./routes/auth-clean');
-const authV2Routes = require('./routes/auth-v2');
+const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users-clean');
 const ticketRoutes = require('./routes/tickets-clean');
 const drawRoutes = require('./routes/draws');
@@ -284,7 +283,7 @@ app.use('/api', (req, res, next) => {
 // API Routes with Versioning
 // Auth routes (public)
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v2/auth', authV2Routes);
+// V2 auth routes removed - using V1 only
 
 // Public ticket verification routes (MUST come before protected routes)
 app.use('/api/v1/tickets', ticketVerificationRoutes);
