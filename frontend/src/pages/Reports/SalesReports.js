@@ -217,7 +217,7 @@ const SalesReports = () => {
           {activeTab === 'overview' && reportData && (
             <div className="space-y-6">
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                 <div className="bg-white overflow-hidden shadow rounded-lg">
                   <div className="p-5">
                     <div className="flex items-center">
@@ -285,6 +285,38 @@ const SalesReports = () => {
                             {formatCurrency(reportData.summary?.monthlyNet || (reportData.summary?.totalSales || 0) - (reportData.summary?.totalWinnings || 0))}
                           </dd>
                         </dl>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Winnings Card with Pending/Approved Breakdown */}
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <ArrowTrendingDownIcon className="h-6 w-6 text-red-400" />
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">Total Winnings</dt>
+                          <dd className="text-lg font-medium text-gray-900">
+                            {formatCurrency(reportData.summary?.totalWinnings || 0)}
+                          </dd>
+                        </dl>
+                        {/* Pending/Approved Breakdown */}
+                        {(reportData.summary?.pendingWinnings || reportData.summary?.approvedWinnings) && (
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-orange-600">
+                                Pending: {formatCurrency(reportData.summary.pendingWinnings || 0)}
+                              </span>
+                              <span className="text-green-600">
+                                Approved: {formatCurrency(reportData.summary.approvedWinnings || 0)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -89,16 +89,16 @@ const io = socketIo(server, {
     origin: allowedOrigins,
     methods: ["GET", "POST"]
   },
+  // Render-compatible Socket.IO configuration
+  transports: ["websocket", "polling"],
+  allowEIO3: true,
   // Socket.IO timeout configuration
   pingTimeout: 60000,        // 60 seconds
   pingInterval: 25000,       // 25 seconds
   upgradeTimeout: 10000,     // 10 seconds
-  allowEIO3: true,           // Allow Engine.IO v3 clients
-  transports: ['websocket', 'polling'],
   // Connection timeout
   connectTimeout: 45000,     // 45 seconds
   // Heartbeat configuration
-  heartbeatTimeout: 60000,   // 60 seconds
   heartbeatInterval: 25000   // 25 seconds
 });
 
@@ -359,6 +359,18 @@ if ((process.env.NODE_ENV || 'development') !== 'production') {
   });
 }
 
+
+// Socket.IO WebSocket debugging
+io.engine.on("connection_error", (err) => {
+  console.log("Socket.IO connection error:", err.req, err.code, err.message, err.context);
+});
+
+io.engine.on("upgrade_error", (err) => {
+  console.log("Socket.IO upgrade error:", err.req, err.code, err.message, err.context);
+});
+
+console.log('Socket.IO server configured with transports:', io.engine.opts.transports);
+console.log('Socket.IO CORS origins:', io.engine.opts.cors?.origin);
 // Socket.IO for real-time features
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);

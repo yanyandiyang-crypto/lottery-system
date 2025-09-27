@@ -13,7 +13,10 @@ const Sales = () => {
   const [summary, setSummary] = useState({
     totalSales: 0,
     totalTickets: 0,
-    totalCommission: 0
+    totalCommission: 0,
+    totalWinnings: 0,
+    pendingWinnings: 0,
+    approvedWinnings: 0
   });
 
   const fetchSales = useCallback(async () => {
@@ -29,7 +32,10 @@ const Sales = () => {
       setSummary(response.data.summary || {
         totalSales: 0,
         totalTickets: 0,
-        totalCommission: 0
+        totalCommission: 0,
+        totalWinnings: 0,
+        pendingWinnings: 0,
+        approvedWinnings: 0
       });
     } catch (err) {
       setError('Failed to fetch sales data');
@@ -101,7 +107,7 @@ const Sales = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -146,6 +152,36 @@ const Sales = () => {
               <p className="text-2xl font-bold text-gray-900">
                 ₱{summary.totalCommission?.toLocaleString()}
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Winnings Card with Pending/Approved Breakdown */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-red-600 font-bold">🏆</span>
+              </div>
+            </div>
+            <div className="ml-4 flex-1">
+              <p className="text-sm font-medium text-gray-500">Total Winnings</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ₱{summary.totalWinnings?.toLocaleString() || '0'}
+              </p>
+              {/* Pending/Approved Breakdown */}
+              {(summary.pendingWinnings || summary.approvedWinnings) && (
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-orange-600">
+                      Pending: ₱{summary.pendingWinnings?.toLocaleString() || '0'}
+                    </span>
+                    <span className="text-green-600">
+                      Approved: ₱{summary.approvedWinnings?.toLocaleString() || '0'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

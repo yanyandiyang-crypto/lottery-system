@@ -1,10 +1,70 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
-const { requireCoordinator } = require('../middleware/roleCheck');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Helper function to calculate actual prize amount for a ticket (same as dashboard/reports)
+function calculateTicketPrize(ticket) {
+  if (!ticket?.bets || !Array.isArray(ticket.bets)) {
+    return 0;
+  }
+
+  const prizeStructure = {
+    'standard': { '3D': 450, 'rambolito': 75 },
+    'straight': { '3D': 450, 'rambolito': 75 }
+  };
+
+  let totalPrize = 0;
+  const winningNumbers = ticket.draw?.drawResult?.winningNumber ? 
+                        [ticket.draw.drawResult.winningNumber] : 
+                        [];
+
+  if (winningNumbers.length === 0) return 0;
+
+  ticket.bets.forEach(bet => {
+    const betCombination = bet.betCombination;
+    const betAmount = parseFloat(bet.betAmount || bet.amount || 0);
+    const betType = (bet.betType || 'standard').toLowerCase();
+    
+    const isWinning = checkIfBetIsWinning(betCombination, betType, winningNumbers);
+    
+    if (isWinning) {
+      const multiplier = betType === 'rambolito' ? 
+        prizeStructure.standard.rambolito : 
+        prizeStructure.standard['3D'];
+      totalPrize += betAmount * multiplier;
+    }
+  });
+
+  return totalPrize;
+}
+
+// Helper function to check if a bet is winning (same as dashboard/reports)
+function checkIfBetIsWinning(betCombination, betType, winningNumbers) {
+  if (!betCombination || !winningNumbers || winningNumbers.length === 0) {
+    return false;
+  }
+
+  const cleanBetCombination = betCombination.toString().replace(/\s+/g, '');
+  const betDigits = cleanBetCombination.split('').sort();
+  const numbersToCheck = Array.isArray(winningNumbers) ? winningNumbers : [winningNumbers];
+  
+  return numbersToCheck.some(winningNumber => {
+    if (!winningNumber) return false;
+    
+    const cleanWinningNumber = winningNumber.toString().replace(/\s+/g, '');
+    const winningDigits = cleanWinningNumber.split('');
+    
+    if (betType === 'rambolito') {
+      const sortedWinningDigits = winningDigits.sort();
+      return JSON.stringify(betDigits) === JSON.stringify(sortedWinningDigits);
+    } else {
+      return cleanBetCombination === cleanWinningNumber;
+    }
+  });
+}
 
 // Cache for live data
 const liveDataCache = new Map();
@@ -883,10 +943,34 @@ router.get('/daily-operator-stats', async (req, res) => {
     const tickets = await prisma.ticket.findMany({
       where: whereClause,
       include: {
-        winningTickets: {
-          select: {
-            prizeAmount: true
+        bets: true,
+        draw: {
+          include: {
+            drawResult: {
+              select: {
+                winningNumber: true,
+                isOfficial: true
+              }
+            }
           }
+        }
+      }
+    });
+
+    // Calculate winnings using claim approval system
+    let totalWinnings = 0;
+    let pendingWinnings = 0;
+    let approvedWinnings = 0;
+
+    tickets.forEach(ticket => {
+      if (ticket.status === 'pending_approval' || ticket.status === 'claimed') {
+        const calculatedPrize = calculateTicketPrize(ticket);
+        totalWinnings += calculatedPrize;
+        
+        if (ticket.status === 'pending_approval') {
+          pendingWinnings += calculatedPrize;
+        } else if (ticket.status === 'claimed') {
+          approvedWinnings += calculatedPrize;
         }
       }
     });
@@ -894,9 +978,9 @@ router.get('/daily-operator-stats', async (req, res) => {
     const stats = {
       totalTickets: tickets.length,
       totalGross: tickets.reduce((sum, ticket) => sum + (ticket.totalAmount || 0), 0),
-      totalWinnings: tickets.reduce((sum, ticket) => 
-        sum + ticket.winningTickets.reduce((wSum, wt) => wSum + (wt.prizeAmount || 0), 0), 0
-      ),
+      totalWinnings,
+      pendingWinnings,
+      approvedWinnings,
       totalNet: 0
     };
 
