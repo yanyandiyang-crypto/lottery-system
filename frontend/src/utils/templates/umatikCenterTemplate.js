@@ -63,9 +63,9 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
   const qrData = `${ticket?.ticketNumber}|${fullHash}`;
   const qrUrl = getQuickChartQrUrl(qrData, 100); // Enhanced QR code for scanning
 
-  // Single centered logo – allow override via assets.logoDataUrl
-  // Default file renamed so you can place your own logo without using umatik.png
-  const centerLogo = assets.logoDataUrl || '/logos/pisting-logo.png';
+  // Single centered logo – use base64 for better compatibility when sharing
+  // Fallback to public URL if base64 not available
+  const centerLogo = assets.logoDataUrl || `${window.location.origin}/logos/pisting-logo.png`;
 
   const betsHtml = bets.map((bet, index) => {
     const letter = String.fromCharCode(65 + index);
@@ -74,17 +74,17 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
     const spacedCombo = combo.split('').join(' ');
     const amount = Number(bet?.betAmount || bet?.amount || 0);
     return `
-      <div style="border: 1px solid #333; margin-bottom: 0.5px; padding: 1px 2px; width: 100%; box-sizing: border-box; background: #f9f9f9;">
-        <!-- Bet Type and Numbers Row -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5px;">
-          <div style="font-weight: 700; font-size: 8px; font-family: Arial, sans-serif;">${betTypeLabel}</div>
-          <div style="font-weight: 700; font-size: 13px; letter-spacing: 4px; font-family: Arial, sans-serif;">${spacedCombo}</div>
-        </div>
-        <!-- Letter and Price Row -->
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <div style="font-size: 8px; font-weight: 700; font-family: Arial, sans-serif;">${letter}</div>
-          <div style="font-size: 8px; font-weight: 700; font-family: Arial, sans-serif;">${formatCurrency(amount)}</div>
-        </div>
+      <div style="border: 1px solid #333; margin-bottom: 2px; padding: 2px; width: 100%; box-sizing: border-box; background: #f9f9f9;">
+        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+          <tr>
+            <td style="font-weight: 700; font-size: 8px; text-align: left; padding: 0;">${betTypeLabel}</td>
+            <td style="font-weight: 700; font-size: 13px; letter-spacing: 4px; text-align: right; padding: 0;">${spacedCombo}</td>
+          </tr>
+          <tr>
+            <td style="font-size: 8px; font-weight: 700; text-align: left; padding: 0;">${letter}</td>
+            <td style="font-size: 8px; font-weight: 700; text-align: right; padding: 0;">${formatCurrency(amount)}</td>
+          </tr>
+        </table>
       </div>`;
   }).join('');
 

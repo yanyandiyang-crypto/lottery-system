@@ -8,6 +8,7 @@ const TicketVerification = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showCamera, setShowCamera] = useState(false);
+  const [cameraPermission, setCameraPermission] = useState(null);
 
   // Verify ticket by number
   const verifyByTicketNumber = async () => {
@@ -74,6 +75,23 @@ const TicketVerification = () => {
       setVerificationResult(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Request camera permission
+  const requestCameraPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      setCameraPermission('granted');
+      setShowCamera(true);
+      // Stop the stream immediately as QrScanner will handle it
+      stream.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      console.log('Camera permission denied:', error);
+      setCameraPermission('denied');
+      setError('Camera access is required for QR scanning. Please allow camera permissions in your browser settings.');
     }
   };
 
@@ -176,9 +194,9 @@ const TicketVerification = () => {
         <button
           onClick={() => {
             setVerificationMode('scan');
-            setShowCamera(true);
             setError('');
             setVerificationResult(null);
+            requestCameraPermission();
           }}
           style={{
             padding: '10px 20px',
@@ -236,6 +254,35 @@ const TicketVerification = () => {
         </div>
       )}
 
+      {/* Camera Permission Status */}
+      {verificationMode === 'scan' && cameraPermission === 'denied' && (
+        <div style={{ 
+          marginBottom: '20px', 
+          padding: '15px', 
+          backgroundColor: '#f8d7da', 
+          border: '1px solid #f5c6cb', 
+          borderRadius: '5px',
+          color: '#721c24'
+        }}>
+          <p><strong>📷 Camera Access Required</strong></p>
+          <p>To scan QR codes, please allow camera access in your browser. Click the camera icon in your address bar or check your browser settings.</p>
+          <button 
+            onClick={requestCameraPermission}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+              marginTop: '10px'
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
       {/* QR Code Scanner */}
       {verificationMode === 'scan' && showCamera && (
         <div style={{ marginBottom: '20px' }}>
@@ -247,9 +294,22 @@ const TicketVerification = () => {
           }}>
             <QrScanner
               onDecode={handleQRScan}
-              style={{ width: '100%' }}
+              onError={(error) => {
+                console.log('QR Scanner Error:', error);
+                setError('Camera access denied or not available. Please allow camera permissions.');
+              }}
+              style={{ width: '100%', height: '300px' }}
               constraints={{
-                facingMode: 'environment' // Use back camera
+                facingMode: 'environment', // Use back camera
+                video: {
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 }
+                }
+              }}
+              videoStyle={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
               }}
             />
           </div>

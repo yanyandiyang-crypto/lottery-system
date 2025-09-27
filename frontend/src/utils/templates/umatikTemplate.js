@@ -52,8 +52,10 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
   const qrData = `${ticket?.ticketNumber}|${fullHash}`;
   const qrUrl = getQuickChartQrUrl(qrData);
 
-  const logo3d = assets.logo3dDataUrl || '/logos/3d-lotto.png';
-  const logoUmatik = assets.logoUmatikDataUrl || '/logos/umatik.png';
+  // Use base64 logos for better compatibility when sharing
+  // Fallback to public URLs if base64 not available
+  const logo3d = assets.logo3dDataUrl || `${window.location.origin}/logos/3d-lotto.png`;
+  const logoUmatik = assets.logoUmatikDataUrl || `${window.location.origin}/logos/umatik.png`;
 
   const betsHtml = bets.map((bet, index) => {
     const letter = String.fromCharCode(65 + index);
@@ -62,15 +64,17 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
     const spacedCombo = combo.split('').join(' ');
     const amount = Number(bet?.betAmount || bet?.amount || 0);
     return `
-      <div style="margin-bottom: 1px; border-bottom: 1px dotted #ccc; padding: 1px 0; background-color: #f9f9f9;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-weight: 700; font-size: 6px; font-family: Arial, sans-serif;">${betTypeLabel}</div>
-          <div style="font-size: 5px; font-family: Arial, sans-serif;">${letter}</div>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5px;">
-          <div style="font-weight: 700; font-size: 9px; letter-spacing: 1.5px; font-family: Arial, sans-serif;">${spacedCombo}</div>
-          <div style="font-size: 6px; font-weight: 700; font-family: Arial, sans-serif;">₱${amount.toFixed(2)}</div>
-        </div>
+      <div style="margin-bottom: 2px; border-bottom: 1px solid #ddd; padding: 2px 0; background-color: #f9f9f9; width: 100%; box-sizing: border-box;">
+        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+          <tr>
+            <td style="font-weight: 700; font-size: 6px; text-align: left; padding: 0;">${betTypeLabel}</td>
+            <td style="font-size: 5px; text-align: right; padding: 0;">${letter}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 700; font-size: 9px; letter-spacing: 1.5px; text-align: left; padding: 0;">${spacedCombo}</td>
+            <td style="font-size: 6px; font-weight: 700; text-align: right; padding: 0;">₱${amount.toFixed(2)}</td>
+          </tr>
+        </table>
       </div>`;
   }).join('');
 
