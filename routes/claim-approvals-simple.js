@@ -86,22 +86,134 @@ router.get('/pending', async (req, res) => {
 // @access  Protected (SuperAdmin, Admin)
 router.post('/:ticketId/approve', async (req, res) => {
   try {
-    console.log('🚀 APPROVE ENDPOINT REACHED');
+    const { ticketId } = req.params;
+    const { notes, prizeAmount } = req.body;
+
+    console.log('🚀 Approving claim for ticket:', ticketId);
+    console.log('🔍 Request user object:', req.user);
+    console.log('🔍 Prize amount:', prizeAmount);
+    console.log('🔍 Notes:', notes);
+
+    // Check if user object exists
+    if (!req.user) {
+      console.error('❌ No user object in request');
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    // Get user ID (try different possible property names)
+    const approverId = req.user.userId || req.user.id || req.user.user_id;
+    const userRole = req.user.role;
+
+    console.log('🔍 Approver ID:', approverId);
+    console.log('🔍 User role:', userRole);
+
+    // Verify user has approval permissions
+    if (!['superadmin', 'admin'].includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions to approve claims'
+      });
+    }
+
+    // Validate ticket ID
+    const ticketIdInt = parseInt(ticketId);
+    if (isNaN(ticketIdInt)) {
+      console.error('❌ Invalid ticket ID:', ticketId);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid ticket ID'
+      });
+    }
+
+    console.log('🔍 Looking for ticket with ID:', ticketIdInt);
+
+    // Find and verify the ticket
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketIdInt },
+      include: {
+        user: {
+          select: {
+            username: true,
+            fullName: true
+          }
+        },
+        bets: true,
+        draw: {
+          include: {
+            drawResult: {
+              select: {
+                winningNumber: true,
+                isOfficial: true
+              }
+            }
+          }
+        }
+      }
+    });
     
-    // Immediate success response for testing
+    console.log('🔍 Found ticket:', ticket ? `${ticket.ticketNumber} (${ticket.status})` : 'null');
+    
+    if (!ticket) {
+      console.error('❌ Ticket not found with ID:', ticketIdInt);
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found'
+      });
+    }
+    
+    if (ticket.status !== 'pending_approval') {
+      console.error('❌ Ticket status is not pending_approval:', ticket.status);
+      return res.status(400).json({
+        success: false,
+        message: `Ticket status is ${ticket.status}, not pending_approval`
+      });
+    }
+
+    console.log('✅ Ticket validation passed, updating status to claimed...');
+
+    // Update ticket status to claimed
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketIdInt },
+      data: {
+        status: 'claimed',
+        // Store approval info in existing fields if available
+        ...(prizeAmount && { totalAmount: parseFloat(prizeAmount) })
+      },
+      include: {
+        user: {
+          select: {
+            username: true,
+            fullName: true
+          }
+        }
+      }
+    });
+    
+    console.log(`✅ Ticket ${ticketId} approved and marked as claimed`);
+    
     res.json({
       success: true,
-      message: 'Approval endpoint working - database update disabled for testing',
-      ticketId: req.params.ticketId,
-      timestamp: new Date().toISOString()
+      message: 'Claim approved successfully',
+      ticket: updatedTicket
     });
 
   } catch (error) {
     console.error('❌ Approve claim error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    });
+    
     res.status(500).json({
       success: false,
       message: 'Error approving claim',
-      error: error.message
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
@@ -115,96 +227,9 @@ router.post('/:ticketId/reject', async (req, res) => {
     const { notes, reason } = req.body;
     const rejectorId = req.user.userId;
 
-    // Verify user has approval permissions
-    if (!['superadmin', 'admin'].includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Insufficient permissions to reject claims'
-      });
-    }
-
-    // For now, just return success (until approval fields are added)
-    res.json({
-      success: true,
-      message: 'Rejection system not fully configured yet',
-      ticket: { id: ticketId }
-    });
-
-  } catch (error) {
-    console.error('Reject claim error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error rejecting claim',
-      error: error.message
-    });
-  }
-});
-
-// @route   GET /api/v1/claim-approvals/history
-// @desc    Get claim approval history (simplified version)
-// @access  Protected (SuperAdmin, Admin)
-router.get('/history', async (req, res) => {
-  try {
-    // For now, return empty array since we don't have claims_audit table configured
-    res.json({
-      success: true,
-      history: [],
-      pagination: {
-        currentPage: 1,
-        totalPages: 0,
-        totalCount: 0,
-        hasNext: false,
-        hasPrev: false
-      }
-    });
-
-  } catch (error) {
-    console.error('Approval history error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching approval history',
-      error: error.message
-    });
-  }
-});
-
-// @route   GET /api/v1/claim-approvals/stats
-// @desc    Get approval statistics (simplified version)
-// @access  Protected (SuperAdmin, Admin)
-router.get('/stats', async (req, res) => {
-  try {
-    // Return basic stats
-    const stats = {
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      averageApprovalTimeHours: 0,
-      totalProcessed: 0
-    };
-
-    res.json({
-      success: true,
-      stats: stats
-    });
-
-  } catch (error) {
-    console.error('Approval stats error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching approval stats',
-      error: error.message
-    });
-  }
-});
-
-// @route   POST /api/v1/claim-approvals/:ticketId/reject
-// @desc    Reject a claim (simplified version)
-// @access  Protected (SuperAdmin, Admin)
-router.post('/:ticketId/reject', async (req, res) => {
-  try {
-    const { ticketId } = req.params;
-    const { notes } = req.body;
-    const rejectorId = req.user.userId;
+    console.log('❌ Rejecting claim for ticket:', ticketId);
+    console.log('🔍 Rejector ID:', rejectorId);
+    console.log('🔍 Reason:', reason);
 
     // Verify user has approval permissions
     if (!['superadmin', 'admin'].includes(req.user.role)) {
@@ -214,9 +239,7 @@ router.post('/:ticketId/reject', async (req, res) => {
       });
     }
 
-    console.log(`❌ Rejecting claim for ticket ${ticketId} by user ${rejectorId}`);
-    
-    // Find and update the ticket
+    // Find and verify the ticket
     const ticket = await prisma.ticket.findUnique({
       where: { id: parseInt(ticketId) },
       include: {
@@ -268,7 +291,7 @@ router.post('/:ticketId/reject', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Reject claim error:', error);
+    console.error('❌ Reject claim error:', error);
     res.status(500).json({
       success: false,
       message: 'Error rejecting claim',
@@ -276,5 +299,76 @@ router.post('/:ticketId/reject', async (req, res) => {
     });
   }
 });
+
+// @route   GET /api/v1/claim-approvals/history
+// @desc    Get claim approval history (simplified version)
+// @access  Protected (SuperAdmin, Admin)
+router.get('/history', async (req, res) => {
+  try {
+    // For now, return empty array since we don't have claims_audit table configured
+    res.json({
+      success: true,
+      history: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        totalCount: 0,
+        hasNext: false,
+        hasPrev: false
+      }
+    });
+
+  } catch (error) {
+    console.error('Approval history error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching approval history',
+      error: error.message
+    });
+  }
+});
+
+// @route   GET /api/v1/claim-approvals/stats
+// @desc    Get approval statistics (simplified version)
+// @access  Protected (SuperAdmin, Admin)
+router.get('/stats', async (req, res) => {
+  try {
+    // Get actual stats from database
+    const pendingCount = await prisma.ticket.count({
+      where: { status: 'pending_approval' }
+    });
+
+    const approvedCount = await prisma.ticket.count({
+      where: { status: 'claimed' }
+    });
+
+    // For now, rejected count is 0 since we reset to validated
+    const rejectedCount = 0;
+
+    const stats = {
+      pending: pendingCount,
+      approved: approvedCount,
+      rejected: rejectedCount,
+      averageApprovalTimeHours: 0, // TODO: Calculate based on approval timestamps
+      totalProcessed: approvedCount + rejectedCount
+    };
+
+    console.log('📊 Approval stats:', stats);
+
+    res.json({
+      success: true,
+      stats: stats
+    });
+
+  } catch (error) {
+    console.error('Approval stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching approval stats',
+      error: error.message
+    });
+  }
+});
+
 
 module.exports = router;
