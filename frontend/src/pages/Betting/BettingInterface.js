@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { formatDrawTime, getDrawTimeLabel } from '../../utils/drawTimeFormatter';
 import TicketGenerator from '../../utils/ticketGenerator';
 import TemplateAssigner from '../../utils/templateAssigner';
+import MobileTicketUtils from '../../utils/mobileTicketUtils';
 import {
   ClockIcon,
   XMarkIcon,
@@ -27,25 +28,17 @@ const DefaultTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
         setError(null);
 
         // Use the same ticket format as the actual printed ticket
-        // Try to use assigned template if available
+        // Use system-wide active template (58mm optimized)
         let template = null;
         try {
-          template = await TemplateAssigner.fetchAssignedTemplate(user.id);
+          template = await TemplateAssigner.fetchSystemTemplate();
         } catch (_) {}
-        const ticketHtml = TicketGenerator.generateWithTemplate(ticket, user, template);
+        const ticketHtml = TicketGenerator.generateWithTemplate(ticket, user, template, {});
         
-        // Calculate dynamic height based on number of bets (same logic as Umatik template)
-        const bets = Array.isArray(ticket?.bets) ? ticket.bets : [];
-        const baseHeight = 750; // Base height for ticket without bets (logos + QR + text + signature)
-        const betHeight = 80; // Height per bet (2 rows + margins + padding)
-        const betsSectionHeight = 20; // Additional height for bets section spacing
-        const bottomPadding = 30; // Bottom padding to ensure content is not cut off
-        const dynamicHeight = baseHeight + betsSectionHeight + (bets.length * betHeight) + bottomPadding;
-        
-        // Constrain preview to 58mm (≈384px). Allocate scaled height so no extra blank space.
+        // Preview optimized for 58mm thermal printer (220px width)
         const wrappedHtml = `
-          <div style="width:384px;margin:0 auto;overflow:hidden;height:${Math.ceil(dynamicHeight * 0.64)}px;position:relative">
-            <div style="width:600px;transform:scale(0.64);transform-origin:top left;position:absolute;top:0;left:0">${ticketHtml}</div>
+          <div style="width:220px;margin:0 auto;overflow:hidden;position:relative;border:1px solid #ddd;background:white;">
+            <div style="width:220px;transform-origin:top left;position:relative;">${ticketHtml}</div>
           </div>
         `;
         setTemplateHtml(wrappedHtml);
@@ -64,7 +57,7 @@ const DefaultTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
     return (
       <div className="ticket-preview">
         <div className="text-center mb-4">
-          <p className="text-sm text-gray-600">Default Ticket Template</p>
+          <p className="text-sm text-gray-600">58mm Thermal Printer Template</p>
         </div>
         <div className="border-2 border-dashed border-gray-300 p-8 rounded-lg">
           <div className="flex justify-center items-center">
@@ -80,7 +73,7 @@ const DefaultTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
     return (
       <div className="ticket-preview">
         <div className="text-center mb-4">
-          <p className="text-sm text-gray-600">Default Ticket Template</p>
+          <p className="text-sm text-gray-600">58mm Thermal Printer Template</p>
         </div>
         <div className="border-2 border-dashed border-red-300 p-4 rounded-lg bg-red-50">
           <p className="text-center text-red-500">Error loading ticket: {error}</p>
@@ -95,7 +88,7 @@ const DefaultTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
   return (
     <div className="ticket-preview">
       <div className="text-center mb-4">
-        <p className="text-sm text-gray-600">Default Ticket Template</p>
+        <p className="text-sm text-gray-600">58mm Thermal Printer Template</p>
       </div>
       
       {/* Template Preview Container */}
@@ -372,18 +365,36 @@ const BettingInterface = () => {
       }
 
       // Create a single ticket with multiple bets using default template
+      // Debug: Check addedBets structure
+      console.log('addedBets before processing:', addedBets);
+      
+      // Calculate total amount
+      const totalAmount = addedBets.reduce((sum, bet) => sum + parseFloat(bet.amount), 0);
+      
+      const processedBets = addedBets.map(bet => {
+        // Ensure bet combination is exactly 3 digits (pad with zeros if needed)
+        const paddedNumber = bet.number.toString().padStart(3, '0');
+        console.log(`Processing bet: ${bet.number} -> ${paddedNumber}`);
+        
+        return {
+          betCombination: paddedNumber,
+          betType: bet.type,
+          betAmount: parseFloat(bet.amount)
+        };
+      });
+      
       const ticketData = {
         drawId: targetDraw.id,
         userId: user.id,
-        bets: addedBets.map(bet => ({
-          betCombination: bet.number,
-          betType: bet.type,
-          betAmount: bet.amount
-        }))
+        totalAmount: totalAmount,
+        bets: processedBets
       };
+      
+      // Debug: Check final ticket data
+      console.log('Final ticketData being sent:', ticketData);
 
-      // Use atomic endpoint for safer ticket creation
-      const response = await api.post('/tickets/atomic', ticketData);
+      // Use create endpoint for ticket creation
+      const response = await api.post('/tickets/create', ticketData);
       
       if (response.data.success) {
         const ticket = response.data.ticket;
@@ -441,27 +452,20 @@ const BettingInterface = () => {
 
   const handleShareTicket = async (ticket) => {
     try {
-      // Simple share functionality without template system
-      const ticketUrl = `${window.location.origin}/ticket/${ticket.id}`;
-      let result;
-      
-      if (navigator.share) {
-        await navigator.share({
-          title: `Lottery Ticket ${ticket.ticketNumber}`,
-          text: `Ticket for lottery draw`,
-          url: ticketUrl
-        });
-        result = { success: true, method: 'web-share' };
-      } else {
-        await navigator.clipboard.writeText(ticketUrl);
-        result = { success: true, method: 'clipboard' };
-      }
+      // Use the improved mobile sharing utility with image support
+      const result = await MobileTicketUtils.shareTicket(ticket, user);
       
       if (result.success) {
-        if (result.method === 'web-share') {
-          toast.success('Ticket shared successfully!');
+        if (result.method === 'web-share-image') {
+          toast.success('Ticket image shared successfully!');
+        } else if (result.method === 'web-share-text') {
+          toast.success('Ticket details shared successfully!');
+        } else if (result.method === 'clipboard') {
+          toast.success(result.message || 'Ticket details copied to clipboard!');
+        } else if (result.method === 'download') {
+          toast.success(result.message || 'Ticket image downloaded!');
         } else {
-          toast.success('Ticket link copied to clipboard!');
+          toast.success('Ticket shared successfully!');
         }
       } else {
         toast.error('Failed to share ticket');
@@ -834,19 +838,53 @@ const BettingInterface = () => {
                 />
                 
                 {/* Simplified Action Buttons */}
-                <div className="mt-4 flex space-x-2">
-                  <button
-                    onClick={() => handleShareTicket(createdTicket)}
-                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-                  >
-                    📱 Share Ticket
-                  </button>
-                  <button
-                    onClick={() => setShowMobileTicket(false)}
-                    className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
-                  >
-                    Close
-                  </button>
+                <div className="mt-4 flex flex-col space-y-2">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleShareTicket(createdTicket)}
+                      className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+                    >
+                      🖼️ Share Image
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const ticketUrl = `${window.location.origin}/ticket/${createdTicket.id}`;
+                          if (navigator.share) {
+                            await navigator.share({
+                              title: `Lottery Ticket ${createdTicket.ticketNumber}`,
+                              text: `Check out my lottery ticket!`,
+                              url: ticketUrl
+                            });
+                            toast.success('Link shared successfully!');
+                          } else {
+                            await navigator.clipboard.writeText(ticketUrl);
+                            toast.success('Link copied to clipboard!');
+                          }
+                        } catch (error) {
+                          console.error('Error sharing link:', error);
+                          toast.error('Failed to share link');
+                        }
+                      }}
+                      className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                    >
+                      🔗 Copy Link
+                    </button>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => generateAndPrintTicket(createdTicket)}
+                      className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
+                    >
+                      🖨️ Print Ticket
+                    </button>
+                    <button
+                      onClick={() => setShowMobileTicket(false)}
+                      className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
+                    >
+                      ✕ Close
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

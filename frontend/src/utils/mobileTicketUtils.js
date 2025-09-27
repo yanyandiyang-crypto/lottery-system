@@ -1,4 +1,5 @@
 // Mobile Ticket Utilities for 58mm Thermal Printers and Web Sharing
+import html2canvas from 'html2canvas';
 
 export class MobileTicketUtils {
   
@@ -367,64 +368,182 @@ export class MobileTicketUtils {
       url: window.location.origin + `/ticket/${ticket.ticketNumber}`
     };
 
-    console.log('Attempting to share ticket:', shareData);
+    console.log('Attempting to share ticket as image:', shareData);
 
     try {
-      // Try to share with image first
-      if (navigator.share && navigator.canShare) {
-        console.log('Attempting to share with image...');
+      // ALWAYS try image sharing first (both mobile and desktop)
+      console.log('Attempting image share...');
+      
+      try {
+        // Generate ticket image using the assigned template
+        console.log('Starting ticket image generation...');
+        const imageBlob = await this.createTicketImageBlob(ticket, user);
+        console.log('Image blob generated successfully, size:', imageBlob.size, 'bytes');
+        const fileName = `lottery-ticket-${ticket.ticketNumber}.png`;
+        const file = new File([imageBlob], fileName, { type: 'image/png' });
+        console.log('File object created:', fileName);
         
-        try {
-          // Generate ticket image
-          const imageBlob = await this.createTicketImageBlob(ticket, user);
-          const fileName = `ticket-${ticket.ticketNumber}.png`;
-          const file = new File([imageBlob], fileName, { type: 'image/png' });
+        // Try Web Share API with image first
+        if (navigator.share) {
+          console.log('Sharing ticket image via Web Share API');
           
-          // Check if browser supports file sharing
-          if (navigator.canShare({ files: [file] })) {
-            console.log('Sharing ticket image via Web Share API');
+          // Try image sharing without canShare check for better compatibility
+          try {
             await navigator.share({
               files: [file],
               title: shareData.title,
               text: shareData.text
             });
             return { success: true, method: 'web-share-image' };
+          } catch (webShareError) {
+            console.log('Web Share API image sharing failed:', webShareError);
+            
+            // If Web Share API fails, try clipboard with image data URL
+            try {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              const img = new Image();
+              
+              return new Promise((resolve) => {
+                img.onload = async () => {
+                  canvas.width = img.width;
+                  canvas.height = img.height;
+                  ctx.drawImage(img, 0, 0);
+                  
+                  try {
+                    // Try to copy image to clipboard (modern browsers)
+                    if (navigator.clipboard && navigator.clipboard.write) {
+                      const clipboardItem = new ClipboardItem({
+                        'image/png': imageBlob
+                      });
+                      await navigator.clipboard.write([clipboardItem]);
+                      resolve({ success: true, method: 'clipboard-image', message: 'Ticket image copied to clipboard!' });
+                    } else {
+                      // Fallback to download
+                      const url = URL.createObjectURL(imageBlob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = fileName;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      resolve({ success: true, method: 'download', message: 'Ticket image downloaded!' });
+                    }
+                  } catch (clipboardError) {
+                    console.log('Clipboard image failed, downloading instead:', clipboardError);
+                    // Fallback to download
+                    const url = URL.createObjectURL(imageBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    resolve({ success: true, method: 'download', message: 'Ticket image downloaded!' });
+                  }
+                };
+                
+                img.onerror = () => {
+                  // If image loading fails, download the blob directly
+                  const url = URL.createObjectURL(imageBlob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = fileName;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                  resolve({ success: true, method: 'download', message: 'Ticket image downloaded!' });
+                };
+                
+                img.src = URL.createObjectURL(imageBlob);
+              });
+            } catch (fallbackError) {
+              console.log('Image fallback failed:', fallbackError);
+              // Direct download as final image fallback
+              const url = URL.createObjectURL(imageBlob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = fileName;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              return { success: true, method: 'download', message: 'Ticket image downloaded!' };
+            }
           }
-        } catch (imageError) {
-          console.log('Image sharing failed, trying URL sharing:', imageError);
+        } else {
+          // No Web Share API, try clipboard or download
+          console.log('No Web Share API, trying clipboard or download...');
+          
+          try {
+            // Try to copy image to clipboard (modern browsers)
+            if (navigator.clipboard && navigator.clipboard.write) {
+              const clipboardItem = new ClipboardItem({
+                'image/png': imageBlob
+              });
+              await navigator.clipboard.write([clipboardItem]);
+              return { success: true, method: 'clipboard-image', message: 'Ticket image copied to clipboard!' };
+            }
+          } catch (clipboardError) {
+            console.log('Clipboard image failed:', clipboardError);
+          }
+          
+          // Fallback to download
+          const url = URL.createObjectURL(imageBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          return { success: true, method: 'download', message: 'Ticket image downloaded!' };
+        }
+      } catch (imageError) {
+        console.error('Image generation failed completely:', imageError);
+        console.error('Error details:', {
+          message: imageError.message,
+          stack: imageError.stack,
+          name: imageError.name
+        });
+        
+        // If image generation fails completely, fall back to text sharing
+        console.log('Image generation failed, falling back to text sharing...');
+        
+        // Try text sharing via Web Share API
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: shareData.title,
+              text: shareData.text,
+              url: shareData.url
+            });
+            return { success: true, method: 'web-share-text' };
+          } catch (textShareError) {
+            console.log('Text sharing also failed:', textShareError);
+          }
         }
         
-        // Fallback to URL sharing
-        if (navigator.canShare(shareData)) {
-          console.log('Sharing ticket URL via Web Share API');
-          await navigator.share(shareData);
-          return { success: true, method: 'web-share-url' };
+        // Final fallback - clipboard text
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          const clipboardText = `${shareData.title}\n\n${shareData.text}\n\n🔗 View ticket: ${shareData.url}`;
+          await navigator.clipboard.writeText(clipboardText);
+          return { success: true, method: 'clipboard-text', message: 'Ticket details copied to clipboard!' };
         }
-      } else if (navigator.share) {
-        // Try Web Share API even if canShare is not available
-        console.log('Trying Web Share API without canShare check');
-        await navigator.share(shareData);
-        return { success: true, method: 'web-share-url' };
-      }
-      
-      // Fallback to clipboard
-      console.log('Falling back to clipboard');
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(
-          `${shareData.title}\n${shareData.text}\n${shareData.url}`
-        );
-        return { success: true, method: 'clipboard' };
-      } else {
-        // Final fallback - show alert with text to copy
-        const shareText = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
-        alert(`Copy this text to share:\n\n${shareText}`);
+        
+        // Ultimate fallback - alert
+        const shareText = `${shareData.title}\n\n${shareData.text}\n\n🔗 ${shareData.url}`;
+        alert(`📋 Copy this text to share your ticket:\n\n${shareText}`);
         return { success: true, method: 'alert' };
       }
       
     } catch (error) {
-      console.error('Share failed:', error);
+      console.error('Share failed completely:', error);
       
-      // Try clipboard fallback if Web Share API failed
+      // Try clipboard fallback if everything else failed
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(
@@ -468,19 +587,114 @@ export class MobileTicketUtils {
   }
 
   /**
-   * Create ticket image as blob for sharing with high quality
+   * Create ticket image as blob using HTML2Canvas for template-aware generation
    */
   static async createTicketImageBlob(ticket, user, template = null) {
+    try {
+      // Get the active system template if not provided
+      if (!template) {
+        const TemplateAssigner = (await import('./templateAssigner')).default;
+        template = await TemplateAssigner.fetchSystemTemplate();
+      }
+      
+      // Generate ticket HTML using the assigned template (58mm optimized)
+      const TicketGenerator = (await import('./ticketGenerator')).default;
+      const ticketHtml = TicketGenerator.generateWithTemplate(ticket, user, template, {});
+      
+      // Create a temporary container for the ticket HTML (58mm width)
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '-9999px';
+      tempContainer.style.width = '220px'; // 58mm width
+      tempContainer.style.backgroundColor = 'white';
+      tempContainer.style.padding = '4px'; // Minimal padding for 58mm
+      tempContainer.innerHTML = ticketHtml;
+      
+      document.body.appendChild(tempContainer);
+      
+      // Wait a moment for fonts and styles to load
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Use html2canvas to convert HTML to image
+      let canvas;
+      try {
+        console.log('Using html2canvas to generate ticket image...');
+        canvas = await html2canvas(tempContainer, {
+          backgroundColor: 'white',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          width: 220, // 58mm width
+          logging: true, // Enable logging for debugging
+          onclone: (clonedDoc) => {
+            // Ensure fonts are loaded in cloned document
+            const clonedContainer = clonedDoc.querySelector('div');
+            if (clonedContainer) {
+              clonedContainer.style.fontFamily = "'Courier New', monospace";
+            }
+          }
+        });
+        console.log('html2canvas completed successfully, canvas size:', canvas.width, 'x', canvas.height);
+      } catch (html2canvasError) {
+        console.error('html2canvas failed:', html2canvasError);
+        console.log('Falling back to manual canvas generation...');
+        canvas = await this.createManualTicketCanvas(ticket, user, template);
+      }
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+      
+      // Convert canvas to blob
+      return new Promise((resolve, reject) => {
+        try {
+          // html2canvas returns an HTMLCanvasElement, use toBlob method
+          if (canvas && typeof canvas.toBlob === 'function') {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Failed to convert canvas to blob'));
+              }
+            }, 'image/png');
+          } else {
+            // Fallback: convert canvas to data URL then to blob
+            const dataURL = canvas.toDataURL('image/png');
+            const byteString = atob(dataURL.split(',')[1]);
+            const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+              ia[i] = byteString.charCodeAt(i);
+            }
+            const blob = new Blob([ab], { type: mimeString });
+            resolve(blob);
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error creating ticket image blob:', error);
+      // Fallback to manual canvas
+      return this.createManualTicketCanvas(ticket, user, template);
+    }
+  }
+
+  /**
+   * Manual canvas generation as fallback
+   */
+  static async createManualTicketCanvas(ticket, user, template = null) {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      // Set high resolution canvas for better quality
-      const scale = 2; // 2x resolution for crisp images
-      canvas.width = 800; // 400 * 2
-      canvas.height = 1200; // 600 * 2
+      // Set high resolution canvas for better quality (58mm optimized)
+      const scale = 2;
+      canvas.width = 440; // 220 * 2 (58mm width)
+      canvas.height = 1200; // Auto height based on content
       
-      // Scale context for high DPI
       ctx.scale(scale, scale);
       
       // White background
@@ -493,29 +707,26 @@ export class MobileTicketUtils {
       ctx.strokeRect(1, 1, (canvas.width / scale) - 2, (canvas.height / scale) - 2);
       
       // Set font
-      ctx.font = '16px Courier New';
+      ctx.font = '16px Arial, sans-serif';
       ctx.fillStyle = 'black';
       
       let y = 40;
       
-      // Header
-      ctx.font = 'bold 24px Courier New';
+      // Header - check template type
+      const isUmatik = template?.design?.templateType === 'umatik' || template?.design?.templateType === 'umatik-center';
+      
+      ctx.font = 'bold 24px Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('🎲 NEWBETTING', canvas.width / scale / 2, y);
+      ctx.fillText(isUmatik ? '🎯 UMATIK LOTTO' : '🎲 3D LOTTO', canvas.width / scale / 2, y);
       y += 30;
       
-      ctx.font = 'bold 20px Courier New';
-      ctx.fillText('3D LOTTO TICKET', canvas.width / scale / 2, y);
+      ctx.font = 'bold 20px Arial, sans-serif';
+      ctx.fillText('LOTTERY TICKET', canvas.width / scale / 2, y);
       y += 30;
       
-      ctx.font = '16px Courier New';
+      ctx.font = '16px Arial, sans-serif';
       ctx.fillText(`#${ticket.ticketNumber}`, canvas.width / scale / 2, y);
       y += 40;
-      
-      // Draw info
-      ctx.font = 'bold 20px Courier New';
-      ctx.fillText(ticket.draw?.drawTime || 'No Time', canvas.width / scale / 2, y);
-      y += 30;
       
       ctx.font = '16px Courier New';
       ctx.fillStyle = '#666';

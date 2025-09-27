@@ -147,7 +147,7 @@ export const usersAPI = {
 };
 
 export const ticketsAPI = {
-  createTicket: (ticketData) => api.post('/tickets', ticketData),
+  createTicket: (ticketData) => api.post('/tickets/create', ticketData),
   getTickets: (params) => api.get('/tickets', { params }),
   getTicket: (id) => api.get(`/tickets/${id}`),
   updateTicket: (id, data) => api.put(`/tickets/${id}`, data),
@@ -157,6 +157,10 @@ export const ticketsAPI = {
   getTicketsByDraw: (drawId, params) => api.get(`/tickets/draw/${drawId}`, { params }),
   getTicketForReprint: (ticketNumber) => api.get(`/tickets/reprint/search/${ticketNumber}`),
   reprintTicket: (ticketId) => api.post(`/tickets/${ticketId}/reprint`),
+  // Ticket verification and claiming
+  searchTicket: (ticketNumber) => api.get(`/tickets/search/${ticketNumber}`),
+  verifyQR: (qrData) => api.post('/tickets/verify-qr', { qrData }),
+  claimTicket: (claimData) => api.post('/tickets/claim', claimData),
   getReprintHistory: (params) => api.get('/tickets/reprint/history', { params })
 };
 

@@ -62,6 +62,9 @@ model User {
   auditLogs            AuditLog[]           @relation("UserAuditLogs")
   loginAudits          LoginAudit[]         @relation("UserLoginAudits")
   createdBetLimits     BetLimitsPerDraw[]   @relation("BetLimitCreator")
+  claimsAuditActions   ClaimsAudit[]        @relation("ClaimsAuditPerformedBy")
+  approvedTickets      Ticket[]             @relation("TicketApprovedBy")
+  requestedTickets     Ticket[]             @relation("TicketRequestedBy")
 
   @@map("users")
 }
@@ -132,27 +135,42 @@ model Draw {
 }
 
 model Ticket {
-  id             Int             @id @default(autoincrement())
-  ticketNumber   String          @unique @map("ticket_number")
-  userId         Int             @map("user_id")
-  drawId         Int             @map("draw_id")
-  totalAmount    Float           @map("total_amount")
-  status         TicketStatus    @default(pending)
-  qrCode         String          @map("qr_code")
-  templateId     Int             @default(1) @map("template_id")
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  agentId        Int             @map("agent_id")
-  betDate        DateTime        @map("bet_date")
-  reprintCount   Int             @default(0) @map("reprint_count")
-  sequenceNumber String          @map("sequence_number")
-  bets           Bet[]
-  notifications  Notification[]
-  reprints       TicketReprint[]
-  agent          User            @relation("TicketAgent", fields: [agentId], references: [id])
-  draw           Draw            @relation(fields: [drawId], references: [id])
-  user           User            @relation(fields: [userId], references: [id])
-  winningTickets WinningTicket[]
+  id                   Int             @id @default(autoincrement())
+  ticketNumber         String          @unique @map("ticket_number")
+  userId               Int             @map("user_id")
+  drawId               Int             @map("draw_id")
+  totalAmount          Float           @map("total_amount")
+  status               TicketStatus    @default(pending)
+  qrCode               String          @map("qr_code")
+  templateId           Int             @default(1) @map("template_id")
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  agentId              Int             @map("agent_id")
+  betDate              DateTime        @map("bet_date")
+  reprintCount         Int             @default(0) @map("reprint_count")
+  sequenceNumber       String          @map("sequence_number")
+  // Claim approval fields
+  approvalRequestedAt  DateTime?       @map("approval_requested_at")
+  approvalRequestedBy  Int?            @map("approval_requested_by")
+  approvedBy           Int?            @map("approved_by")
+  approvalNotes        String?         @map("approval_notes")
+  prizeAmount          Float?          @map("prize_amount")
+  // Claimer information fields
+  claimerName          String?         @map("claimer_name")
+  claimerPhone         String?         @map("claimer_phone")
+  claimerAddress       String?         @map("claimer_address")
+  claimedAt            DateTime?       @map("claimed_at")
+  // Relations
+  bets                 Bet[]
+  notifications        Notification[]
+  reprints             TicketReprint[]
+  agent                User            @relation("TicketAgent", fields: [agentId], references: [id])
+  draw                 Draw            @relation(fields: [drawId], references: [id])
+  user                 User            @relation(fields: [userId], references: [id])
+  winningTickets       WinningTicket[]
+  claimsAudit          ClaimsAudit[]
+  approvedByUser       User?           @relation("TicketApprovedBy", fields: [approvedBy], references: [id])
+  requestedByUser      User?           @relation("TicketRequestedBy", fields: [approvalRequestedBy], references: [id])
 
   @@map("tickets")
 }
@@ -429,6 +447,8 @@ enum BetType {
 enum TicketStatus {
   pending
   validated
+  claimed
+  pending_approval
   paid
   cancelled
 }
@@ -486,6 +506,22 @@ model SecurityAudit {
   user        User?    @relation("UserSecurityAudits", fields: [userId], references: [id])
 
   @@map("security_audit")
+}
+
+model ClaimsAudit {
+  id           Int      @id @default(autoincrement())
+  ticketId     Int      @map("ticket_id")
+  action       String   // 'claim_requested', 'approved', 'rejected'
+  performedBy  Int      @map("performed_by")
+  notes        String?
+  oldStatus    String?  @map("old_status")
+  newStatus    String?  @map("new_status")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  ticket           Ticket @relation(fields: [ticketId], references: [id])
+  performedByUser  User   @relation("ClaimsAuditPerformedBy", fields: [performedBy], references: [id])
+
+  @@map("claims_audit")
 }
 
 enum AccountStatus {

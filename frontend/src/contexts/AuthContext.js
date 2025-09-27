@@ -35,12 +35,17 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
+        // Set the token in axios headers before making the request
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
         const response = await authAPI.getMe();
-        setUser(response.data.user);
+        setUser(response.data.data?.user || response.data.user);
       } catch (error) {
         console.error('Auth check failed:', error);
+        // Clear invalid token
         localStorage.removeItem('token');
         delete axios.defaults.headers.common['Authorization'];
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -54,7 +59,8 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await authAPI.login(credentials);
       
-      const { token, user: userData } = response.data;
+      // Handle clean API response structure
+      const { token, user: userData } = response.data.data || response.data;
       
       // Store token and user data
       localStorage.setItem('token', token);

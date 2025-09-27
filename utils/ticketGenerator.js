@@ -4,10 +4,19 @@ const TimezoneUtils = require('./timezone');
 
 class TicketGenerator {
   static generateTicketNumber() {
-    // Generate 17-digit random ticket number
-    const timestamp = Date.now().toString();
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `${timestamp}${random}`.substring(0, 17);
+    // Generate 17-digit numeric-only ticket number
+    const timestamp = Date.now().toString(); // 13 digits
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0'); // 4 digits
+    const ticketNumber = (timestamp + random).slice(-17); // Ensure exactly 17 digits
+    
+    // Validate it's purely numeric
+    if (!/^\d{17}$/.test(ticketNumber)) {
+      // Fallback: generate purely from timestamp and sequential number
+      const fallbackRandom = Math.floor(Math.random() * 9999) + 1; // 1-9999
+      return (timestamp + fallbackRandom.toString().padStart(4, '0')).slice(-17);
+    }
+    
+    return ticketNumber;
   }
 
   static generateAgentId(user) {
@@ -31,39 +40,42 @@ class TicketGenerator {
 
   static async generateQRCode(ticketData) {
     try {
-      // Create hash of ticket data for QR code
-      const dataString = JSON.stringify({
-        ticketNumber: ticketData.ticketNumber,
-        betCombination: ticketData.betCombination,
-        betAmount: ticketData.betAmount,
-        drawId: ticketData.drawId,
-        timestamp: ticketData.createdAt
-      });
+      // Generate secure hash for verification
+      const { ticketNumber, totalAmount, drawId, userId, createdAt } = ticketData;
+      const timestamp = createdAt ? new Date(createdAt).getTime() : Date.now();
       
-      const hash = crypto.createHash('sha256').update(dataString).digest('hex');
+      // Create deterministic hash from ticket data
+      const hashInput = `${ticketNumber}:${totalAmount}:${drawId}:${userId}:${timestamp}`;
+      const fullHash = crypto.createHash('sha256').update(hashInput).digest('hex');
+      const compactHash = fullHash.substring(0, 16); // 16 chars for QR compactness
+      
+      // QR data format: "ticketNumber|hash"
+      const qrData = `${ticketNumber}|${compactHash}`;
       
       // Use external QR code service (QuickChart as primary, QRServer as fallback)
-      const qrText = encodeURIComponent(hash);
-      const primaryQRUrl = `https://quickchart.io/qr?text=${qrText}&size=200`;
-      const fallbackQRUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrText}`;
+      const qrText = encodeURIComponent(qrData);
+      const primaryQRUrl = `https://quickchart.io/qr?text=${qrText}&size=200&margin=0&ecc=H`;
+      const fallbackQRUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrText}&ecc=H`;
       
       // Try primary service first
-      let qrCodeData = primaryQRUrl;
+      let qrCodeUrl = primaryQRUrl;
       
       try {
         // Test if QuickChart is accessible
         const response = await fetch(primaryQRUrl, { method: 'HEAD' });
         if (!response.ok) {
-          qrCodeData = fallbackQRUrl;
+          qrCodeUrl = fallbackQRUrl;
         }
       } catch (error) {
         // If QuickChart fails, use QRServer
-        qrCodeData = fallbackQRUrl;
+        qrCodeUrl = fallbackQRUrl;
       }
       
       return {
-        hash: hash,
-        qrCodeData: qrCodeData
+        hash: compactHash,
+        qrData: qrData,
+        qrCodeUrl: qrCodeUrl,
+        fullHash: fullHash
       };
     } catch (error) {
       console.error('QR Code generation error:', error);

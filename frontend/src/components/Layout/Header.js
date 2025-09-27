@@ -105,45 +105,48 @@ const Header = ({ onMenuClick }) => {
   };
 
   return (
-    <div className="sticky top-0 z-40 flex h-14 sm:h-16 shrink-0 items-center gap-x-1 sm:gap-x-2 lg:gap-x-4 border-b border-gray-200 bg-white px-1 sm:px-2 lg:px-4 xl:px-8 shadow-sm">
-      {/* Mobile menu button */}
+    <div className="sticky top-0 z-40 flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-x-1 sm:gap-x-2 lg:gap-x-4 border-b border-gray-200 bg-white/95 backdrop-blur-sm px-2 sm:px-4 lg:px-6 xl:px-8 shadow-sm">
+      {/* Mobile menu button - Enhanced touch target */}
       <button
         type="button"
-        className="-m-1.5 p-1.5 text-gray-700 lg:hidden"
+        className="-m-2 p-2 text-gray-700 lg:hidden touch-target hover:bg-gray-100 rounded-md transition-colors duration-200"
         onClick={onMenuClick}
+        aria-label="Open navigation menu"
       >
         <span className="sr-only">Open sidebar</span>
         <Bars3Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
       </button>
 
-      {/* Separator */}
+      {/* Separator - Responsive */}
       <div className="h-4 sm:h-6 w-px bg-gray-200 lg:hidden" aria-hidden="true" />
 
-      <div className="flex flex-1 gap-x-2 sm:gap-x-4 self-stretch lg:gap-x-6">
+      <div className="flex flex-1 gap-x-1 sm:gap-x-2 md:gap-x-4 self-stretch lg:gap-x-6">
+        {/* Spacer */}
         <div className="flex flex-1"></div>
         
-        <div className="flex items-center gap-x-1 sm:gap-x-2 lg:gap-x-4">
-          {/* Connection Status - Hidden on mobile */}
-          <div className="hidden sm:flex items-center gap-x-2">
-            <div className={`h-2 w-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
-            <span className="text-xs text-gray-500">
+        {/* Header actions - Responsive layout */}
+        <div className="flex items-center gap-x-1 sm:gap-x-2 md:gap-x-3 lg:gap-x-4">
+          {/* Connection Status - Progressive disclosure */}
+          <div className="hidden md:flex items-center gap-x-2">
+            <div className={`h-2 w-2 rounded-full transition-colors duration-200 ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
+            <span className="text-xs lg:text-sm text-gray-500 font-medium">
               {connected ? 'Connected' : 'Disconnected'}
             </span>
           </div>
 
-          {/* Balance Display - Responsive for all users */}
+          {/* Balance Display - Enhanced responsive design */}
           {canViewBalance && (
             <div 
-              className="flex items-center gap-x-1 bg-green-50 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg transition-all duration-300 hover:bg-green-100"
+              className="flex items-center gap-x-1 bg-green-50 px-1.5 sm:px-2 md:px-3 py-1 sm:py-1.5 rounded-md md:rounded-lg transition-all duration-300 hover:bg-green-100 border border-green-200"
               data-balance-display
             >
               <DocumentTextIcon className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span className="text-xs text-green-600 font-medium hidden sm:block">Balance</span>
                 {balanceLoading ? (
-                  <div className="h-3 sm:h-4 w-6 sm:w-8 lg:w-12 bg-green-200 rounded animate-pulse"></div>
+                  <div className="h-3 sm:h-4 w-8 sm:w-12 md:w-16 bg-green-200 rounded animate-pulse"></div>
                 ) : (
-                  <span className="text-xs sm:text-sm font-bold text-green-700 truncate transition-all duration-200">
+                  <span className="text-xs sm:text-sm md:text-base font-bold text-green-700 truncate transition-all duration-200">
                     ₱{userBalance?.currentBalance?.toLocaleString() || '0'}
                   </span>
                 )}
@@ -151,14 +154,14 @@ const Header = ({ onMenuClick }) => {
             </div>
           )}
 
-          {/* Notifications */}
+          {/* Notifications - Enhanced touch target */}
           <Menu as="div" className="relative">
-            <Menu.Button className="-m-1 p-1 sm:-m-2.5 sm:p-2.5 text-gray-400 hover:text-gray-500 relative">
+            <Menu.Button className="-m-1.5 p-1.5 sm:-m-2 sm:p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md transition-colors duration-200 relative touch-target">
               <span className="sr-only">View notifications</span>
-              <BellIcon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" aria-hidden="true" />
+              <BellIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" aria-hidden="true" />
               {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {notificationCount > 9 ? '9+' : notificationCount}
+                <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 h-4 w-4 sm:h-5 sm:w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white">
+                  {notificationCount > 99 ? '99+' : notificationCount > 9 ? '9+' : notificationCount}
                 </span>
               )}
             </Menu.Button>
@@ -171,11 +174,14 @@ const Header = ({ onMenuClick }) => {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
-                <div className="px-4 py-2 border-b border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+              <Menu.Items className="absolute right-0 z-10 mt-2 w-72 sm:w-80 md:w-96 origin-top-right rounded-lg bg-white py-2 shadow-xl ring-1 ring-gray-900/10 focus:outline-none border border-gray-200">
+                <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900">Notifications</h3>
+                  {notificationCount > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">{notificationCount} unread</p>
+                  )}
                 </div>
-                <div className="max-h-64 overflow-y-auto">
+                <div className="max-h-64 sm:max-h-80 overflow-y-auto">
                   {notifications.length > 0 ? (
                     notifications.slice(0, 5).map((notification) => (
                       <Menu.Item key={notification.id}>
@@ -183,7 +189,7 @@ const Header = ({ onMenuClick }) => {
                           <div
                             className={`${
                               active ? 'bg-gray-50' : ''
-                            } px-4 py-3 border-b border-gray-100 cursor-pointer`}
+                            } px-3 sm:px-4 py-3 sm:py-4 border-b border-gray-100 cursor-pointer touch-target hover:bg-gray-50 transition-colors duration-150`}
                             onClick={async () => {
                               // Mark as read if not already read
                               if (!notification.isRead) {
@@ -257,17 +263,17 @@ const Header = ({ onMenuClick }) => {
           {/* Separator */}
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" />
 
-          {/* Profile dropdown */}
+          {/* Profile dropdown - Enhanced for mobile */}
           <Menu as="div" className="relative flex-shrink-0">
-            <Menu.Button className="-m-1 p-1 sm:-m-1.5 sm:p-1.5 flex items-center">
+            <Menu.Button className="-m-1.5 p-1.5 sm:-m-2 sm:p-2 flex items-center hover:bg-gray-100 rounded-md transition-colors duration-200 touch-target">
               <span className="sr-only">Open user menu</span>
-              <div className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-primary-600 font-medium text-xs sm:text-sm">
+              <div className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 lg:h-9 lg:w-9 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-primary-200">
+                <span className="text-primary-600 font-semibold text-xs sm:text-sm md:text-base">
                   {user?.fullName?.charAt(0) || 'U'}
                 </span>
               </div>
-              <span className="hidden lg:flex lg:items-center">
-                <span className="ml-2 lg:ml-4 text-sm font-semibold leading-6 text-gray-900 truncate max-w-20 xl:max-w-none" aria-hidden="true">
+              <span className="hidden md:flex md:items-center">
+                <span className="ml-2 md:ml-3 lg:ml-4 text-sm md:text-base font-semibold leading-6 text-gray-900 truncate max-w-24 lg:max-w-32 xl:max-w-none" aria-hidden="true">
                   {user?.fullName}
                 </span>
               </span>
@@ -281,14 +287,18 @@ const Header = ({ onMenuClick }) => {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
+              <Menu.Items className="absolute right-0 z-10 mt-2.5 w-40 sm:w-44 origin-top-right rounded-lg bg-white py-2 shadow-xl ring-1 ring-gray-900/10 focus:outline-none border border-gray-200">
+                <div className="px-3 py-2 border-b border-gray-200">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{user?.fullName}</p>
+                  <p className="text-xs text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</p>
+                </div>
                 <Menu.Item>
                   {({ active }) => (
                     <button
                       onClick={handleLogout}
                       className={`${
-                        active ? 'bg-gray-50' : ''
-                      } block w-full text-left px-3 py-1 text-sm leading-6 text-gray-900`}
+                        active ? 'bg-red-50 text-red-700' : 'text-gray-900'
+                      } block w-full text-left px-3 py-2.5 text-sm font-medium transition-colors duration-150 touch-target hover:bg-red-50 hover:text-red-700`}
                     >
                       Sign out
                     </button>

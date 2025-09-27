@@ -1,9 +1,22 @@
-/* Responsive Utilities for NewBetting Lottery System */
+/* Enhanced Responsive Utilities for NewBetting Lottery System */
 
-/* Prevent horizontal scrolling on mobile */
+/* Prevent horizontal scrolling and improve mobile performance */
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Enhanced mobile viewport handling */
+@supports (-webkit-touch-callout: none) {
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  body {
+    min-height: -webkit-fill-available;
+  }
 }
 
 /* Ensure tables are responsive */
@@ -200,5 +213,683 @@ html, body {
 @media (min-width: 1280px) {
   .responsive-container {
     @apply px-8;
+  }
+}
+
+/* Enhanced touch-friendly utilities */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (pointer: coarse) {
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Larger touch targets for small screens */
+  .touch-target-large {
+    min-height: 56px;
+    min-width: 56px;
+  }
+}
+
+/* Enhanced responsive breakpoint utilities */
+.mobile-only {
+  @apply block;
+}
+
+.tablet-only {
+  @apply hidden;
+}
+
+.desktop-only {
+  @apply hidden;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .mobile-only {
+    @apply hidden;
+  }
+  
+  .tablet-only {
+    @apply block;
+  }
+  
+  .desktop-only {
+    @apply hidden;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    @apply hidden;
+  }
+  
+  .tablet-only {
+    @apply hidden;
+  }
+  
+  .desktop-only {
+    @apply block;
+  }
+}
+
+/* Enhanced responsive typography */
+.responsive-heading {
+  @apply text-xl font-bold;
+}
+
+@media (min-width: 640px) {
+  .responsive-heading {
+    @apply text-2xl;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-heading {
+    @apply text-3xl;
+  }
+}
+
+.responsive-subheading {
+  @apply text-lg font-semibold;
+}
+
+@media (min-width: 640px) {
+  .responsive-subheading {
+    @apply text-xl;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-subheading {
+    @apply text-2xl;
+  }
+}
+
+/* Enhanced responsive spacing utilities */
+.responsive-gap {
+  @apply gap-2;
+}
+
+@media (min-width: 640px) {
+  .responsive-gap {
+    @apply gap-4;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-gap {
+    @apply gap-6;
+  }
+}
+
+.responsive-margin {
+  @apply m-2;
+}
+
+@media (min-width: 640px) {
+  .responsive-margin {
+    @apply m-4;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-margin {
+    @apply m-6;
+  }
+}
+
+/* Enhanced card responsive utilities */
+.responsive-card-grid {
+  @apply grid grid-cols-1 gap-4;
+}
+
+@media (min-width: 640px) {
+  .responsive-card-grid {
+    @apply grid-cols-2 gap-6;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-card-grid {
+    @apply grid-cols-3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .responsive-card-grid {
+    @apply grid-cols-4;
+  }
+}
+
+/* Enhanced form responsive utilities */
+.responsive-form-grid {
+  @apply grid grid-cols-1 gap-4;
+}
+
+@media (min-width: 640px) {
+  .responsive-form-grid {
+    @apply grid-cols-2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-form-grid {
+    @apply grid-cols-3;
+  }
+}
+
+/* Enhanced button responsive utilities */
+.responsive-button {
+  @apply px-3 py-2 text-sm font-medium rounded-lg;
+}
+
+@media (min-width: 640px) {
+  .responsive-button {
+    @apply px-4 py-2.5 text-base;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-button {
+    @apply px-6 py-3;
+  }
+}
+
+/* Enhanced table responsive utilities */
+.responsive-table-wrapper {
+  @apply w-full overflow-x-auto -mx-2;
+}
+
+@media (min-width: 640px) {
+  .responsive-table-wrapper {
+    @apply mx-0 rounded-lg border border-gray-200;
+  }
+}
+
+.responsive-table-cell {
+  @apply px-2 py-2 text-xs;
+}
+
+@media (min-width: 640px) {
+  .responsive-table-cell {
+    @apply px-4 py-3 text-sm;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-table-cell {
+    @apply px-6 py-4 text-base;
+  }
+}
+
+/* Enhanced modal responsive utilities */
+.responsive-modal-container {
+  @apply fixed inset-0 z-50 flex items-end justify-center p-0;
+}
+
+@media (min-width: 640px) {
+  .responsive-modal-container {
+    @apply items-center p-4;
+  }
+}
+
+.responsive-modal-content {
+  @apply w-full max-h-full bg-white rounded-t-2xl;
+}
+
+@media (min-width: 640px) {
+  .responsive-modal-content {
+    @apply max-w-md rounded-2xl max-h-96;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-modal-content {
+    @apply max-w-lg max-h-[32rem];
+  }
+}
+
+/* Enhanced safe area utilities for modern devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+.safe-area-inset {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Enhanced scroll utilities */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Enhanced focus utilities for accessibility */
+.focus-visible-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+}
+
+/* Enhanced backdrop utilities */
+.backdrop-blur-light {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.backdrop-blur-medium {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Mobile-specific fixes for common layout issues */
+
+/* Fix button overlapping on mobile */
+@media (max-width: 640px) {
+  /* Ensure buttons don't overlap */
+  .button-group {
+    @apply flex flex-col space-y-2;
+  }
+  
+  .button-group > * {
+    @apply w-full;
+  }
+  
+  /* Fix header button groups */
+  .header-actions {
+    @apply flex flex-col space-y-2;
+  }
+  
+  .header-actions .date-inputs {
+    @apply flex flex-col space-y-1;
+  }
+  
+  .header-actions .date-inputs input {
+    @apply w-full text-sm;
+  }
+  
+  /* Fix form button groups */
+  .form-actions {
+    @apply flex flex-col space-y-2;
+  }
+  
+  .form-actions button {
+    @apply w-full;
+  }
+  
+  /* Fix modal button groups */
+  .modal-actions {
+    @apply flex flex-col space-y-2;
+  }
+  
+  .modal-actions button {
+    @apply w-full;
+  }
+}
+
+/* Enhanced table responsive fixes */
+.mobile-table-fix {
+  @apply w-full overflow-x-auto;
+}
+
+.mobile-table-fix table {
+  @apply min-w-full;
+}
+
+@media (max-width: 640px) {
+  .mobile-table-fix {
+    @apply -mx-2;
+  }
+  
+  .mobile-table-fix table {
+    @apply text-xs;
+  }
+  
+  .mobile-table-fix th,
+  .mobile-table-fix td {
+    @apply px-2 py-2;
+  }
+  
+  /* Hide less important columns on mobile */
+  .mobile-hidden {
+    @apply hidden;
+  }
+  
+  /* Stack table content vertically on very small screens */
+  .mobile-stack table,
+  .mobile-stack thead,
+  .mobile-stack tbody,
+  .mobile-stack th,
+  .mobile-stack td,
+  .mobile-stack tr {
+    @apply block;
+  }
+  
+  .mobile-stack thead tr {
+    @apply absolute -top-full -left-full;
+  }
+  
+  .mobile-stack tr {
+    @apply border border-gray-200 mb-2 p-2 rounded;
+  }
+  
+  .mobile-stack td {
+    @apply border-none relative pl-12 text-left;
+  }
+  
+  .mobile-stack td:before {
+    content: attr(data-label) ": ";
+    @apply absolute left-2 font-semibold text-gray-600 text-xs;
+  }
+}
+
+/* Advanced mobile table solutions */
+.table-mobile-cards {
+  @apply block sm:hidden;
+}
+
+.table-desktop {
+  @apply hidden sm:block;
+}
+
+/* Mobile card-based table layout */
+.mobile-card-table {
+  @apply space-y-3;
+}
+
+.mobile-card-table .table-card {
+  @apply bg-white border border-gray-200 rounded-lg p-4 shadow-sm;
+}
+
+.mobile-card-table .table-card-header {
+  @apply flex justify-between items-start mb-3;
+}
+
+.mobile-card-table .table-card-title {
+  @apply text-base font-semibold text-gray-900 truncate;
+}
+
+.mobile-card-table .table-card-subtitle {
+  @apply text-sm text-gray-600 truncate mt-1;
+}
+
+.mobile-card-table .table-card-body {
+  @apply space-y-2;
+}
+
+.mobile-card-table .table-card-row {
+  @apply flex justify-between items-center py-1;
+}
+
+.mobile-card-table .table-card-label {
+  @apply text-sm font-medium text-gray-500;
+}
+
+.mobile-card-table .table-card-value {
+  @apply text-sm text-gray-900 text-right flex-1 ml-2 truncate;
+}
+
+/* Compact table for mobile */
+.compact-mobile-table {
+  @apply w-full;
+}
+
+@media (max-width: 640px) {
+  .compact-mobile-table table {
+    @apply text-xs;
+  }
+  
+  .compact-mobile-table th {
+    @apply px-1 py-2 text-xs;
+  }
+  
+  .compact-mobile-table td {
+    @apply px-1 py-2 text-xs;
+  }
+  
+  /* Hide columns marked as mobile-hide */
+  .compact-mobile-table .mobile-hide {
+    @apply hidden;
+  }
+  
+  /* Make important columns more prominent */
+  .compact-mobile-table .mobile-primary {
+    @apply font-semibold;
+  }
+}
+
+/* Horizontal scroll table with better UX */
+.scroll-table-container {
+  @apply w-full overflow-x-auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.scroll-table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scroll-table-container::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
+}
+
+.scroll-table-container::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded;
+}
+
+.scroll-table-container::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+@media (max-width: 640px) {
+  .scroll-table-container {
+    @apply -mx-2 px-2;
+  }
+  
+  .scroll-table-container table {
+    @apply min-w-max;
+  }
+  
+  /* Add scroll indicator */
+  .scroll-table-container::after {
+    content: "← Swipe to see more →";
+    @apply block text-center text-xs text-gray-400 mt-2;
+  }
+}
+
+/* Enhanced form responsive fixes */
+.mobile-form-fix {
+  @apply space-y-3;
+}
+
+@media (max-width: 640px) {
+  .mobile-form-fix .form-row {
+    @apply flex flex-col space-y-2;
+  }
+  
+  .mobile-form-fix .form-group {
+    @apply w-full;
+  }
+  
+  .mobile-form-fix input,
+  .mobile-form-fix select,
+  .mobile-form-fix textarea {
+    @apply w-full text-sm;
+  }
+  
+  .mobile-form-fix label {
+    @apply text-sm font-medium;
+  }
+}
+
+/* Enhanced modal responsive fixes */
+.mobile-modal-fix {
+  @apply fixed inset-0 z-50 overflow-y-auto;
+}
+
+@media (max-width: 640px) {
+  .mobile-modal-fix .modal-content {
+    @apply w-full h-full max-h-full rounded-none;
+  }
+  
+  .mobile-modal-fix .modal-header {
+    @apply px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10;
+  }
+  
+  .mobile-modal-fix .modal-body {
+    @apply px-4 py-4 overflow-y-auto;
+  }
+  
+  .mobile-modal-fix .modal-footer {
+    @apply px-4 py-3 border-t border-gray-200 sticky bottom-0 bg-white;
+  }
+}
+
+/* Enhanced dashboard responsive fixes */
+@media (max-width: 640px) {
+  .dashboard-stats {
+    @apply grid grid-cols-1 gap-3;
+  }
+  
+  .dashboard-card {
+    @apply p-3;
+  }
+  
+  .dashboard-card h3 {
+    @apply text-sm font-semibold;
+  }
+  
+  .dashboard-card .stat-value {
+    @apply text-lg font-bold;
+  }
+}
+
+/* Enhanced betting interface fixes */
+@media (max-width: 640px) {
+  .betting-interface {
+    @apply p-2 space-y-3;
+  }
+  
+  .number-pad {
+    @apply grid grid-cols-3 gap-2;
+  }
+  
+  .number-pad button {
+    @apply h-12 text-base;
+  }
+  
+  .bet-amount-controls {
+    @apply flex flex-col space-y-2;
+  }
+  
+  .amount-buttons {
+    @apply grid grid-cols-3 gap-1;
+  }
+  
+  .amount-buttons button {
+    @apply text-xs py-1;
+  }
+}
+
+/* Enhanced navigation fixes */
+@media (max-width: 640px) {
+  .nav-tabs {
+    @apply flex overflow-x-auto space-x-1 pb-2;
+  }
+  
+  .nav-tabs button {
+    @apply flex-shrink-0 px-3 py-2 text-sm whitespace-nowrap;
+  }
+}
+
+/* Enhanced card layout fixes */
+@media (max-width: 640px) {
+  .card-grid {
+    @apply grid grid-cols-1 gap-3;
+  }
+  
+  .card-content {
+    @apply p-3;
+  }
+  
+  .card-header {
+    @apply flex flex-col space-y-2;
+  }
+  
+  .card-actions {
+    @apply flex flex-col space-y-2 mt-3;
+  }
+}
+
+/* Enhanced text and typography fixes */
+@media (max-width: 640px) {
+  .mobile-text-fix h1 {
+    @apply text-lg font-bold;
+  }
+  
+  .mobile-text-fix h2 {
+    @apply text-base font-semibold;
+  }
+  
+  .mobile-text-fix h3 {
+    @apply text-sm font-medium;
+  }
+  
+  .mobile-text-fix p {
+    @apply text-sm;
+  }
+  
+  .mobile-text-fix .description {
+    @apply text-xs text-gray-600;
+  }
+}
+
+/* Enhanced spacing fixes */
+@media (max-width: 640px) {
+  .mobile-spacing-fix {
+    @apply space-y-2;
+  }
+  
+  .mobile-spacing-fix .section {
+    @apply mb-4;
+  }
+  
+  .mobile-spacing-fix .subsection {
+    @apply mb-3;
+  }
+}
+
+/* Enhanced overflow fixes */
+.mobile-overflow-fix {
+  @apply overflow-x-hidden;
+}
+
+@media (max-width: 640px) {
+  .mobile-overflow-fix {
+    @apply max-w-full;
+  }
+  
+  .mobile-overflow-fix * {
+    @apply max-w-full;
   }
 }

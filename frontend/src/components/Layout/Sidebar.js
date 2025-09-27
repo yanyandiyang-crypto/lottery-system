@@ -29,6 +29,8 @@ const staticNavigation = [
   { name: 'Prize Configuration', href: '/prize-configuration', icon: CurrencyDollarIcon, roles: ['superadmin'] },
   { name: 'Template Assignment', href: '/template-assignment', icon: CogIcon, roles: ['superadmin'] },
   { name: 'Mobile POS Templates', href: '/mobile-pos-templates', icon: PrinterIcon, roles: ['superadmin'] },
+  { name: 'Winning Reports', href: '/winning-reports', icon: ChartBarIcon, roles: ['superadmin', 'admin', 'area_coordinator', 'coordinator'] },
+  { name: 'Claim Approvals', href: '/claim-approvals', icon: ShieldCheckIcon, roles: ['superadmin', 'admin'] },
   { name: 'Security Audit', href: '/admin/audit', icon: ShieldCheckIcon, roles: ['superadmin', 'admin'] },
   
   // Operator Features
@@ -41,6 +43,10 @@ const staticNavigation = [
   { name: 'Winning Tickets', href: '/winning-tickets', icon: TrophyIcon, roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
   { name: 'Bet History', href: '/bet-history', icon: ClockIcon, roles: ['agent'] },
   { name: 'Draw Results', href: '/agent-results', icon: TrophyIcon, roles: ['agent'] },
+  
+  // Ticket Verification & Claiming
+  { name: 'Verify Ticket', href: '/verify', icon: ShieldCheckIcon, roles: ['agent', 'admin', 'superadmin'] },
+  { name: 'Claim Prize', href: '/claim', icon: TrophyIcon, roles: ['agent', 'admin', 'superadmin'] },
   
   // General Features
   { name: 'Account Info', href: '/account/info', icon: CogIcon, roles: ['superadmin', 'admin', 'area_coordinator', 'coordinator', 'agent', 'operator'] },
@@ -70,7 +76,7 @@ const roleLabels = {
   operator: 'Operator'
 };
 
-const Sidebar = () => {
+const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
   const { user, hasRole } = useAuth();
   const location = useLocation();
   const [allowedFunctions, setAllowedFunctions] = useState([]);
@@ -292,10 +298,12 @@ const Sidebar = () => {
 
   if (loading) {
     return (
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
+      <div className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col z-30 transition-all duration-300 ${
+        isCollapsed ? 'lg:w-16' : 'lg:w-64 xl:w-72 2xl:w-80'
+      }`}>
+        <div className="flex flex-col flex-grow bg-white/95 backdrop-blur-sm border-r border-gray-200 pt-5 pb-4 overflow-y-auto shadow-lg">
           <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
         </div>
       </div>
@@ -303,44 +311,54 @@ const Sidebar = () => {
   }
 
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 xl:w-72 lg:flex-col">
-      <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-3 lg:pt-5 pb-4 overflow-y-auto">
-        {/* Logo */}
-        <div className="flex items-center flex-shrink-0 px-3 lg:px-4">
-          <div className="flex items-center min-w-0">
+    <div className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col z-30 transition-all duration-300 ${
+      isCollapsed ? 'lg:w-16' : 'lg:w-64 xl:w-72 2xl:w-80'
+    }`}>
+      <div className="flex flex-col flex-grow bg-white/95 backdrop-blur-sm border-r border-gray-200 pt-4 lg:pt-5 pb-4 overflow-y-auto shadow-lg">
+        {/* Logo - Enhanced responsive design with collapse support */}
+        <div className={`flex items-center flex-shrink-0 ${isCollapsed ? 'px-2 justify-center' : 'px-4 lg:px-5 xl:px-6'}`}>
+          <div className="flex items-center min-w-0 w-full">
             <div className="flex-shrink-0">
-              <div className="h-7 w-7 lg:h-8 lg:w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-base lg:text-lg">N</span>
+              <button
+                onClick={onToggleCollapse}
+                className="h-8 w-8 lg:h-9 lg:w-9 xl:h-10 xl:w-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md hover:from-primary-700 hover:to-primary-800 transition-all duration-200 cursor-pointer"
+                title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              >
+                <span className="text-white font-bold text-lg lg:text-xl xl:text-2xl">N</span>
+              </button>
+            </div>
+            {!isCollapsed && (
+              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                <h1 className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 truncate">NewBetting</h1>
+                <p className="text-xs lg:text-sm text-gray-500 font-medium">Lottery System</p>
               </div>
-            </div>
-            <div className="ml-2 lg:ml-3 min-w-0">
-              <h1 className="text-lg lg:text-xl font-bold text-gray-900 truncate">NewBetting</h1>
-              <p className="text-xs text-gray-500">Lottery System</p>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* User Info */}
-        <div className="mt-3 lg:mt-5 px-3 lg:px-4">
-          <div className="bg-gray-50 rounded-lg p-2 lg:p-3">
-            <div className="flex items-center min-w-0">
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 lg:h-10 lg:w-10 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-primary-600 font-medium text-xs lg:text-sm">
-                    {user?.fullName?.charAt(0) || 'U'}
-                  </span>
+        {/* User Info - Enhanced design with collapse support */}
+        {!isCollapsed && (
+          <div className="mt-4 lg:mt-5 xl:mt-6 px-4 lg:px-5 xl:px-6">
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-3 lg:p-4 border border-gray-200 shadow-sm">
+              <div className="flex items-center min-w-0">
+                <div className="flex-shrink-0">
+                  <div className="h-9 w-9 lg:h-10 lg:w-10 xl:h-12 xl:w-12 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center border-2 border-primary-300 shadow-sm">
+                    <span className="text-primary-700 font-semibold text-sm lg:text-base xl:text-lg">
+                      {user?.fullName?.charAt(0) || 'U'}
+                    </span>
+                  </div>
+                </div>
+                <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                  <p className="text-sm lg:text-base xl:text-lg font-semibold text-gray-900 truncate">{user?.fullName}</p>
+                  <p className="text-xs lg:text-sm text-gray-600 font-medium">{roleLabels[user?.role]}</p>
                 </div>
               </div>
-              <div className="ml-2 lg:ml-3 min-w-0">
-                <p className="text-xs lg:text-sm font-medium text-gray-900 truncate">{user?.fullName}</p>
-                <p className="text-xs text-gray-500">{roleLabels[user?.role]}</p>
-              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Navigation */}
-        <nav className="mt-3 lg:mt-5 flex-1 px-2 space-y-1 overflow-y-auto">
+        {/* Navigation - Enhanced responsive design with collapse support */}
+        <nav className={`mt-4 lg:mt-5 xl:mt-6 flex-1 space-y-1 overflow-y-auto ${isCollapsed ? 'px-2' : 'px-3 lg:px-4 xl:px-5'}`}>
           {filteredNavigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -349,22 +367,37 @@ const Sidebar = () => {
                 to={item.href}
                 className={`${
                   isActive
-                    ? 'bg-primary-50 border-primary-500 text-primary-700'
-                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                } group flex items-center px-2 py-2 text-xs lg:text-sm font-medium border-l-4 rounded-r-md transition-colors duration-150`}
+                    ? 'bg-gradient-to-r from-primary-50 to-primary-100 border-primary-500 text-primary-700 shadow-sm'
+                    : 'border-transparent text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900 hover:shadow-sm'
+                } group flex items-center ${
+                  isCollapsed 
+                    ? 'px-2 py-3 justify-center' 
+                    : 'px-3 lg:px-4 py-2.5 lg:py-3'
+                } text-sm lg:text-base font-medium border-l-4 rounded-r-xl transition-all duration-200 ease-in-out`}
+                title={isCollapsed ? item.name : ''}
               >
                 <item.icon
                   className={`${
-                    isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
-                  } mr-2 lg:mr-3 flex-shrink-0 h-4 w-4 lg:h-5 lg:w-5`}
+                    isActive ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'
+                  } ${isCollapsed ? '' : 'mr-3 lg:mr-4'} flex-shrink-0 h-5 w-5 lg:h-6 lg:w-6 transition-colors duration-200`}
                   aria-hidden="true"
                 />
-                <span className="truncate">{item.name}</span>
+                {!isCollapsed && (
+                  <span className="truncate font-medium">{item.name}</span>
+                )}
               </NavLink>
             );
           })}
         </nav>
 
+        {/* Footer info */}
+        {!isCollapsed && (
+          <div className="mt-4 px-4 lg:px-5 xl:px-6 py-3 border-t border-gray-200">
+            <div className="flex items-center justify-center">
+              <p className="text-xs text-gray-400 font-medium">v2.0.1</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

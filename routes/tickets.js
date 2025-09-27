@@ -130,11 +130,17 @@ router.post('/atomic', requireAgent, createTicketLimiter, async (req, res) => {
     // Calculate total amount
     const totalAmount = bets.reduce((sum, bet) => sum + bet.betAmount, 0);
     
-    // Generate ticket number
-    const ticketNumber = `T${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    // Generate 17-digit numeric-only ticket number
+    const timestamp = Date.now().toString(); // 13 digits
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0'); // 4 digits
+    const ticketNumber = (timestamp + random).slice(-17); // Ensure exactly 17 digits
     
-    // Generate QR code
-    const qrCodeData = `Ticket: ${ticketNumber}\nAmount: ₱${totalAmount.toFixed(2)}\nDate: ${new Date().toLocaleDateString()}`;
+    // Generate QR code with secure hash format
+    const crypto = require('crypto');
+    const qrTimestamp = new Date().getTime();
+    const hashInput = `${ticketNumber}:${totalAmount}:${drawIdNum}:${req.user.userId}:${qrTimestamp}`;
+    const hash = crypto.createHash('sha256').update(hashInput).digest('hex').substring(0, 16);
+    const qrCodeData = `${ticketNumber}|${hash}`;
     const qrCode = await QRCode.toDataURL(qrCodeData);
     
     // Prepare ticket data for atomic transaction

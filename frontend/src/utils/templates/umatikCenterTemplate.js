@@ -56,8 +56,12 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
   const agentId = user?.username || user?.id || 'agent';
   const totalAmount = ticket?.totalAmount || bets.reduce((s, b) => s + Number(b.betAmount || 0), 0);
 
-  const qrData = `T:${ticket?.ticketNumber}\nA:${totalAmount}\nD:${betDateFmt.full}`;
-  const qrUrl = getQuickChartQrUrl(qrData);
+  // Generate secure hash for QR verification
+  const timestamp = ticket?.createdAt ? new Date(ticket.createdAt).getTime() : Date.now();
+  const hashInput = `${ticket?.ticketNumber}:${totalAmount}:${ticket?.drawId}:${user?.id}:${timestamp}`;
+  const fullHash = btoa(hashInput).substring(0, 16); // Simple hash for frontend
+  const qrData = `${ticket?.ticketNumber}|${fullHash}`;
+  const qrUrl = getQuickChartQrUrl(qrData, 100); // Enhanced QR code for scanning
 
   // Single centered logo – allow override via assets.logoDataUrl
   // Default file renamed so you can place your own logo without using umatik.png
@@ -65,51 +69,85 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
 
   const betsHtml = bets.map((bet, index) => {
     const letter = String.fromCharCode(65 + index);
-    const betTypeLabel = bet?.betType === 'Rambolito' ? 'Rambolito 6' : (bet?.betType || 'Standard');
+    const betTypeLabel = (bet?.betType?.toLowerCase() === 'rambolito') ? 'Rambolito' : 'Standard';
     const combo = (bet?.betCombination || bet?.combi || '').toString();
     const spacedCombo = combo.split('').join(' ');
     const amount = Number(bet?.betAmount || bet?.amount || 0);
-    return (
-      `\n               <div style="margin-bottom: 2px; border-bottom: 1px solid #ddd; padding: 4px 0px 4px 4px; width: 100%; box-sizing: border-box; background-color: #f9f9f9; min-height: 22px;">\n                    <div style=\"display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative;\">\n                        <div class=\"bet-type\" style=\"font-weight: 700; font-size: 24px; letter-spacing: 0px; font-family: Arial, sans-serif;\">${betTypeLabel}</div>\n                        <div class=\"bet-combi\" style=\"font-weight: 700; font-size: 26px; letter-spacing: 10px; font-family: Arial, sans-serif; position: absolute; right: 8px; top: 0px;\">${spacedCombo}</div>\n                    </div>\n               </div>\n               <div style=\"margin-top: -8px; margin-bottom: 4px; border-bottom: 1px solid #ddd; padding: 0px 0px 4px 4px; width: 100%; box-sizing: border-box; background-color: #f9f9f9; min-height: 20px;\">\n                    <div style=\"display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative;\">\n                        <div class=\"bet-letter\" style=\"font-size: 15px; font-weight: 700; font-family: Arial, sans-serif;\">${letter}</div>\n                        <div class=\"bet-price\" style=\"font-size: 20px; font-weight: 700; letter-spacing: 0px; font-family: Arial, sans-serif; position: absolute; right: 8px; top: -6px; margin: 0;\">Price:${formatCurrency(amount).replace('₱', 'P')}</div>\n                    </div>\n                </div>`
-    );
+    return `
+      <div style="border: 1px solid #333; margin-bottom: 0.5px; padding: 1px 2px; width: 100%; box-sizing: border-box; background: #f9f9f9;">
+        <!-- Bet Type and Numbers Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5px;">
+          <div style="font-weight: 700; font-size: 8px; font-family: Arial, sans-serif;">${betTypeLabel}</div>
+          <div style="font-weight: 700; font-size: 13px; letter-spacing: 4px; font-family: Arial, sans-serif;">${spacedCombo}</div>
+        </div>
+        <!-- Letter and Price Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div style="font-size: 8px; font-weight: 700; font-family: Arial, sans-serif;">${letter}</div>
+          <div style="font-size: 8px; font-weight: 700; font-family: Arial, sans-serif;">${formatCurrency(amount)}</div>
+        </div>
+      </div>`;
   }).join('');
 
-  const digits = String(ticket?.ticketNumber || '').padStart(17, '0').split('').map(d => `<span style=\"font-size: 33px; font-weight: 700; letter-spacing: 16px;\">${d}</span>`).join('');
-
-  // Dynamic height similar to umatik
-  const baseHeight = 200;
-  const betHeight = 100;
-  const betsSectionHeight = 60;
-  const bottomPadding = 80;
-  const dynamicHeight = baseHeight + betsSectionHeight + (bets.length * betHeight) + bottomPadding;
+  // Format ticket number for display (17 digits without spacing)
+  const ticketNum = String(ticket?.ticketNumber || '').padStart(17, '0');
+  const digits = ticketNum.split('').map(d => 
+    `<span style="font-size: 8px; font-weight: 700; letter-spacing: 1px;">${d}</span>`
+  ).join('');
 
   return `
-<div style="font-family: Arial, sans-serif; font-size: 17px; width: 600px; height: ${dynamicHeight}px; color: black; font-weight: 800;">
-  <div style="display: flex; justify-content: center; align-items: center; padding-bottom: 4px;">
-    ${centerLogo ? `<img src="${centerLogo}" alt="Logo" style="width: 230px; height: auto; z-index: 10; margin-bottom: 8px;">` : ''}
+<div style="font-family: Arial, sans-serif; font-size: 8px; width: 220px; color: black; font-weight: 800; background: white; padding: 4px;">
+  <!-- Centered Logo -->
+  <div style="display: flex; justify-content: center; align-items: center; padding-bottom: 2px; margin-bottom: 4px;">
+    ${centerLogo ? `<img src="${centerLogo}" alt="Logo" style="width: 60px; height: auto; z-index: 10;">` : ''}
   </div>
-  <div style="display: flex; justify-content: space-between; margin-bottom: 8px; margin-top: 4px;">
-    <div style="width: 50%;">
-      <p class="ticket-text" style="margin: 10px 0 8px 0; text-align: left; font-weight: 700; font-size: 18px; font-family: Arial, sans-serif;">Bet Date:</p>
-      <p class="ticket-text" style="margin: 8px 0 8px 0; text-align: left; font-weight: 700; font-size: 18px; font-family: Arial, sans-serif;">${betDateFmt.full}</p>
-      <p class="ticket-text" style="margin: 8px 0 8px 0; text-align: left; font-weight: 700; font-size: 18px; font-family: Arial, sans-serif;">Draw Date:</p>
-      <p class="ticket-text" style="margin: 8px 0 8px 0; text-align: left; font-weight: 700; font-size: 18px; font-family: Arial, sans-serif;">${fullDrawDate}</p>
-      <p class="ticket-text" style="margin: 8px 0 8px 0; text-align: left; font-weight: 700; font-size: 18px; font-family: Arial, sans-serif;">Draw ID: ${drawId}</p>
-      <p class="ticket-text" style="margin: 8px 0 8px 0; text-align: left; font-weight: 700; font-size: 18px; font-family: Arial, sans-serif; white-space: nowrap;">Agent ID: ${agentId}</p>
-      <p class="ticket-text" style="margin: 8px 0 20px 0; text-align: left; font-weight: 700; font-size: 18px; font-family: Arial, sans-serif;">Ticket Price: ${formatCurrency(totalAmount)}</p>
+  
+  <!-- Info and QR Code Section - Side by side for 58mm -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; gap: 1px;">
+    <!-- Info Section - Enhanced Layout -->
+    <div style="width: 50%; margin-bottom: 6px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 3px; padding: 3px;">
+      <div style="border-bottom: 1px dotted #999; padding-bottom: 2px; margin-bottom: 2px;">
+        <p class="ticket-text" style="margin: 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">BET DATE:</p>
+        <p class="ticket-text" style="margin: 0; text-align: left; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif; color: black;">${betDateFmt.full}</p>
+      </div>
+      <div style="border-bottom: 1px dotted #999; padding-bottom: 2px; margin-bottom: 2px;">
+        <p class="ticket-text" style="margin: 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">DRAW DATE:</p>
+        <p class="ticket-text" style="margin: 0; text-align: left; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif; color: black;">${fullDrawDate}</p>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
+        <span style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">DRAW ID:</span>
+        <span style="font-weight: 700; font-size: 8px; font-family: Arial, sans-serif; color: black;">${drawId}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
+        <span style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">AGENT:</span>
+        <span style="font-weight: 700; font-size: 8px; font-family: Arial, sans-serif; color: black;">${agentId}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; background: #e8f4f8; padding: 1px 2px; border-radius: 2px; margin-top: 2px;">
+        <span style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">TOTAL:</span>
+        <span style="font-weight: 700; font-size: 9px; font-family: Arial, sans-serif; color: black;">${formatCurrency(totalAmount)}</span>
+      </div>
     </div>
-    <div style="width: 45%; display: flex; align-items: flex-start; justify-content: center;">
-      <div id="qrcode-container" style="width: 270px; height: 270px; position: relative; z-index: 1;">
-        <img src="${qrUrl}" alt="QR Code" style="width: 270px; height: 270px;" />
+    
+    <!-- QR Code Section - Right side, bigger and closer -->
+    <div style="width: 48%; display: flex; justify-content: center; align-items: flex-start;">
+      <div id="qrcode-container" style="width: 90px; height: 90px; position: relative; z-index: 1; border: none;">
+        <img src="${qrUrl}" alt="QR Code" style="width: 90px; height: 90px; border: none;" />
       </div>
     </div>
   </div>
-  <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 8px 0; gap: 0px;">
-    ${digits}
+  
+  <!-- Ticket Number Section - Compact -->
+  <div style="background: #f0f0f0; border: 1px solid #333; border-radius: 2px; margin: 3px 0; padding: 2px; text-align: center;">
+    <p class="ticket-number" style="text-align: center; font-size: 7px; margin: 0 0 1px 0; letter-spacing: 0px; font-weight: 700; font-family: Arial, sans-serif; color: black;">TICKET NUMBER</p>
+    <div style="display: flex; justify-content: center; align-items: center; width: 100%; background: white; border: 1px solid #ccc; padding: 2px 1px;">
+      ${digits}
+    </div>
   </div>
-  <p class="ticket-number" style="text-align: center; font-size: 20px; margin: 2px 0 16px 0; letter-spacing: 0px; font-weight: 700; font-family: Arial, sans-serif; display: block; width: 100%;">Ticket Number</p>
+  
+  <!-- Bets Section -->
   ${betsHtml}
-  <div style="margin: 12px 0; height: 12px;"></div>
+  
+  <!-- Footer Spacing -->
+  <div style="margin: 6px 0; height: 6px;"></div>
 </div>`;
 }
 

@@ -5,32 +5,72 @@ const prisma = new PrismaClient();
 
 async function restoreSystemEssentials() {
     console.log('🔄 Starting system restoration...');
+    console.log('📅 Current Manila time:', moment().tz('Asia/Manila').format('YYYY-MM-DD HH:mm:ss'));
     
     try {
-        // 1. Clean up duplicate draws first
-        console.log('🧹 Cleaning up duplicate draws...');
+        // Test database connection first
+        console.log('🔗 Testing database connection...');
+        await prisma.$connect();
+        console.log('✅ Database connected successfully');
+        
+        // 1. Clean up related data first to avoid foreign key constraints
+        console.log('🧹 Cleaning up related data first...');
+        
+        // Delete current_bet_totals first (they reference draws)
+        try {
+            await prisma.currentBetTotal.deleteMany({});
+            console.log('✅ Current bet totals cleared');
+        } catch (error) {
+            console.log('⚠️ No current bet totals to clear or table doesn\'t exist');
+        }
+        
+        // Delete tickets that reference draws
+        try {
+            await prisma.ticket.deleteMany({});
+            console.log('✅ All tickets cleared');
+        } catch (error) {
+            console.log('⚠️ No tickets to clear');
+        }
+        
+        // Delete draw results
+        try {
+            await prisma.drawResult.deleteMany({});
+            console.log('✅ Draw results cleared');
+        } catch (error) {
+            console.log('⚠️ No draw results to clear');
+        }
+        
+        // Now we can safely delete draws
+        console.log('🧹 Now cleaning up draws...');
         await prisma.draw.deleteMany({});
         console.log('✅ All old draws removed');
 
-        // 2. Create today's draws with proper cutoff times
-        console.log('📅 Creating today\'s draws...');
+        // 2. Create today's draws with proper timezone-aware timestamps
+        console.log('📅 Creating today\'s draws with fixed timestamps...');
         const today = moment().tz('Asia/Manila').format('YYYY-MM-DD');
         
+        // Create draws with proper Manila timezone timestamps
         const draws = [
             {
-                drawDate: new Date(`${today}T14:00:00+08:00`), // 2PM draw
+                drawDate: moment.tz(`${today} 14:00`, 'YYYY-MM-DD HH:mm', 'Asia/Manila').toDate(),
                 drawTime: 'twoPM',
-                status: 'open'
+                status: 'open',
+                createdAt: moment().tz('Asia/Manila').toDate(),
+                updatedAt: moment().tz('Asia/Manila').toDate()
             },
             {
-                drawDate: new Date(`${today}T17:00:00+08:00`), // 5PM draw
+                drawDate: moment.tz(`${today} 17:00`, 'YYYY-MM-DD HH:mm', 'Asia/Manila').toDate(),
                 drawTime: 'fivePM',
-                status: 'open'
+                status: 'open',
+                createdAt: moment().tz('Asia/Manila').toDate(),
+                updatedAt: moment().tz('Asia/Manila').toDate()
             },
             {
-                drawDate: new Date(`${today}T21:00:00+08:00`), // 9PM draw
+                drawDate: moment.tz(`${today} 21:00`, 'YYYY-MM-DD HH:mm', 'Asia/Manila').toDate(),
                 drawTime: 'ninePM',
-                status: 'open'
+                status: 'open',
+                createdAt: moment().tz('Asia/Manila').toDate(),
+                updatedAt: moment().tz('Asia/Manila').toDate()
             }
         ];
 
@@ -38,7 +78,45 @@ async function restoreSystemEssentials() {
             await prisma.draw.create({
                 data: draw
             });
-            console.log(`✅ Created ${draw.drawTime} draw for ${today}`);
+            const drawDateTime = moment(draw.drawDate).tz('Asia/Manila').format('YYYY-MM-DD HH:mm');
+            console.log(`✅ Created ${draw.drawTime} draw for ${drawDateTime}`);
+        }
+
+        // 2.1. Create draws for the next 7 days to ensure continuity
+        console.log('📅 Creating draws for next 7 days...');
+        for (let i = 1; i <= 7; i++) {
+            const futureDate = moment().tz('Asia/Manila').add(i, 'days').format('YYYY-MM-DD');
+            
+            const futureDrws = [
+                {
+                    drawDate: moment.tz(`${futureDate} 14:00`, 'YYYY-MM-DD HH:mm', 'Asia/Manila').toDate(),
+                    drawTime: 'twoPM',
+                    status: 'open',
+                    createdAt: moment().tz('Asia/Manila').toDate(),
+                    updatedAt: moment().tz('Asia/Manila').toDate()
+                },
+                {
+                    drawDate: moment.tz(`${futureDate} 17:00`, 'YYYY-MM-DD HH:mm', 'Asia/Manila').toDate(),
+                    drawTime: 'fivePM',
+                    status: 'open',
+                    createdAt: moment().tz('Asia/Manila').toDate(),
+                    updatedAt: moment().tz('Asia/Manila').toDate()
+                },
+                {
+                    drawDate: moment.tz(`${futureDate} 21:00`, 'YYYY-MM-DD HH:mm', 'Asia/Manila').toDate(),
+                    drawTime: 'ninePM',
+                    status: 'open',
+                    createdAt: moment().tz('Asia/Manila').toDate(),
+                    updatedAt: moment().tz('Asia/Manila').toDate()
+                }
+            ];
+
+            for (const draw of futureDrws) {
+                await prisma.draw.create({
+                    data: draw
+                });
+            }
+            console.log(`✅ Created 3 draws for ${futureDate}`);
         }
 
         // 3. Restore bet limits
@@ -96,16 +174,24 @@ async function restoreSystemEssentials() {
 
         console.log('\n🎉 System restoration completed successfully!');
         console.log('\n📊 Summary:');
-        console.log(`✅ Created 3 draws for today (${today})`);
+        console.log(`✅ Created 3 draws for today (${today}) with proper Manila timezone`);
+        console.log(`✅ Created 21 draws for next 7 days (3 draws × 7 days)`);
+        console.log(`✅ Total draws created: 24 draws with fixed timestamps`);
         console.log(`✅ Restored ${betLimits.length} bet limits`);
         console.log(`✅ Restored ${systemSettings.length} system settings`);
         console.log('📝 Ticket templates managed via frontend designer');
+        console.log('\n🕐 All timestamps are now properly set to Asia/Manila timezone');
         
     } catch (error) {
-        console.error('❌ Error during restoration:', error);
+        console.error('❌ Error during restoration:');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Full error:', error);
         throw error;
     } finally {
+        console.log('🔌 Disconnecting from database...');
         await prisma.$disconnect();
+        console.log('✅ Database disconnected');
     }
 }
 
@@ -116,6 +202,8 @@ restoreSystemEssentials()
         process.exit(0);
     })
     .catch((error) => {
-        console.error('💥 Restoration failed:', error);
+        console.error('💥 Restoration failed:');
+        console.error('Error details:', error.message);
+        console.error('Stack trace:', error.stack);
         process.exit(1);
     });

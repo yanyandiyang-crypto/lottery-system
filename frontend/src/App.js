@@ -41,6 +41,10 @@ import WebShareTest from './pages/Test/WebShareTest';
 import AuditDashboard from './pages/Admin/AuditDashboard';
 import TransactionHistory from './pages/Account/TransactionHistory';
 import TemplateAssignment from './pages/TicketTemplates/TemplateAssignment';
+import TicketSearch from './components/TicketSearch';
+import TicketClaiming from './components/TicketClaiming';
+import WinningDashboard from './pages/WinningReports/WinningDashboard';
+import ClaimApprovals from './pages/ClaimApprovals/ClaimApprovals';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -145,6 +149,10 @@ function AppRoutes() {
         <Route path="/prize-configuration" element={<SuperAdminRoute><PrizeConfiguration /></SuperAdminRoute>} />
         {/* Template Assignment - SuperAdmin only */}
         <Route path="/template-assignment" element={<SuperAdminRoute><TemplateAssignment /></SuperAdminRoute>} />
+        {/* Winning Reports - Management roles */}
+        <Route path="/winning-reports" element={<ManagementRoute><WinningDashboard /></ManagementRoute>} />
+        {/* Claim Approvals - SuperAdmin and Admin only */}
+        <Route path="/claim-approvals" element={<AdminRoute><ClaimApprovals /></AdminRoute>} />
 
 
 
@@ -199,6 +207,10 @@ function AppRoutes() {
 
         {/* Mobile Ticket Share - Public route */}
         <Route path="/ticket/:ticketNumber" element={<MobileTicketShare />} />
+
+        {/* Ticket Verification & Claiming - Public routes */}
+        <Route path="/verify" element={<TicketSearch />} />
+        <Route path="/claim" element={<TicketClaiming />} />
 
         {/* Test Routes */}
         <Route path="/test/webshare" element={<WebShareTest />} />

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import React, { useState } from 'react';
+import { useQuery } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -16,13 +16,12 @@ import {
 
 const AgentTickets = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [drawTimeFilter, setDrawTimeFilter] = useState('all');
   const [dateRange, setDateRange] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
+    startDate: '', // Empty means no date filter
+    endDate: ''   // Empty means no date filter
   });
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -30,43 +29,13 @@ const AgentTickets = () => {
     totalItems: 0,
     itemsPerPage: 10
   });
-  const [hierarchyData, setHierarchyData] = useState({
-    agents: [],
-    coordinators: [],
-    areaCoordinators: []
-  });
+  // Removed hierarchyData as it's not currently used in this component
 
   const canReprint = () => {
     return user.role === 'agent' || user.role === 'superadmin';
   };
 
-  const fetchHierarchyData = useCallback(async () => {
-    if (user.role === 'coordinator') {
-      try {
-        const response = await api.get(`/users/coordinator/${user.id}/agents`);
-        setHierarchyData(prev => ({
-          ...prev,
-          agents: response.data.data || []
-        }));
-      } catch (error) {
-        console.error('Error fetching agents for coordinator:', error);
-      }
-    } else if (user.role === 'area_coordinator') {
-      try {
-        const response = await api.get(`/users/area-coordinator/${user.id}/coordinators`);
-        setHierarchyData(prev => ({
-          ...prev,
-          coordinators: response.data.data || []
-        }));
-      } catch (error) {
-        console.error('Error fetching coordinators for area coordinator:', error);
-      }
-    }
-  }, [user.id, user.role]);
-
-  useEffect(() => {
-    fetchHierarchyData();
-  }, [fetchHierarchyData]);
+  // Removed fetchHierarchyData and related useEffect as hierarchy data is not currently used
 
   const fetchTickets = async ({ pageParam = 1 }) => {
     const params = new URLSearchParams({
@@ -79,17 +48,36 @@ const AgentTickets = () => {
       endDate: dateRange.endDate
     });
 
+    console.log('Fetching tickets with params:', {
+      url: `/tickets?${params}`,
+      user: user,
+      params: Object.fromEntries(params)
+    });
+
     const response = await api.get(`/tickets?${params}`);
     const data = response.data.data;
     
+    console.log('Tickets API response:', {
+      success: response.data.success,
+      dataStructure: data,
+      itemsCount: data.items?.length,
+      pagination: data.pagination,
+      sampleTicket: data.items?.[0] // Log first ticket to see structure
+    });
+    
     setPagination(prev => ({
       ...prev,
-      currentPage: data.currentPage,
-      totalPages: data.totalPages,
-      totalItems: data.totalItems
+      currentPage: data.pagination.currentPage,
+      totalPages: data.pagination.totalPages,
+      totalItems: data.pagination.totalItems
     }));
     
-    return data;
+    return {
+      tickets: data.items,
+      currentPage: data.pagination.currentPage,
+      totalPages: data.pagination.totalPages,
+      totalItems: data.pagination.totalItems
+    };
   };
 
   const { data: ticketsData, isLoading, refetch } = useQuery(
@@ -125,12 +113,12 @@ const AgentTickets = () => {
 
   const generateAndPrintTicket = async (ticket) => {
     try {
-      // Get assigned template for the ticket's agent
+      // Get system-wide active template
       let template = null;
       try {
-        template = await TemplateAssigner.fetchAssignedTemplate(ticket.user?.id || ticket.agentId);
+        template = await TemplateAssigner.fetchSystemTemplate();
       } catch (error) {
-        console.warn('Could not fetch assigned template, using default:', error);
+        console.warn('Could not fetch system template, using default:', error);
       }
 
       // Use template-aware ticket generator
@@ -263,8 +251,6 @@ const AgentTickets = () => {
   const filteredTickets = ticketsData?.tickets?.filter(ticket => {
     const matchesSearch = !searchTerm || 
       ticket.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.agent?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.agent?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.user?.username?.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -385,13 +371,13 @@ const AgentTickets = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTickets.map((ticket) => (
-                <tr key={ticket.id} className="hover:bg-gray-50">
+              {filteredTickets.map((ticket, index) => (
+                <tr key={ticket.id || ticket.ticketNumber || index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {ticket.ticketNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {ticket.agent?.fullName || ticket.agent?.username || 'Unknown'}
+                    {ticket.user?.fullName || ticket.user?.username || 'Unknown'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {ticket.draw?.drawDate ? new Date(ticket.draw.drawDate).toLocaleDateString() : ''} {formatDrawTimeForTicket(ticket.draw?.drawTime)}

@@ -18,10 +18,10 @@ const { register } = require('./utils/metrics');
 const metricsMiddleware = require('./middleware/metrics');
 
 // Import routes
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/auth-clean');
 const authV2Routes = require('./routes/auth-v2');
-const userRoutes = require('./routes/users');
-const ticketRoutes = require('./routes/tickets');
+const userRoutes = require('./routes/users-clean');
+const ticketRoutes = require('./routes/tickets-clean');
 const drawRoutes = require('./routes/draws');
 const salesRoutes = require('./routes/sales');
 const reportRoutes = require('./routes/reports');
@@ -41,11 +41,15 @@ const setupRoutes = require('./routes/setup');
 const auditRoutes = require('./routes/audit');
 const transactionsRoutes = require('./routes/transactions');
 const databaseResetRoutes = require('./routes/database-reset');
+const ticketVerificationRoutes = require('./routes/ticket-verification-clean');
+const winningReportsRoutes = require('./routes/winning-reports-proper');
+const claimApprovalsRoutes = require('./routes/claim-approvals-simple');
 
 // Import middleware
 const authMiddleware = require('./middleware/auth');
 const roleMiddleware = require('./middleware/roleCheck');
-const errorHandler = require('./middleware/errorHandler');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { sanitizeBody } = require('./middleware/validation');
 const { apiVersioning, versionSecurity, getVersionInfo, listVersions } = require('./middleware/apiVersioning');
 const { createSecurityMiddleware, auditLogger, requestSizeLimit } = require('./middleware/security');
 const requestId = require('./middleware/requestId');
@@ -249,6 +253,9 @@ app.use('/api', (req, res, next) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v2/auth', authV2Routes);
 
+// Public ticket verification routes (MUST come before protected routes)
+app.use('/api/v1/tickets', ticketVerificationRoutes);
+
 // Protected v1 routes
 app.use('/api/v1/users', authMiddleware, userRoutes);
 app.use('/api/v1/admin-users', authMiddleware, require('./routes/admin-users'));
@@ -267,6 +274,8 @@ app.use('/api/v1/draw-results', authMiddleware, drawResultsRoutes);
 app.use('/api/v1/function-management', authMiddleware, require('./routes/function-management'));
 app.use('/api/v1/ticket-templates', authMiddleware, ticketTemplatesRoutes);
 app.use('/api/v1/prize-configuration', authMiddleware, prizeConfigurationRoutes);
+app.use('/api/v1/winning-reports', authMiddleware, winningReportsRoutes);
+app.use('/api/v1/claim-approvals', authMiddleware, claimApprovalsRoutes);
 
 // Health check routes (no authentication required)
 app.use('/api/v1/health', healthRoutes);
@@ -347,16 +356,12 @@ app.set('io', io);
 if (process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.errorHandler());
 }
-app.use(errorHandler);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    path: req.originalUrl
-  });
-});
+// 404 handler (must come before error handler)
+app.use('*', notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
