@@ -53,13 +53,13 @@ router.post('/create',
     // Debug: Log received data
     console.log('Received ticket creation request:', {
       body: req.body,
-      userId: req.user?.userId,
+      userId: req.user?.id,
       betsLength: req.body.bets?.length,
       betsStructure: req.body.bets?.[0]
     });
     // Enhanced error logging for ticket creation
     console.log('Ticket creation request details:', {
-      userId: req.user?.userId,
+      userId: req.user?.id,
       userRole: req.user?.role,
       bodyKeys: Object.keys(req.body),
       betsCount: req.body.bets?.length,
@@ -392,7 +392,7 @@ router.post('/:ticketNumber/cancel',
       console.error('❌ Ticket creation error:', {
         message: error.message,
         stack: error.stack,
-        userId: req.user?.userId,
+        userId: req.user?.id,
         body: req.body
       });
       
