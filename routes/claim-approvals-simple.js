@@ -86,89 +86,18 @@ router.get('/pending', async (req, res) => {
 // @access  Protected (SuperAdmin, Admin)
 router.post('/:ticketId/approve', async (req, res) => {
   try {
-    console.log('🚀 Approve endpoint hit!');
-    console.log('🔍 req.params:', req.params);
-    console.log('🔍 req.body:', req.body);
-    console.log('🔍 req.user:', req.user);
+    console.log('🚀 APPROVE ENDPOINT REACHED');
     
-    const { ticketId } = req.params;
-    
-    // Early return for testing
-    return res.json({
-      success: true,
-      message: 'Test response - endpoint is working',
-      ticketId: ticketId,
-      user: req.user
-    });
-    
-    // Find and update the ticket
-    const ticket = await prisma.ticket.findUnique({
-      where: { id: parseInt(ticketId) },
-      include: {
-        user: {
-          select: {
-            username: true,
-            fullName: true
-          }
-        }
-      }
-    });
-    
-    if (!ticket) {
-      return res.status(404).json({
-        success: false,
-        message: 'Ticket not found'
-      });
-    }
-    
-    if (ticket.status !== 'pending_approval') {
-      return res.status(400).json({
-        success: false,
-        message: `Ticket status is ${ticket.status}, not pending_approval`
-      });
-    }
-    
-    // Update ticket status to claimed
-    console.log(`🔄 Updating ticket ${ticketId} to claimed status...`);
-    
-    const updatedTicket = await prisma.ticket.update({
-      where: { id: parseInt(ticketId) },
-      data: {
-        status: 'claimed',
-        claimedAt: new Date()
-      },
-      include: {
-        user: {
-          select: {
-            username: true,
-            fullName: true
-          }
-        }
-      }
-    });
-    
-    console.log(`✅ Successfully updated ticket ${ticketId}:`, {
-      id: updatedTicket.id,
-      status: updatedTicket.status,
-      claimedAt: updatedTicket.claimedAt
-    });
-    
-    console.log(`✅ Ticket ${ticketId} approved and marked as claimed`);
-    
+    // Immediate success response for testing
     res.json({
       success: true,
-      message: 'Claim approved successfully',
-      ticket: updatedTicket
+      message: 'Approval endpoint working - database update disabled for testing',
+      ticketId: req.params.ticketId,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('❌ Approve claim error:', error);
-    console.error('❌ Full error details:', {
-      message: error.message,
-      code: error.code,
-      meta: error.meta,
-      stack: error.stack
-    });
     res.status(500).json({
       success: false,
       message: 'Error approving claim',

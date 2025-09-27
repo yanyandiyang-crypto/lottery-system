@@ -1,6 +1,6 @@
 {
   "name": "newbetting-lottery-system",
-  "version": "3.0.7",
+  "version": "3.0.8",
   "description": "3-Digit Lottery System with Web + Mobile POS Support",
   "main": "server.js",
   "scripts": {

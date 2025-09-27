@@ -57,8 +57,41 @@ router.post('/create',
       betsLength: req.body.bets?.length,
       betsStructure: req.body.bets?.[0]
     });
+    // Enhanced error logging for ticket creation
+    console.log('Ticket creation request details:', {
+      userId: req.user?.userId,
+      userRole: req.user?.role,
+      bodyKeys: Object.keys(req.body),
+      betsCount: req.body.bets?.length,
+      drawId: req.body.drawId,
+      timestamp: new Date().toISOString()
+    });
     
-    const { bets, drawId, idempotencyKey } = req.body;
+    // Validate required fields
+    if (!req.body.bets || !Array.isArray(req.body.bets) || req.body.bets.length === 0) {
+      console.log('❌ Missing or invalid bets array');
+      return sendError(res, 'Bets array is required and must not be empty', 400);
+    }
+    
+    if (!req.body.drawId) {
+      console.log('❌ Missing drawId');
+      return sendError(res, 'Draw ID is required', 400);
+    }
+    
+    // Validate each bet
+    for (let i = 0; i < req.body.bets.length; i++) {
+      const bet = req.body.bets[i];
+      if (!bet.betType || !bet.betCombination || !bet.betAmount) {
+        console.log(`❌ Invalid bet at index ${i}:`, bet);
+        return sendError(res, `Invalid bet at index ${i}. Required: betType, betCombination, betAmount`, 400);
+      }
+    }
+
+    
+    
+    try {
+      // Main ticket creation logic
+const { bets, drawId, idempotencyKey } = req.body;
     const userId = req.user.userId;
 
     // Handle idempotency
@@ -338,7 +371,27 @@ router.post('/:ticketNumber/cancel',
         type: 'TICKET_REFUND',
         ticketId: ticket.id,
         description: `Ticket cancellation refund: ${ticketNumber}`
+      
+    } catch (error) {
+      console.error('❌ Ticket creation error:', {
+        message: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        body: req.body
       });
+      
+      // Return specific error messages
+      if (error.message.includes('Unique constraint')) {
+        return sendError(res, 'Ticket number already exists', 409);
+      } else if (error.message.includes('Foreign key constraint')) {
+        return sendError(res, 'Invalid user or draw reference', 400);
+      } else if (error.message.includes('Validation error')) {
+        return sendError(res, 'Invalid data format', 400);
+      } else {
+        return sendError(res, 'Database operation failed: ' + error.message, 500);
+      }
+    }
+});
     }
 
     return sendSuccess(res, {
