@@ -740,6 +740,17 @@ router.get('/live', requireAuth, async (req, res) => {
 
     // Get live sales data
     const liveSalesData = await prisma.ticket.aggregate({
+      where: whereClause,
+      _sum: {
+        totalAmount: true
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Get live winnings data from claim approval system
+    const liveClaimData = await prisma.ticket.findMany({
       where: {
         ...whereClause,
         status: {
@@ -758,9 +769,6 @@ router.get('/live', requireAuth, async (req, res) => {
             }
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
 
@@ -779,7 +787,6 @@ router.get('/live', requireAuth, async (req, res) => {
       where: {
         ...whereClause,
         status: 'pending'
-        ...(whereClause.userId ? { userId: whereClause.userId } : {})
       }
     });
 
