@@ -5,6 +5,91 @@ const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Helper function to calculate actual prize amount for a ticket
+function calculateTicketPrize(ticket) {
+  if (!ticket?.bets || !Array.isArray(ticket.bets)) {
+    return 0;
+  }
+
+  // Prize structure based on bet type and amount
+  const prizeStructure = {
+    'standard': {
+      '3D': 450,      // 450x multiplier for standard 3D
+      'rambolito': 75  // 75x multiplier for rambolito
+    },
+    'straight': {
+      '3D': 450,
+      'rambolito': 75
+    }
+  };
+
+  let totalPrize = 0;
+  
+  // Get winning numbers from DrawResult table
+  const winningNumbers = ticket.draw?.drawResult?.winningNumber ? 
+                        [ticket.draw.drawResult.winningNumber] : 
+                        [];
+
+  if (winningNumbers.length === 0) {
+    return 0; // No winning numbers available
+  }
+
+  ticket.bets.forEach(bet => {
+    const betCombination = bet.betCombination;
+    const betAmount = parseFloat(bet.betAmount || bet.amount || 0);
+    const betType = (bet.betType || 'standard').toLowerCase();
+    
+    // Check if this specific bet is a winner
+    const isWinning = checkIfBetIsWinning(betCombination, betType, winningNumbers);
+    
+    if (isWinning) {
+      // Determine multiplier based on bet type
+      let multiplier = 0;
+      if (betType === 'rambolito') {
+        multiplier = prizeStructure.standard.rambolito || 75;
+      } else {
+        multiplier = prizeStructure.standard['3D'] || 450;
+      }
+
+      // Calculate prize: bet amount × multiplier (only for winning bets)
+      const betPrize = betAmount * multiplier;
+      totalPrize += betPrize;
+    }
+  });
+
+  return totalPrize;
+}
+
+// Helper function to check if a specific bet combination is winning
+function checkIfBetIsWinning(betCombination, betType, winningNumbers) {
+  if (!betCombination || !winningNumbers || winningNumbers.length === 0) {
+    return false;
+  }
+
+  // Clean bet combination
+  const cleanBetCombination = betCombination.toString().replace(/\s+/g, '');
+  const betDigits = cleanBetCombination.split('').sort();
+  
+  // Handle different winning number formats
+  const numbersToCheck = Array.isArray(winningNumbers) ? winningNumbers : [winningNumbers];
+  
+  return numbersToCheck.some(winningNumber => {
+    if (!winningNumber) return false;
+    
+    const cleanWinningNumber = winningNumber.toString().replace(/\s+/g, '');
+    const winningDigits = cleanWinningNumber.split('');
+    
+    if (betType === 'rambolito') {
+      // For rambolito, check if bet digits match winning digits in any order
+      const sortedWinningDigits = winningDigits.sort();
+      return JSON.stringify(betDigits) === JSON.stringify(sortedWinningDigits);
+    } else {
+      // For standard/straight, check exact match
+      return cleanBetCombination === cleanWinningNumber;
+    }
+  });
+}
+
 // @route   GET /api/dashboard
 // @desc    Get comprehensive dashboard data for authenticated user based on role
 // @access  Private
@@ -134,21 +219,52 @@ router.get('/', requireAuth, async (req, res) => {
       ? ((dashboardData.todaySales - dashboardData.yesterdaySales) / dashboardData.yesterdaySales * 100)
       : 0;
 
-    // Get winning amount for today
-    const winningData = await prisma.winningTicket.aggregate({
+    // Get winning amounts from claim approval system
+    // Include both pending approvals and approved claims
+    const claimData = await prisma.ticket.findMany({
       where: {
-        ticket: whereClause
+        ...whereClause,
+        status: {
+          in: ['pending_approval', 'claimed']
+        }
       },
-      _sum: {
-        prizeAmount: true
-      },
-      _count: {
-        id: true
+      include: {
+        bets: true,
+        draw: {
+          include: {
+            drawResult: {
+              select: {
+                winningNumber: true,
+                isOfficial: true
+              }
+            }
+          }
+        }
       }
     });
 
-    dashboardData.winningAmount = winningData._sum.prizeAmount || 0;
-    dashboardData.winnersToday = winningData._count.id || 0;
+    // Calculate actual winning amounts based on prize configuration
+    let totalWinningAmount = 0;
+    let pendingAmount = 0;
+    let approvedAmount = 0;
+    let winnersCount = 0;
+
+    claimData.forEach(ticket => {
+      const calculatedPrize = calculateTicketPrize(ticket);
+      totalWinningAmount += calculatedPrize;
+      winnersCount++;
+
+      if (ticket.status === 'pending_approval') {
+        pendingAmount += calculatedPrize;
+      } else if (ticket.status === 'claimed') {
+        approvedAmount += calculatedPrize;
+      }
+    });
+
+    dashboardData.winningAmount = totalWinningAmount;
+    dashboardData.winnersToday = winnersCount;
+    dashboardData.pendingWinnings = pendingAmount;
+    dashboardData.approvedWinnings = approvedAmount;
     dashboardData.netSales = dashboardData.grossSales - dashboardData.winningAmount;
 
     // Get per-draw sales breakdown
@@ -624,24 +740,45 @@ router.get('/live', requireAuth, async (req, res) => {
 
     // Get live sales data
     const liveSalesData = await prisma.ticket.aggregate({
-      where: whereClause,
-      _sum: { totalAmount: true },
-      _count: { id: true }
+      where: {
+        ...whereClause,
+        status: {
+          in: ['pending_approval', 'claimed']
+        }
+      },
+      include: {
+        bets: true,
+        draw: {
+          include: {
+            drawResult: {
+              select: {
+                winningNumber: true,
+                isOfficial: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
 
-    // Get live winnings data
-    const liveWinningsData = await prisma.winningTicket.aggregate({
-      where: {
-        ticket: whereClause
-      },
-      _sum: { prizeAmount: true },
-      _count: { id: true }
+    // Calculate live winning amounts
+    let liveWinningAmount = 0;
+    let liveWinnersCount = 0;
+
+    liveClaimData.forEach(ticket => {
+      const calculatedPrize = calculateTicketPrize(ticket);
+      liveWinningAmount += calculatedPrize;
+      liveWinnersCount++;
     });
 
     // Get active tickets count
     const activeTickets = await prisma.ticket.count({
       where: {
-        status: 'pending',
+        ...whereClause,
+        status: 'pending'
         ...(whereClause.userId ? { userId: whereClause.userId } : {})
       }
     });

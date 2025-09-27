@@ -53,6 +53,130 @@ const ClaimApprovals = () => {
     }
   }, []);
 
+  // Calculate actual prize amount based on prize configuration for WINNING bets only
+  const calculateActualPrizeAmount = useCallback((ticket) => {
+    if (!ticket?.bets || !Array.isArray(ticket.bets)) {
+      return 0;
+    }
+
+    // Debug: Log the ticket data to see structure
+    console.log('🔍 Ticket data for prize calculation:', {
+      ticketNumber: ticket.ticketNumber,
+      draw: ticket.draw,
+      bets: ticket.bets
+    });
+
+    // Prize structure based on bet type and amount
+    const prizeStructure = {
+      'standard': {
+        '3D': 450,      // 450x multiplier for standard 3D
+        'rambolito': 75  // 75x multiplier for rambolito
+      },
+      'straight': {
+        '3D': 450,
+        'rambolito': 75
+      }
+    };
+
+    let totalPrize = 0;
+    
+    // Get winning numbers from DrawResult table
+    const winningNumbers = ticket.draw?.drawResult?.winningNumber ? 
+                          [ticket.draw.drawResult.winningNumber] : 
+                          [];
+
+    console.log('🎯 Winning numbers found:', winningNumbers);
+
+    ticket.bets.forEach(bet => {
+      const betCombination = bet.betCombination;
+      const betAmount = parseFloat(bet.betAmount || bet.amount || 0);
+      const betType = (bet.betType || 'standard').toLowerCase();
+      
+      console.log('🎲 Checking bet:', { betCombination, betType, betAmount });
+      
+      // Check if this specific bet is a winner
+      const isWinning = checkIfBetIsWinning(betCombination, betType, winningNumbers);
+      
+      console.log('✅ Is winning:', isWinning);
+      
+      if (isWinning) {
+        // Determine multiplier based on bet type
+        let multiplier = 0;
+        if (betType === 'rambolito') {
+          multiplier = prizeStructure.standard.rambolito || 75;
+        } else {
+          multiplier = prizeStructure.standard['3D'] || 450;
+        }
+
+        // Calculate prize: bet amount × multiplier (only for winning bets)
+        const betPrize = betAmount * multiplier;
+        totalPrize += betPrize;
+        
+        console.log('💰 Prize calculated:', { betPrize, multiplier, totalPrize });
+      }
+    });
+
+    console.log('🏁 Final total prize:', totalPrize);
+    
+    return totalPrize;
+  }, []);
+
+  // Helper function to check if a specific bet combination is winning
+  const checkIfBetIsWinning = (betCombination, betType, winningNumbers) => {
+    if (!betCombination || !winningNumbers || winningNumbers.length === 0) {
+      console.log('❌ Missing data:', { betCombination, betType, winningNumbers });
+      return false;
+    }
+
+    // Clean bet combination
+    const cleanBetCombination = betCombination.toString().replace(/\s+/g, '');
+    const betDigits = cleanBetCombination.split('').sort();
+    
+    console.log('🔍 Checking combination:', { 
+      original: betCombination, 
+      clean: cleanBetCombination, 
+      betType, 
+      winningNumbers 
+    });
+
+    // Handle different winning number formats
+    const numbersToCheck = Array.isArray(winningNumbers) ? winningNumbers : [winningNumbers];
+    
+    return numbersToCheck.some(winningNumber => {
+      if (!winningNumber) return false;
+      
+      const cleanWinningNumber = winningNumber.toString().replace(/\s+/g, '');
+      const winningDigits = cleanWinningNumber.split('');
+      
+      console.log('🎯 Comparing:', { 
+        bet: cleanBetCombination, 
+        winning: cleanWinningNumber,
+        betType 
+      });
+      
+      if (betType === 'rambolito') {
+        // For rambolito, check if bet digits match winning digits in any order
+        const sortedWinningDigits = winningDigits.sort();
+        const match = JSON.stringify(betDigits) === JSON.stringify(sortedWinningDigits);
+        console.log('🔄 Rambolito check:', { 
+          betDigits, 
+          sortedWinningDigits, 
+          match 
+        });
+        return match;
+      } else {
+        // For standard/straight, check exact match
+        const match = cleanBetCombination === cleanWinningNumber;
+        console.log('🎯 Standard check:', { 
+          bet: cleanBetCombination, 
+          winning: cleanWinningNumber, 
+          match 
+        });
+        return match;
+      }
+    });
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -69,9 +193,12 @@ const ClaimApprovals = () => {
 
   const handleApprove = async (ticketId) => {
     try {
+      const calculatedAmount = calculateActualPrizeAmount(selectedClaim);
+      const finalPrizeAmount = prizeAmount ? parseFloat(prizeAmount) : calculatedAmount;
+      
       const response = await api.post(`/claim-approvals/${ticketId}/approve`, {
         notes: approvalNotes,
-        prizeAmount: prizeAmount ? parseFloat(prizeAmount) : null
+        prizeAmount: finalPrizeAmount
       });
       
       if (response.data.success) {
@@ -324,17 +451,17 @@ const ClaimApprovals = () => {
                         color: '#dc2626',
                         marginBottom: '5px'
                       }}>
-                        {formatCurrency(claim.calculatedPrizeAmount)}
+                        {formatCurrency(calculateActualPrizeAmount(claim))}
                       </div>
                       <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                        Requested: {formatDate(claim.approvalRequestedAt)}
+                        Requested: {formatDate(claim?.approvalRequestedAt || claim?.createdAt)}
                       </div>
                       <div style={{ 
                         fontSize: '12px', 
-                        color: claim.daysPending > 2 ? '#dc2626' : '#6b7280',
-                        fontWeight: claim.daysPending > 2 ? '600' : 'normal'
+                        color: (claim?.daysPending || 0) > 2 ? '#dc2626' : '#6b7280',
+                        fontWeight: (claim?.daysPending || 0) > 2 ? '600' : 'normal'
                       }}>
-                        {claim.daysPending} days pending
+                        {claim?.daysPending || 0} days pending
                       </div>
                     </div>
 
@@ -482,36 +609,83 @@ const ClaimApprovals = () => {
               borderRadius: '8px',
               marginBottom: '20px'
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <div>
-                  <strong>Ticket Number:</strong><br />
-                  {formatTicketNumber(selectedClaim.ticketNumber)}
-                </div>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '15px',
+                marginBottom: '20px'
+              }}>
                 <div>
                   <strong>Agent:</strong><br />
                   {selectedClaim.user?.fullName || selectedClaim.user?.username}
                 </div>
                 <div>
-                  <strong>Claimer:</strong><br />
-                  {selectedClaim.claimerName}
+                  <strong>Ticket Number:</strong><br />
+                  {selectedClaim.ticketNumber}
                 </div>
                 <div>
-                  <strong>Phone:</strong><br />
-                  {selectedClaim.claimerPhone}
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <strong>Address:</strong><br />
-                  {selectedClaim.claimerAddress}
+                  <strong>Claim Time:</strong><br />
+                  {formatDate(selectedClaim?.approvalRequestedAt || selectedClaim?.createdAt)}
                 </div>
                 <div>
-                  <strong>Calculated Prize:</strong><br />
+                  <strong>Prize Amount:</strong><br />
                   <span style={{ fontSize: '18px', fontWeight: '700', color: '#dc2626' }}>
-                    {formatCurrency(selectedClaim.calculatedPrizeAmount)}
+                    {formatCurrency(calculateActualPrizeAmount(selectedClaim))}
                   </span>
                 </div>
-                <div>
-                  <strong>Requested:</strong><br />
-                  {formatDate(selectedClaim.approvalRequestedAt)}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <strong>Winning Combinations & Bet Types:</strong><br />
+                  {(() => {
+                    const winningNumbers = selectedClaim.draw?.drawResult?.winningNumber ? 
+                                          [selectedClaim.draw.drawResult.winningNumber] : 
+                                          [];
+                    
+                    console.log('🎯 Display: Winning numbers for filtering:', winningNumbers);
+                    
+                    const winningBets = selectedClaim.bets?.filter(bet => {
+                      const isWinning = checkIfBetIsWinning(bet.betCombination, bet.betType, winningNumbers);
+                      console.log('🎲 Display: Bet check result:', { bet: bet.betCombination, isWinning });
+                      return isWinning;
+                    }) || [];
+
+                    if (winningBets.length === 0) {
+                      return <div style={{ color: '#6b7280', fontStyle: 'italic' }}>No winning combinations found</div>;
+                    }
+
+                    return winningBets.map((bet, index) => {
+                      const betAmount = parseFloat(bet.betAmount || bet.amount || 0);
+                      const betType = (bet.betType || 'standard').toLowerCase();
+                      const multiplier = betType === 'rambolito' ? 75 : 450;
+                      const betPrize = betAmount * multiplier;
+                      
+                      return (
+                        <div key={index} style={{ 
+                          backgroundColor: '#f0f9ff', 
+                          padding: '12px', 
+                          borderRadius: '6px', 
+                          margin: '6px 0',
+                          border: '1px solid #bfdbfe'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <strong>{bet.betType}:</strong> {bet.betCombination}
+                              <div style={{ fontSize: '12px', color: '#059669', fontWeight: '600' }}>
+                                ✅ WINNING BET
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                ₱{betAmount} × {multiplier}x
+                              </div>
+                              <div style={{ fontSize: '16px', fontWeight: '700', color: '#dc2626' }}>
+                                ₱{betPrize.toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </div>
@@ -526,7 +700,7 @@ const ClaimApprovals = () => {
                 step="0.01"
                 value={prizeAmount}
                 onChange={(e) => setPrizeAmount(e.target.value)}
-                placeholder={selectedClaim.calculatedPrizeAmount.toString()}
+                placeholder={calculateActualPrizeAmount(selectedClaim)?.toString() || '0.00'}
                 style={{
                   width: '100%',
                   padding: '10px',

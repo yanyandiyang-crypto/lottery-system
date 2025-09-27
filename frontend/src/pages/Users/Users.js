@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
 import { 
@@ -17,15 +17,13 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    filterUsers();
-  }, [users, activeTab, searchTerm]);
-
-  const filterUsers = () => {
+  const filterUsers = useCallback(() => {
+    // Ensure users is an array before filtering
+    if (!Array.isArray(users)) {
+      setFilteredUsers([]);
+      return;
+    }
+    
     let filtered = users;
     
     // Hide SuperAdmin users from regular admin view
@@ -48,13 +46,22 @@ const Users = () => {
     }
     
     setFilteredUsers(filtered);
-  };
+  }, [users, activeTab, searchTerm, user.role]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    filterUsers();
+  }, [filterUsers]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const response = await api.get('/users');
-      setUsers(response.data.data || []);
+      console.log('Users API response:', response.data);
+      setUsers(response.data.items || response.data.data || []);
     } catch (err) {
       setError('Failed to fetch users');
       console.error('Error fetching users:', err);
@@ -99,11 +106,13 @@ const Users = () => {
       
       // Update the user in the local state immediately
       setUsers(prevUsers => 
-        prevUsers.map(userData => 
-          userData.id === userId 
-            ? { ...userData, status: newStatus }
-            : userData
-        )
+        Array.isArray(prevUsers) 
+          ? prevUsers.map(userData => 
+              userData.id === userId 
+                ? { ...userData, status: newStatus }
+                : userData
+            )
+          : []
       );
       
       // Also refresh from server to ensure consistency
@@ -168,7 +177,7 @@ const Users = () => {
                 />
               </div>
               <div className="text-sm text-gray-500">
-                Total Users: {users.length}
+                Total Users: {Array.isArray(users) ? users.length : 0}
               </div>
             </div>
           </div>
@@ -189,7 +198,7 @@ const Users = () => {
                 const isActive = activeTab === tab.id;
                 const count = tab.id === 'all' 
                   ? filteredUsers.length 
-                  : users.filter(u => u.role === tab.id && (user.role === 'superadmin' || u.role !== 'superadmin')).length;
+                  : Array.isArray(users) ? users.filter(u => u.role === tab.id && (user.role === 'superadmin' || u.role !== 'superadmin')).length : 0;
                 
                 return (
                   <button

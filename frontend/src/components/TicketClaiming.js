@@ -9,12 +9,7 @@ const TicketClaiming = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showCamera, setShowCamera] = useState(false);
-  const [claimStep, setClaimStep] = useState('verify'); // 'verify', 'details', 'success'
-  
-  // Claimer details
-  const [claimerName, setClaimerName] = useState('');
-  const [claimerPhone, setClaimerPhone] = useState('');
-  const [claimerAddress, setClaimerAddress] = useState('');
+  const [claimStep, setClaimStep] = useState('verify'); // 'verify', 'success'
 
   // Verify ticket for claiming
   const verifyTicketForClaiming = async (ticketNum, qrData = null) => {
@@ -83,22 +78,18 @@ const TicketClaiming = () => {
     }
   };
 
-  // Submit claim
+  // Submit claim automatically after verification
   const submitClaim = async () => {
-    if (!claimerName.trim()) {
-      setError('Claimer name is required');
-      return;
-    }
-
     setLoading(true);
     setError('');
     
     try {
       const response = await ticketsAPI.claimTicket({
         ticketNumber: ticketData.ticketNumber,
-        claimerName: claimerName.trim(),
-        claimerPhone: claimerPhone.trim(),
-        claimerAddress: claimerAddress.trim()
+        // Auto-filled with agent info - no manual input needed
+        claimerName: 'Agent Claim',
+        claimerPhone: '',
+        claimerAddress: ''
       });
       
       const data = response.data;
@@ -133,9 +124,6 @@ const TicketClaiming = () => {
     setTicketNumber('');
     setTicketData(null);
     setClaimStep('verify');
-    setClaimerName('');
-    setClaimerPhone('');
-    setClaimerAddress('');
     setError('');
     setShowCamera(false);
   };
@@ -379,67 +367,15 @@ const TicketClaiming = () => {
             </div>
           </div>
 
-          {/* Claim Details Form */}
+          {/* Quick Claim Confirmation */}
           <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '10px', border: '1px solid #d1fae5' }}>
-            <h4 style={{ marginBottom: '20px', color: '#374151' }}>Claim Details:</h4>
+            <h4 style={{ marginBottom: '20px', color: '#374151' }}>🏆 Ready to Claim Prize!</h4>
             
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                Full Name: *
-              </label>
-              <input
-                type="text"
-                value={claimerName}
-                onChange={(e) => setClaimerName(e.target.value)}
-                placeholder="Enter full name of claimer"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '16px'
-                }}
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                Phone Number:
-              </label>
-              <input
-                type="tel"
-                value={claimerPhone}
-                onChange={(e) => setClaimerPhone(e.target.value)}
-                placeholder="09123456789"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '16px'
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                Address:
-              </label>
-              <textarea
-                value={claimerAddress}
-                onChange={(e) => setClaimerAddress(e.target.value)}
-                placeholder="Complete address"
-                rows="3"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                  resize: 'vertical'
-                }}
-              />
+            <div style={{ backgroundColor: '#f0f9ff', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+              <p style={{ margin: 0, color: '#1e40af', fontSize: '14px' }}>
+                ✅ This claim will be automatically sent to admin for approval.<br/>
+                📋 Admin will review: Agent, Time, Ticket Number, Winning Combination & Bet Type
+              </p>
             </div>
 
             <div style={{ display: 'flex', gap: '15px' }}>
@@ -461,20 +397,20 @@ const TicketClaiming = () => {
               </button>
               <button
                 onClick={submitClaim}
-                disabled={loading || !claimerName.trim()}
+                disabled={loading}
                 style={{
                   flex: 2,
                   padding: '15px',
-                  backgroundColor: loading || !claimerName.trim() ? '#9ca3af' : '#dc2626',
+                  backgroundColor: loading ? '#9ca3af' : '#dc2626',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   fontSize: '16px',
                   fontWeight: '600',
-                  cursor: loading || !claimerName.trim() ? 'not-allowed' : 'pointer'
+                  cursor: loading ? 'not-allowed' : 'pointer'
                 }}
               >
-                {loading ? '⏳ Processing Claim...' : '🏆 Submit Claim'}
+                {loading ? '⏳ Submitting Claim...' : '🏆 Claim Prize Now'}
               </button>
             </div>
           </div>
@@ -506,8 +442,9 @@ const TicketClaiming = () => {
             border: '1px solid #d1fae5'
           }}>
             <div><strong>Ticket:</strong> {formatTicketNumber(ticketData?.ticketNumber || '')}</div>
-            <div><strong>Claimer:</strong> {claimerName}</div>
+            <div><strong>Claimed by:</strong> Agent</div>
             <div><strong>Date:</strong> {new Date().toLocaleString()}</div>
+            <div><strong>Status:</strong> Pending Admin Approval</div>
           </div>
 
           <button
