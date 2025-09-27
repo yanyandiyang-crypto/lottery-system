@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-09-27T15:51:46.470Z",
+  "version": "3.0.2",
+  "trigger": "manual",
+  "changes": [
+    "Fixed Socket.IO WebSocket connection",
+    "Added WebSocket transport configuration",
+    "Added polling fallback for Render compatibility",
+    "Added WebSocket error debugging",
+    "Updated to version 3.0.2"
+  ],
+  "frontend": {
+    "apiUrl": "https://lottery-system-tna9.onrender.com",
+    "socketUrl": "https://lottery-system-tna9.onrender.com",
+    "version": "3.0.2"
+  }
+}
