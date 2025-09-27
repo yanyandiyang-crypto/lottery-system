@@ -619,6 +619,19 @@ const Dashboard = () => {
                     <ArrowDownIcon className="h-4 w-4 text-red-500 mr-1" />
                     <span className="text-red-600 font-medium">Payouts</span>
                   </div>
+                  {/* Pending/Approved Breakdown */}
+                  {(dashboardData?.pendingWinnings || dashboardData?.approvedWinnings) && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-orange-600">
+                          Pending: ₱{(dashboardData.pendingWinnings || 0).toLocaleString()}
+                        </span>
+                        <span className="text-green-600">
+                          Approved: ₱{(dashboardData.approvedWinnings || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Net Sales Card */}

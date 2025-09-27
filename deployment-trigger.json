@@ -1,15 +1,15 @@
 {
-  "timestamp": "2025-09-27T11:14:15.541Z",
-  "version": "1.0.0",
-  "deployment": "manual-trigger",
+  "timestamp": "2025-09-27T15:41:34.010Z",
+  "version": "3.0.1",
+  "trigger": "manual",
   "changes": [
-    "Ticket claiming system",
-    "Ticket verification",
-    "Winning reports",
-    "Enhanced mobile POS",
-    "QR ticket system",
-    "New UI components",
-    "Database migrations",
-    "Enhanced templates"
-  ]
+    "Fixed health endpoint path",
+    "Updated DATABASE_URL to new database",
+    "Added missing environment variables",
+    "Fixed CORS and authentication setup"
+  ],
+  "database": {
+    "url": "postgresql://lottery_db_k3w0_user:FvVBvl5N1R3Cz4LYnk0EwDg0oZXJDNk7@dpg-d3c016j7mgec73a3pdf0-a.oregon-postgres.render.com/lottery_db_k3w0",
+    "status": "restored"
+  }
 }

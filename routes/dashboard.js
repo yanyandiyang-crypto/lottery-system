@@ -855,7 +855,7 @@ router.get('/live', requireAuth, async (req, res) => {
     }
 
     const grossSales = liveSalesData._sum.totalAmount || 0;
-    const winningAmount = liveWinningsData._sum.prizeAmount || 0;
+    const winningAmount = liveWinningAmount;
     const netSales = grossSales - winningAmount;
 
     res.json({
@@ -867,7 +867,7 @@ router.get('/live', requireAuth, async (req, res) => {
         netSales,
         activeTickets,
         totalTickets: liveSalesData._count.id || 0,
-        totalWinners: liveWinningsData._count.id || 0,
+        totalWinners: liveWinnersCount,
         activeAgents,
         totalAgents,
         drawSales: liveDrawSales,
