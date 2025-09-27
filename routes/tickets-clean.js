@@ -91,112 +91,120 @@ router.post('/create',
     
     try {
       // Main ticket creation logic
-const { bets, drawId, idempotencyKey } = req.body;
-    const userId = req.user.userId;
+      const { bets, drawId, idempotencyKey } = req.body;
+      const userId = req.user.userId;
 
-    // Handle idempotency
-    if (idempotencyKey) {
-      const existingTicket = await TicketService.findByIdempotencyKey(userId, idempotencyKey);
-      if (existingTicket) {
-        return sendSuccess(res, {
-          ticket: existingTicket,
-          idempotent: true
-        }, 'Ticket already created (idempotent request)');
-      }
-    }
-
-    // Validate betting rules
-    const bettingValidation = await validateBettingRules(bets, userId);
-    if (!bettingValidation.isValid) {
-      return sendError(res, bettingValidation.message, 400);
-    }
-
-    // Check bet limits
-    const limitsCheck = await checkBetLimits(bets, userId, drawId);
-    if (!limitsCheck.isValid) {
-      return sendError(res, limitsCheck.message, 400);
-    }
-
-    // Calculate total amount
-    const totalAmount = bets.reduce((sum, bet) => sum + parseFloat(bet.betAmount), 0);
-
-    // Generate ticket number and QR code (like the old system)
-    const { generateTicketNumber } = require('../utils/ticketGenerator');
-    const QRCode = require('qrcode');
-    const crypto = require('crypto');
-    
-    const ticketNumber = generateTicketNumber();
-    
-    // Generate secure hash for QR code
-    const hashData = `${ticketNumber}:${totalAmount}:${drawId}:${userId}:${Date.now()}`;
-    const hash = crypto.createHash('sha256').update(hashData).digest('hex').substring(0, 16);
-    const qrCodeData = `${ticketNumber}|${hash}`;
-    const qrCode = await QRCode.toDataURL(qrCodeData);
-    
-    // Prepare ticket data for atomic transaction
-    const ticketData = {
-      ticketNumber,
-      drawId,
-      userId,
-      totalAmount,
-      qrCode,
-      betCombination: bets[0].betCombination, // Primary bet combination
-      betType: bets[0].betType
-    };
-    
-    // Use atomic transaction service for balance + ticket creation
-    const result = await transactionService.createTicketWithBalanceDeduction(
-      ticketData,
-      req.user,
-      req.ip,
-      req.get('User-Agent')
-    );
-    
-    if (!result.success) {
-      return sendError(res, result.message, 400);
-    }
-
-    // Create bets in database
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-    
-    await prisma.$transaction(async (tx) => {
-      // Insert bets
-      await tx.bet.createMany({
-        data: bets.map(bet => ({
-          ticketId: result.ticketId,
-          betType: bet.betType,
-          betCombination: bet.betCombination,
-          betAmount: parseFloat(bet.betAmount)
-        }))
-      });
-    });
-
-    // Get the complete ticket with bets for response
-    const completeTicket = await prisma.ticket.findUnique({
-      where: { id: result.ticketId },
-      include: {
-        bets: true,
-        draw: true,
-        user: {
-          select: {
-            id: true,
-            username: true,
-            fullName: true
-          }
+      // Handle idempotency
+      if (idempotencyKey) {
+        const existingTicket = await TicketService.findByIdempotencyKey(userId, idempotencyKey);
+        if (existingTicket) {
+          return sendSuccess(res, {
+            ticket: existingTicket,
+            idempotent: true
+          }, 'Ticket already created (idempotent request)');
         }
       }
-    });
 
-    // Return response in the same format as the old route for frontend compatibility
-    return res.json({
-      success: true,
-      message: 'Ticket created successfully',
-      ticket: completeTicket,
-      remainingBalance: result.remainingBalance
-    });
-  })
-);
+      // Validate betting rules
+      const bettingValidation = await validateBettingRules(bets, userId);
+      if (!bettingValidation.isValid) {
+        return sendError(res, bettingValidation.message, 400);
+      }
+
+      // Check bet limits
+      const limitsCheck = await checkBetLimits(bets, userId, drawId);
+      if (!limitsCheck.isValid) {
+        return sendError(res, limitsCheck.message, 400);
+      }
+
+      // Calculate total amount
+      const totalAmount = bets.reduce((sum, bet) => sum + parseFloat(bet.betAmount), 0);
+
+      // Generate ticket number and QR code (like the old system)
+      const { generateTicketNumber } = require('../utils/ticketGenerator');
+      const QRCode = require('qrcode');
+      const crypto = require('crypto');
+      
+      const ticketNumber = generateTicketNumber();
+      
+      // Generate secure hash for QR code
+      const hashData = `${ticketNumber}:${totalAmount}:${drawId}:${userId}:${Date.now()}`;
+      const hash = crypto.createHash('sha256').update(hashData).digest('hex').substring(0, 16);
+      const qrCodeData = `${ticketNumber}|${hash}`;
+      const qrCode = await QRCode.toDataURL(qrCodeData);
+      
+      // Prepare ticket data for atomic transaction
+      const ticketData = {
+        ticketNumber,
+        drawId,
+        userId,
+        totalAmount,
+        qrCode,
+        betCombination: bets[0].betCombination, // Primary bet combination
+        betType: bets[0].betType
+      };
+      
+      // Use atomic transaction service for balance + ticket creation
+      const result = await transactionService.createTicketWithBalanceDeduction(
+        ticketData,
+        req.user,
+        req.ip,
+        req.get('User-Agent')
+      );
+      
+      if (!result.success) {
+        return sendError(res, result.message, 400);
+      }
+
+      // Create bets in database
+      const { PrismaClient } = require('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      await prisma.$transaction(async (tx) => {
+        // Insert bets
+        await tx.bet.createMany({
+          data: bets.map(bet => ({
+            ticketId: result.ticketId,
+            betType: bet.betType,
+            betCombination: bet.betCombination,
+            betAmount: parseFloat(bet.betAmount)
+          }))
+        });
+      });
+
+      // Get the complete ticket with bets for response
+      const completeTicket = await prisma.ticket.findUnique({
+        where: { id: result.ticketId },
+        include: {
+          bets: true,
+          draw: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              fullName: true
+            }
+          }
+        }
+      });
+
+      // Return response in the same format as the old route for frontend compatibility
+      return res.json({
+        success: true,
+        message: 'Ticket created successfully',
+        ticket: completeTicket,
+        remainingBalance: result.remainingBalance
+      });
+
+    } catch (error) {
+      console.error('❌ Ticket creation error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error creating ticket',
+        error: error.message
+      });
+    }
+}));
 
 /**
  * @route   GET /api/v1/tickets
@@ -351,27 +359,35 @@ router.get('/:ticketNumber',
 router.post('/:ticketNumber/cancel',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const { ticketNumber } = req.params;
-    const userId = req.user.userId;
-    const userRole = req.user.role;
+    try {
+      const { ticketNumber } = req.params;
+      const userId = req.user.userId;
+      const userRole = req.user.role;
 
-    const ticket = await TicketService.getTicketByNumber(ticketNumber);
+      const ticket = await TicketService.getTicketByNumber(ticketNumber);
 
-    // Check permissions
-    if (userRole === 'agent' && ticket.userId !== userId) {
-      return sendError(res, 'Access denied', 403);
-    }
+      // Check permissions
+      if (userRole === 'agent' && ticket.userId !== userId) {
+        return sendError(res, 'Access denied', 403);
+      }
 
-    // Cancel ticket
-    const cancelResult = await TicketService.cancelTicket(ticketNumber, userId);
+      // Cancel ticket
+      const cancelResult = await TicketService.cancelTicket(ticketNumber, userId);
 
-    // Refund balance if successful
-    if (cancelResult.success) {
-      await transactionService.addBalance(ticket.userId, ticket.totalAmount, {
-        type: 'TICKET_REFUND',
-        ticketId: ticket.id,
-        description: `Ticket cancellation refund: ${ticketNumber}`
-      
+      // Refund balance if successful
+      if (cancelResult.success) {
+        await transactionService.addBalance(ticket.userId, ticket.totalAmount, {
+          type: 'TICKET_REFUND',
+          ticketId: ticket.id,
+          description: `Ticket cancellation refund: ${ticketNumber}`
+        });
+      }
+
+      return sendSuccess(res, {
+        ticket: cancelResult.ticket,
+        refundAmount: ticket.totalAmount
+      }, 'Ticket cancelled successfully');
+
     } catch (error) {
       console.error('❌ Ticket creation error:', {
         message: error.message,
@@ -391,13 +407,6 @@ router.post('/:ticketNumber/cancel',
         return sendError(res, 'Database operation failed: ' + error.message, 500);
       }
     }
-});
-    }
-
-    return sendSuccess(res, {
-      ticket: cancelResult.ticket,
-      refundAmount: ticket.totalAmount
-    }, 'Ticket cancelled successfully');
   })
 );
 
