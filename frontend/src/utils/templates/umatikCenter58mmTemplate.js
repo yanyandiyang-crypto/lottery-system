@@ -70,14 +70,16 @@ export function generateUmatikCenter58mmTicketHTML(ticket, user, assets = {}) {
     const amount = Number(bet?.betAmount || bet?.amount || 0);
     return `
       <div style="border-bottom: 1px dotted #ccc; padding: 2px 0; margin-bottom: 2px; background-color: #f9f9f9;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-weight: 700; font-size: 7px;">${betTypeLabel}</div>
-          <div style="font-size: 6px;">${letter}</div>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1px;">
-          <div style="font-weight: 700; font-size: 10px; letter-spacing: 2px;">${spacedCombo}</div>
-          <div style="font-size: 7px; font-weight: 700;">₱${amount.toFixed(2)}</div>
-        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="font-weight: 700; font-size: 7px; text-align: left; padding: 0;">${betTypeLabel}</td>
+            <td style="font-size: 6px; text-align: right; padding: 0;">${letter}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 700; font-size: 10px; letter-spacing: 2px; text-align: left; padding: 0;">${spacedCombo}</td>
+            <td style="font-size: 7px; font-weight: 700; text-align: right; padding: 0;">₱${amount.toFixed(2)}</td>
+          </tr>
+        </table>
       </div>`;
   }).join('');
 
@@ -85,37 +87,41 @@ export function generateUmatikCenter58mmTicketHTML(ticket, user, assets = {}) {
 
   return `
 <div style="font-family: 'Courier New', monospace; font-size: 8px; width: 220px; color: black; font-weight: 700; background: white; padding: 4px; border: 1px solid #000;">
-  <!-- Header with Centered Logo -->
-  <div style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 4px;">
-    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 2px;">
-      ${centerLogo ? `<img src="${centerLogo}" alt="Logo" style="width: 100px; height: auto;">` : '<div style="font-size: 8px; font-weight: bold;">LOTTERY</div>'}
-    </div>
-    <div style="font-size: 7px; font-weight: bold;">3D LOTTO TICKET</div>
-  </div>
+  <!-- Header with Centered Logo - Table Layout -->
+  <table style="width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; margin-bottom: 4px;">
+    <tr>
+      <td style="text-align: center; padding: 2px 0;">
+        ${centerLogo ? `<img src="${centerLogo}" alt="Logo" style="width: 100px; height: auto; display: block; margin: 0 auto;">` : '<div style="font-size: 8px; font-weight: bold;">LOTTERY</div>'}
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: center; font-size: 7px; font-weight: bold; padding: 2px 0;">3D LOTTO TICKET</td>
+    </tr>
+  </table>
 
-  <!-- Ticket Info Section -->
-  <div style="font-size: 6px; margin-bottom: 4px; line-height: 1.2;">
-    <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
-      <span><strong>Bet Date:</strong></span>
-      <span>${betDateFmt.full}</span>
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
-      <span><strong>Draw Date:</strong></span>
-      <span>${fullDrawDate}</span>
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
-      <span><strong>Draw ID:</strong></span>
-      <span>${drawId}</span>
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
-      <span><strong>Agent:</strong></span>
-      <span>${agentId}</span>
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
-      <span><strong>Total:</strong></span>
-      <span><strong>${formatCurrency(totalAmount)}</strong></span>
-    </div>
-  </div>
+  <!-- Ticket Info Section - Table Layout -->
+  <table style="width: 100%; border-collapse: collapse; font-size: 6px; margin-bottom: 4px;">
+    <tr>
+      <td style="text-align: left; padding: 0 0 1px 0;"><strong>Bet Date:</strong></td>
+      <td style="text-align: right; padding: 0 0 1px 0;">${betDateFmt.full}</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 0 0 1px 0;"><strong>Draw Date:</strong></td>
+      <td style="text-align: right; padding: 0 0 1px 0;">${fullDrawDate}</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 0 0 1px 0;"><strong>Draw ID:</strong></td>
+      <td style="text-align: right; padding: 0 0 1px 0;">${drawId}</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 0 0 1px 0;"><strong>Agent:</strong></td>
+      <td style="text-align: right; padding: 0 0 1px 0;">${agentId}</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 0;"><strong>Total:</strong></td>
+      <td style="text-align: right; padding: 0;"><strong>${formatCurrency(totalAmount)}</strong></td>
+    </tr>
+  </table>
 
   <!-- Ticket Number -->
   <div style="text-align: center; margin: 4px 0; padding: 3px 0; border-top: 1px dashed #666; border-bottom: 1px dashed #666;">
