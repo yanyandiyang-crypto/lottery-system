@@ -266,8 +266,8 @@ router.get('/:userId/transactions', async (req, res) => {
     if (type) whereClause.transactionType = type;
     if (startDate || endDate) {
       whereClause.createdAt = {};
-      if (startDate) whereClause.createdAt.gte = new Date(startDate);
-      if (endDate) whereClause.createdAt.lte = new Date(endDate);
+      if (startDate) whereClause.createdAt.gte = new Date(startDate + 'T00:00:00+08:00');
+      if (endDate) whereClause.createdAt.lte = new Date(endDate + 'T23:59:59.999+08:00');
     }
 
     const transactions = await prisma.balanceTransaction.findMany({

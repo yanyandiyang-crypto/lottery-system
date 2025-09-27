@@ -78,8 +78,8 @@ router.get('/system-log', requireAuth, requireSuperAdmin, async (req, res) => {
     if (tableName) filters.tableName = tableName;
     if (userId) filters.userId = parseInt(userId);
     if (operation) filters.operation = operation;
-    if (startDate) filters.startDate = new Date(startDate);
-    if (endDate) filters.endDate = new Date(endDate);
+    if (startDate) filters.startDate = new Date(startDate + 'T00:00:00+08:00');
+    if (endDate) filters.endDate = new Date(endDate + 'T23:59:59.999+08:00');
     
     const auditLog = await transactionService.getAuditLog(
       filters, 
@@ -108,8 +108,8 @@ router.get('/system-log/export', requireAuth, requireSuperAdmin, async (req, res
     if (tableName) filters.tableName = tableName;
     if (userId) filters.userId = parseInt(userId);
     if (operation) filters.operation = operation;
-    if (startDate) filters.startDate = new Date(startDate);
-    if (endDate) filters.endDate = new Date(endDate);
+    if (startDate) filters.startDate = new Date(startDate + 'T00:00:00+08:00');
+    if (endDate) filters.endDate = new Date(endDate + 'T23:59:59.999+08:00');
 
     const auditLog = await transactionService.getAuditLog(filters, 1, parseInt(limit));
     const rows = auditLog.auditLogs || [];

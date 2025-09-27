@@ -81,9 +81,9 @@ router.get('/sales', requireAuth, async (req, res) => {
     }
 
     // Use half-open date window [start, nextDay(end)) to include full endDate
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setDate(end.getDate() + 1);
+    // Convert Philippines dates to UTC for database query
+    const start = new Date(startDate + 'T00:00:00+08:00'); // Philippines midnight
+    const end = new Date(endDate + 'T23:59:59.999+08:00'); // Philippines end of day
 
     let whereClause = {
       createdAt: {
@@ -299,9 +299,9 @@ router.get('/sales', async (req, res) => {
     }
 
     // Use half-open date window [start, nextDay(end))
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setDate(end.getDate() + 1);
+    // Convert Philippines dates to UTC for database query
+    const start = new Date(startDate + 'T00:00:00+08:00'); // Philippines midnight
+    const end = new Date(endDate + 'T23:59:59.999+08:00'); // Philippines end of day
 
     let whereClause = {
       createdAt: { gte: start, lt: end }

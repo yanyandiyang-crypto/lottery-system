@@ -107,11 +107,9 @@ router.get('/', requireAuth, async (req, res) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      // Half-open: [start, nextDay(end))
-      const nextDayEnd = new Date(end);
-      nextDayEnd.setDate(nextDayEnd.getDate() + 1);
+      // Convert Philippines dates to UTC for database query
+      const start = new Date(startDate + 'T00:00:00+08:00'); // Philippines midnight
+      const nextDayEnd = new Date(endDate + 'T23:59:59.999+08:00'); // Philippines end of day
       today = start;
       tomorrow = nextDayEnd;
     }

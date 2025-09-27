@@ -14,8 +14,8 @@ router.get('/history', requireAuth, async (req, res) => {
     const page = parseInt(req.query.page || '1', 10);
     const limit = parseInt(req.query.limit || '20', 10);
     const requestedUserId = req.query.userId ? parseInt(req.query.userId, 10) : null;
-    const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
-    const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
+    const startDate = req.query.startDate ? new Date(req.query.startDate + 'T00:00:00+08:00') : null;
+    const endDate = req.query.endDate ? new Date(req.query.endDate + 'T23:59:59.999+08:00') : null;
 
     // Authorization by role
     // - superadmin/admin: can view any user's transactions

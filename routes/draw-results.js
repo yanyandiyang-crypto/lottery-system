@@ -639,8 +639,8 @@ router.get('/agent/history', requireAuth, async (req, res) => {
     // Date filtering
     if (startDate || endDate) {
       whereClause.drawDate = {};
-      if (startDate) whereClause.drawDate.gte = new Date(startDate);
-      if (endDate) whereClause.drawDate.lte = new Date(endDate);
+      if (startDate) whereClause.drawDate.gte = new Date(startDate + 'T00:00:00+08:00');
+      if (endDate) whereClause.drawDate.lte = new Date(endDate + 'T23:59:59.999+08:00');
     }
 
     // Draw time filtering

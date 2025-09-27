@@ -104,10 +104,15 @@ router.get('/', requireAuth, async (req, res) => {
       });
     }
 
+    // Convert Philippines dates to UTC for database query
+    // Philippines is UTC+8, so we need to adjust the dates
+    const startDateUTC = new Date(startDate + 'T00:00:00+08:00'); // Philippines midnight
+    const endDateUTC = new Date(endDate + 'T23:59:59.999+08:00'); // Philippines end of day
+    
     let whereClause = {
       createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate + 'T23:59:59.999Z')
+        gte: startDateUTC,
+        lte: endDateUTC
       }
     };
 
