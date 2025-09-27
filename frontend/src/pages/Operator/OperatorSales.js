@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   EyeIcon, 
   ArrowPathIcon, 
@@ -8,9 +9,11 @@ import {
 } from '@heroicons/react/24/outline';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { getCurrentDatePH } from '../../utils/dateUtils';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
 
 const OperatorSales = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [salesData, setSalesData] = useState({
     dailyStats: {
@@ -22,9 +25,9 @@ const OperatorSales = () => {
     perDrawSales: [],
     historicalData: []
   });
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getCurrentDatePH());
+  const [startDate, setStartDate] = useState(getCurrentDatePH());
+  const [endDate, setEndDate] = useState(getCurrentDatePH());
   const [viewMode, setViewMode] = useState('today'); // 'today', 'historical'
 
   useEffect(() => {

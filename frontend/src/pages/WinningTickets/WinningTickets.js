@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import api, { ticketsAPI, userAPI } from '../../utils/api';
+import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { getCurrentDatePH } from '../../utils/dateUtils';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
 import { 
@@ -34,8 +35,8 @@ const WinningTickets = () => {
     totalPages: 0
   });
   const [filters, setFilters] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: getCurrentDatePH(),
+    endDate: getCurrentDatePH(),
     drawTime: 'all',
     search: ''
   });
@@ -54,11 +55,11 @@ const WinningTickets = () => {
   const fetchHierarchyData = async () => {
     try {
       if (user.role === 'area_coordinator') {
-        const coordinatorsRes = await userAPI.getUsers({ role: 'coordinator' });
+        const coordinatorsRes = await api.get('/users', { params: { role: 'coordinator' } });
         setCoordinators(coordinatorsRes.data.data || []);
       } else if (['superadmin', 'admin'].includes(user.role)) {
         // Fetch all agents for superadmin and admin
-        const agentsRes = await userAPI.getUsers({ role: 'agent' });
+        const agentsRes = await api.get('/users', { params: { role: 'agent' } });
         setAgents(agentsRes.data.data || []);
       }
     } catch (error) {
@@ -94,7 +95,7 @@ const WinningTickets = () => {
           if (selectedCoordinatorId) {
             // Get all agents under the selected coordinator
             try {
-              const agentsRes = await userAPI.getUsers({ role: 'agent', coordinatorId: selectedCoordinatorId });
+              const agentsRes = await api.get('/users', { params: { role: 'agent', coordinatorId: selectedCoordinatorId } });
               const agentList = agentsRes.data.data || [];
               setAgents(agentList);
             } catch (e) {
@@ -104,7 +105,7 @@ const WinningTickets = () => {
           // Use the main tickets API which will filter by region automatically
           response = await api.get('/tickets', { params: queryFilters });
         } else {
-          response = await ticketsAPI.getTicketsByAgent(agentIdToQuery, queryFilters);
+          response = await api.get(`/tickets/agent/${agentIdToQuery}`, { params: queryFilters });
         }
       }
 
@@ -352,7 +353,7 @@ const WinningTickets = () => {
                         setSelectedAgentId('');
                         if (coordinatorId) {
                           try {
-                            const agentsRes = await userAPI.getUsers({ role: 'agent', coordinatorId: parseInt(coordinatorId) });
+                            const agentsRes = await api.get('/users', { params: { role: 'agent', coordinatorId: parseInt(coordinatorId) } });
                             setAgents(agentsRes.data.data || []);
                           } catch (error) {
                             console.error('Error fetching agents:', error);

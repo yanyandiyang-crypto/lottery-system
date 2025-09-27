@@ -465,7 +465,7 @@ const Dashboard = () => {
                 <div className="flex space-x-1">
                   <button
                     onClick={() => {
-                      const t = new Date().toISOString().split('T')[0];
+                      const t = getCurrentDatePH();
                       setDateRange({ startDate: t, endDate: t });
                     }}
                     className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${

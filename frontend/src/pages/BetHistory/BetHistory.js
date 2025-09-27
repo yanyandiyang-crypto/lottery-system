@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import api, { ticketsAPI, userAPI } from '../../utils/api';
+import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { getCurrentDatePH } from '../../utils/dateUtils';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
 import { 
@@ -24,8 +25,8 @@ const BetHistory = () => {
   const [selectedAgentId, setSelectedAgentId] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'winning'
   const [filters, setFilters] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: getCurrentDatePH(),
+    endDate: getCurrentDatePH(),
     status: 'all',
     drawTime: 'all'
   });
@@ -45,21 +46,22 @@ const BetHistory = () => {
         if (['superadmin', 'admin'].includes(user.role)) {
           // Load all coordinators and agents for selection
           const [coorsRes, agentsRes] = await Promise.all([
-            userAPI.getUsers({ role: 'coordinator' }),
-            userAPI.getUsers({ role: 'agent' })
+            api.get('/users?role=coordinator'),
+            api.get('/users?role=agent')
           ]);
           setCoordinators(coorsRes.data.data || []);
           setAgents(agentsRes.data.data || []);
         } else if (user.role === 'area_coordinator') {
-          const coorsRes = await userAPI.getUsers({ role: 'coordinator', coordinatorId: user.id });
-          const areaCoors = coorsRes.data.data || [];
+          const agents = await api.get('/users/agents');
+          const coordinators = await api.get('/users/coordinators', { params: { coordinatorId: user.id } });
+          const areaCoors = coordinators.data.data || [];
           setCoordinators(areaCoors);
           // Default to first coordinator selected
           if (areaCoors.length > 0 && !selectedCoordinatorId) {
             setSelectedCoordinatorId(String(areaCoors[0].id));
           }
         } else if (user.role === 'coordinator') {
-          const agentsRes = await userAPI.getUsers({ role: 'agent', coordinatorId: user.id });
+          const agentsRes = await api.get('/users', { params: { role: 'agent', coordinatorId: user.id } });
           const myAgents = agentsRes.data.data || [];
           setAgents(myAgents);
           if (myAgents.length > 0 && !selectedAgentId) {
@@ -101,7 +103,7 @@ const BetHistory = () => {
           agentIdToQuery = parseInt(selectedAgentId);
         } else if (selectedCoordinatorId) {
           try {
-            const agentsRes = await userAPI.getUsers({ role: 'agent', coordinatorId: selectedCoordinatorId });
+            const agentsRes = await api.get('/users', { params: { role: 'agent', coordinatorId: selectedCoordinatorId } });
             const list = agentsRes.data.data || [];
             setAgents(list);
             if (list.length > 0) {
@@ -125,7 +127,7 @@ const BetHistory = () => {
         }
       }
 
-      const response = await ticketsAPI.getTicketsByAgent(agentIdToQuery, queryFilters);
+      const response = await api.get(`/tickets/agent/${agentIdToQuery}`, { params: queryFilters });
 
       setTickets(response.data.data.tickets || []);
       setPagination(prev => ({
@@ -142,7 +144,7 @@ const BetHistory = () => {
 
   const handleViewTicket = async (ticketId) => {
     try {
-      const response = await ticketsAPI.getTicket(ticketId);
+      const response = await api.get(`/tickets/${ticketId}`);
       setSelectedTicket(response.data.data);
       setShowTicketModal(true);
     } catch (error) {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import api, { salesAPI } from '../../utils/api';
+import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { getCurrentDatePH } from '../../utils/dateUtils';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
 import { formatDrawTime, getDrawTimeLabel } from '../../utils/drawTimeFormatter';
 import { 
@@ -16,7 +17,7 @@ const SalesPerDraw = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [salesData, setSalesData] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getCurrentDatePH());
   const [dailyStats, setDailyStats] = useState({
     today: { sales: 0, tickets: 0 },
     thisWeek: { sales: 0, tickets: 0 },
@@ -36,7 +37,7 @@ const SalesPerDraw = () => {
       if (user?.role === 'agent') {
         params.agentId = user.id;
       }
-      const response = await salesAPI.getPerDrawSales(params);
+      const response = await api.get('/sales/per-draw', { params });
       setSalesData(response.data?.data?.draws || []);
     } catch (error) {
       console.error('Error fetching sales data:', error);
@@ -75,7 +76,7 @@ const SalesPerDraw = () => {
       };
 
       // Selected day via per-draw tickets (keeps in sync with page cards)
-      const todayResp = await salesAPI.getPerDrawSales({ date: selectedISO });
+      const todayResp = await api.get('/sales/per-draw', { params: { date: selectedISO } });
       const todayDraws = todayResp.data?.data?.draws || [];
       const todaySales = todayDraws.reduce((sum, d) => sum + (d.grossSales || 0), 0);
       const todayTickets = todayDraws.reduce((sum, d) => sum + (d.ticketCount || 0), 0);

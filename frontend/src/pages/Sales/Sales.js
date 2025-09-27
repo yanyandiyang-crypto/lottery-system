@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import { getCurrentDatePH } from '../../utils/dateUtils';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
+    startDate: getCurrentDatePH(),
+    endDate: getCurrentDatePH()
   });
   const [summary, setSummary] = useState({
     totalSales: 0,

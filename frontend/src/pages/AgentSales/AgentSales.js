@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { getCurrentDatePH } from '../../utils/dateUtils';
 import {
   ChartBarIcon,
   CalendarIcon,
@@ -17,7 +18,7 @@ const AgentSales = () => {
     thisMonth: { totalSales: 0, totalTickets: 0 }
   });
   const [perDrawSales, setPerDrawSales] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getCurrentDatePH());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

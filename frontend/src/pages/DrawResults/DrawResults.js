@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { drawResultsAPI, drawsAPI } from '../../utils/api';
+import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { getCurrentDatePH } from '../../utils/dateUtils';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
 import { formatDrawTime, getDrawTimeLabel } from '../../utils/drawTimeFormatter';
 import { 
@@ -24,16 +25,18 @@ const DrawResults = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showInputModal, setShowInputModal] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getCurrentDatePH());
   const [winnerNotifications, setWinnerNotifications] = useState([]);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
 
   const fetchDraws = async (date = null) => {
     try {
-      const response = await drawsAPI.getDraws({
-        status: 'all',
-        limit: 20,
-        date: date || selectedDate
+      const response = await api.get('/draws', {
+        params: {
+          status: 'all',
+          limit: 20,
+          date: date || selectedDate
+        }
       });
       setDraws(response.data.data);
     } catch (error) {
@@ -52,7 +55,7 @@ const DrawResults = () => {
 
   const fetchWinnerNotifications = async (drawId) => {
     try {
-      const response = await drawResultsAPI.getWinnerNotifications(drawId);
+      const response = await api.get(`/draw-results/${drawId}/winners`);
       setWinnerNotifications(response.data.data);
     } catch (error) {
       console.error('Failed to fetch winner notifications:', error);
@@ -61,8 +64,8 @@ const DrawResults = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await drawResultsAPI.getAdminDashboard({
-        days: 7
+      const response = await api.get('/draw-results/dashboard', {
+        params: { days: 7 }
       });
       setDashboardData(response.data.data);
     } catch (error) {
@@ -80,7 +83,7 @@ const DrawResults = () => {
 
     setSubmitting(true);
     try {
-      await drawResultsAPI.inputResult({
+      await api.post('/draw-results/input', {
         drawId: selectedDraw.id,
         result: resultInput
       });

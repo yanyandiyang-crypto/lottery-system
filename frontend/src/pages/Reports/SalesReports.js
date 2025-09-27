@@ -4,6 +4,7 @@ import { reportsAPI } from '../../utils/api';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
+import { getCurrentDatePH, getTodayRange } from '../../utils/dateUtils';
 import { 
   DocumentArrowDownIcon, 
   ChartBarIcon,
@@ -24,8 +25,8 @@ const SalesReports = () => {
   const [drawTimeData, setDrawTimeData] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: getCurrentDatePH(),
+    endDate: getCurrentDatePH(),
     reportType: 'summary',
     groupBy: 'date'
   });

@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import { getCurrentDatePH } from '../../utils/dateUtils';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Reports = () => {
+  const { user } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedReport, setSelectedReport] = useState('sales');
   const [dateRange, setDateRange] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
+    startDate: getCurrentDatePH(),
+    endDate: getCurrentDatePH()
   });
 
   const reportTypes = [
