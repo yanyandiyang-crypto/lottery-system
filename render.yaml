@@ -9,12 +9,16 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: lottery-db
-          property: connectionString
+        value: postgresql://lottery_db_k3w0_user:FvVBvl5N1R3Cz4LYnk0EwDg0oZXJDNk7@dpg-d3c016j7mgec73a3pdf0-a.oregon-postgres.render.com/lottery_db_k3w0
       - key: CORS_ORIGIN
         value: https://lottery-system-gamma.vercel.app,http://localhost:3000,http://localhost:3002
-    healthCheckPath: /api/v1/health
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        value: your-super-secret-jwt-key-change-this-in-production
+      - key: BCRYPT_ROUNDS
+        value: 10
+    healthCheckPath: /v1/health
 
 databases:
   - name: lottery-db
