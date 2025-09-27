@@ -122,6 +122,8 @@ router.post('/:ticketId/approve', async (req, res) => {
     }
     
     // Update ticket status to claimed
+    console.log(`🔄 Updating ticket ${ticketId} to claimed status...`);
+    
     const updatedTicket = await prisma.ticket.update({
       where: { id: parseInt(ticketId) },
       data: {
@@ -136,6 +138,12 @@ router.post('/:ticketId/approve', async (req, res) => {
           }
         }
       }
+    });
+    
+    console.log(`✅ Successfully updated ticket ${ticketId}:`, {
+      id: updatedTicket.id,
+      status: updatedTicket.status,
+      claimedAt: updatedTicket.claimedAt
     });
     
     console.log(`✅ Ticket ${ticketId} approved and marked as claimed`);
