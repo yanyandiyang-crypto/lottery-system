@@ -81,37 +81,50 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
   const digits = String(ticket?.ticketNumber || '').padStart(17, '0').split('').map(d => `<span style="font-size: 8px; font-weight: 700; letter-spacing: 1px;">${d}</span>`).join('');
 
   return `
-<div style="font-family: Arial, sans-serif; font-size: 8px; width: 220px; color: black; font-weight: 800; background: white; padding: 4px;">
-  <!-- Header with Both Logos -->
-  <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 2px; margin-bottom: 4px; border-bottom: 1px solid #000;">
-    ${logo3d ? `<img src="${logo3d}" alt="3D Lotto" style="width: 60px; height: auto;">` : '<div style="font-size: 8px; font-weight: bold;">3D LOTTO</div>'}
-    ${logoUmatik ? `<img src="${logoUmatik}" alt="Umatik" style="width: 80px; height: auto;">` : '<div style="font-size: 7px; font-weight: bold;">UMATIK</div>'}
-  </div>
+<div style="font-family: Arial, sans-serif; font-size: 8px; width: 220px; color: black; font-weight: 800; background: white; padding: 4px; box-sizing: border-box;">
+  <!-- Header with Both Logos - Table Layout for Consistency -->
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; border-bottom: 1px solid #000; padding-bottom: 2px;">
+    <tr>
+      <td style="text-align: left; vertical-align: middle; padding: 0;">
+        ${logo3d ? `<img src="${logo3d}" alt="3D Lotto" style="width: 60px; height: auto; display: block;">` : '<div style="font-size: 8px; font-weight: bold;">3D LOTTO</div>'}
+      </td>
+      <td style="text-align: right; vertical-align: middle; padding: 0;">
+        ${logoUmatik ? `<img src="${logoUmatik}" alt="Umatik" style="width: 80px; height: auto; display: block;">` : '<div style="font-size: 7px; font-weight: bold;">UMATIK</div>'}
+      </td>
+    </tr>
+  </table>
   
-  <!-- Info and QR Code Section - Stacked for 58mm -->
-  <div style="margin-bottom: 4px;">
-    <!-- Info Section -->
-    <div style="margin-bottom: 6px;">
-      <p style="margin: 2px 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Bet Date: ${betDateFmt.full}</p>
-      <p style="margin: 2px 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Draw Date: ${fullDrawDate}</p>
-      <p style="margin: 2px 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Draw ID: ${drawId}</p>
-      <p style="margin: 2px 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Agent ID: ${agentId}</p>
-      <p style="margin: 2px 0 6px 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Ticket Price: ${formatCurrency(totalAmount)}</p>
-    </div>
-    
-    <!-- QR Code Section -->
-    <div style="display: flex; justify-content: center; margin-bottom: 6px;">
-      <div style="width: 80px; height: 80px; position: relative; z-index: 1;">
-        <img src="${qrUrl}" alt="QR Code" style="width: 80px; height: 80px;" />
-      </div>
-    </div>
-  </div>
+  <!-- Info Section - Table Layout -->
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
+    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Bet Date: ${betDateFmt.full}</td></tr>
+    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Draw Date: ${fullDrawDate}</td></tr>
+    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Draw ID: ${drawId}</td></tr>
+    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Agent ID: ${agentId}</td></tr>
+    <tr><td style="padding: 1px 0 4px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Ticket Price: ${formatCurrency(totalAmount)}</td></tr>
+  </table>
   
-  <!-- Ticket Number -->
-  <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 4px 0; gap: 0px; border-top: 1px dashed #666; border-bottom: 1px dashed #666; padding: 3px 0;">
-    ${digits}
-  </div>
-  <p style="text-align: center; font-size: 7px; margin: 2px 0 6px 0; letter-spacing: 0px; font-weight: 700; font-family: Arial, sans-serif; display: block; width: 100%;">Ticket Number</p>
+  <!-- QR Code Section - Centered Table -->
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
+    <tr>
+      <td style="text-align: center; padding: 0;">
+        <img src="${qrUrl}" alt="QR Code" style="width: 80px; height: 80px; display: block; margin: 0 auto;" />
+      </td>
+    </tr>
+  </table>
+  
+  <!-- Ticket Number - Table Layout -->
+  <table style="width: 100%; border-collapse: collapse; margin: 4px 0; border-top: 1px dashed #666; border-bottom: 1px dashed #666;">
+    <tr>
+      <td style="text-align: center; padding: 3px 0; font-size: 8px; font-weight: 700; letter-spacing: 1px;">
+        ${digits}
+      </td>
+    </tr>
+  </table>
+  <table style="width: 100%; border-collapse: collapse; margin: 2px 0 6px 0;">
+    <tr>
+      <td style="text-align: center; font-size: 7px; font-weight: 700; font-family: Arial, sans-serif;">Ticket Number</td>
+    </tr>
+  </table>
   
   <!-- Bets Section -->
   ${betsHtml}
