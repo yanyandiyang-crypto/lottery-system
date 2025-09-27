@@ -312,8 +312,11 @@ const SalesReports = () => {
                                 Pending: {formatCurrency(reportData.summary.pendingWinnings || 0)}
                               </span>
                               <span className="text-green-600">
-                                Approved: {formatCurrency(reportData.summary.approvedWinnings || 0)}
+                                Paid: {formatCurrency(reportData.summary.approvedWinnings || 0)}
                               </span>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1 text-center">
+                              *Only paid winnings deducted from net
                             </div>
                           </div>
                         )}

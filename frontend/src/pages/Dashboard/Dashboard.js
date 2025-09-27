@@ -627,8 +627,11 @@ const Dashboard = () => {
                           Pending: ₱{(dashboardData.pendingWinnings || 0).toLocaleString()}
                         </span>
                         <span className="text-green-600">
-                          Approved: ₱{(dashboardData.approvedWinnings || 0).toLocaleString()}
+                          Paid: ₱{(dashboardData.approvedWinnings || 0).toLocaleString()}
                         </span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        *Only paid winnings deducted from net sales
                       </div>
                     </div>
                   )}

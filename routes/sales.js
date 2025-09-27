@@ -965,12 +965,12 @@ router.get('/daily-operator-stats', async (req, res) => {
     tickets.forEach(ticket => {
       if (ticket.status === 'pending_approval' || ticket.status === 'claimed') {
         const calculatedPrize = calculateTicketPrize(ticket);
-        totalWinnings += calculatedPrize;
         
         if (ticket.status === 'pending_approval') {
           pendingWinnings += calculatedPrize;
         } else if (ticket.status === 'claimed') {
           approvedWinnings += calculatedPrize;
+          totalWinnings += calculatedPrize; // Only approved winnings count towards total
         }
       }
     });

@@ -244,28 +244,29 @@ router.get('/', requireAuth, async (req, res) => {
     });
 
     // Calculate actual winning amounts based on prize configuration
-    let totalWinningAmount = 0;
+    let totalWinnings = 0;
     let pendingAmount = 0;
     let approvedAmount = 0;
     let winnersCount = 0;
-
-    claimData.forEach(ticket => {
-      const calculatedPrize = calculateTicketPrize(ticket);
-      totalWinningAmount += calculatedPrize;
-      winnersCount++;
-
-      if (ticket.status === 'pending_approval') {
-        pendingAmount += calculatedPrize;
-      } else if (ticket.status === 'claimed') {
-        approvedAmount += calculatedPrize;
+    tickets.forEach(ticket => {
+      if (ticket.status === 'pending_approval' || ticket.status === 'claimed') {
+        const calculatedPrize = calculateTicketPrize(ticket);
+        winnersCount++;
+        
+        if (ticket.status === 'pending_approval') {
+          pendingAmount += calculatedPrize;
+        } else if (ticket.status === 'claimed') {
+          approvedAmount += calculatedPrize;
+          totalWinnings += calculatedPrize; // Only approved winnings count towards total
+        }
       }
     });
 
-    dashboardData.winningAmount = totalWinningAmount;
+    dashboardData.winningAmount = totalWinnings; // Only approved winnings
     dashboardData.winnersToday = winnersCount;
     dashboardData.pendingWinnings = pendingAmount;
     dashboardData.approvedWinnings = approvedAmount;
-    dashboardData.netSales = dashboardData.grossSales - dashboardData.winningAmount;
+    dashboardData.netSales = dashboardData.grossSales - dashboardData.winningAmount; // Gross - Approved only
 
     // Get per-draw sales breakdown
     const drawTimes = ['twoPM', 'fivePM', 'ninePM'];
@@ -778,8 +779,12 @@ router.get('/live', requireAuth, async (req, res) => {
 
     liveClaimData.forEach(ticket => {
       const calculatedPrize = calculateTicketPrize(ticket);
-      liveWinningAmount += calculatedPrize;
       liveWinnersCount++;
+      
+      // Only count approved/claimed winnings towards total
+      if (ticket.status === 'claimed') {
+        liveWinningAmount += calculatedPrize;
+      }
     });
 
     // Get active tickets count
