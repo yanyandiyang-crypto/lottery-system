@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrReader } from 'react-qr-reader';
+import { QrScanner } from 'react-qr-scanner';
 import { ticketsAPI } from '../utils/api';
 
 const TicketClaiming = () => {
@@ -305,8 +305,8 @@ const TicketClaiming = () => {
                 }}>
                   📱 Scan winning ticket QR code
                 </div>
-                <QrReader
-                  onResult={handleQRScan}
+                <QrScanner
+                  onDecode={handleQRScan}
                   style={{ width: '100%' }}
                   constraints={{ facingMode: 'environment' }}
                 />

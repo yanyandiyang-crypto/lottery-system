@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrReader } from 'react-qr-reader';
+import { QrScanner } from 'react-qr-scanner';
 
 const TicketSearch = () => {
   const [searchMode, setSearchMode] = useState('number'); // 'number' or 'qr'
@@ -229,8 +229,8 @@ const TicketSearch = () => {
             }}>
               📱 Point camera at QR code
             </div>
-            <QrReader
-              onResult={handleQRScan}
+            <QrScanner
+              onDecode={handleQRScan}
               style={{ width: '100%' }}
               constraints={{
                 facingMode: 'environment'

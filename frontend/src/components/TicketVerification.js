@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrReader } from 'react-qr-reader';
+import { QrScanner } from 'react-qr-scanner';
 
 const TicketVerification = () => {
   const [verificationMode, setVerificationMode] = useState('search'); // 'search' or 'scan'
@@ -245,8 +245,8 @@ const TicketVerification = () => {
             overflow: 'hidden',
             backgroundColor: '#f8f9fa'
           }}>
-            <QrReader
-              onResult={handleQRScan}
+            <QrScanner
+              onDecode={handleQRScan}
               style={{ width: '100%' }}
               constraints={{
                 facingMode: 'environment' // Use back camera

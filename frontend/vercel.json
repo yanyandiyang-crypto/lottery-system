@@ -38,8 +38,8 @@
     "REACT_APP_VERSION": "2.0.0",
     "GENERATE_SOURCEMAP": "false"
   },
-  "buildCommand": "npm install && npm run build",
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "build",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "create-react-app"
 }
