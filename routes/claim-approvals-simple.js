@@ -4,6 +4,17 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+// Test endpoint to verify authentication
+router.get('/test-auth', (req, res) => {
+  console.log('🔍 Test auth endpoint hit');
+  console.log('🔍 req.user:', req.user);
+  res.json({
+    success: true,
+    user: req.user,
+    message: 'Authentication test successful'
+  });
+});
+
 // @route   GET /api/v1/claim-approvals/pending
 // @desc    Get pending claim approvals (simplified version)
 // @access  Protected (SuperAdmin, Admin)
@@ -75,24 +86,20 @@ router.get('/pending', async (req, res) => {
 // @access  Protected (SuperAdmin, Admin)
 router.post('/:ticketId/approve', async (req, res) => {
   try {
+    console.log('🚀 Approve endpoint hit!');
+    console.log('🔍 req.params:', req.params);
+    console.log('🔍 req.body:', req.body);
+    console.log('🔍 req.user:', req.user);
+    
     const { ticketId } = req.params;
-    const { notes, prizeAmount } = req.body;
     
-    console.log('🔍 Debug - req.user:', req.user);
-    console.log('🔍 Debug - ticketId:', ticketId);
-    console.log('🔍 Debug - body:', req.body);
-    
-    const approverId = req.user?.userId || req.user?.id;
-
-    // Verify user has approval permissions
-    if (!['superadmin', 'admin'].includes(req.user?.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Insufficient permissions to approve claims'
-      });
-    }
-
-    console.log(`🎯 Approving claim for ticket ${ticketId} by user ${approverId}`);
+    // Early return for testing
+    return res.json({
+      success: true,
+      message: 'Test response - endpoint is working',
+      ticketId: ticketId,
+      user: req.user
+    });
     
     // Find and update the ticket
     const ticket = await prisma.ticket.findUnique({
