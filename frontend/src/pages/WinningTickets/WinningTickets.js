@@ -13,8 +13,15 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   CheckCircleIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
 
 const WinningTickets = () => {
   const { user } = useAuth();
@@ -212,36 +219,31 @@ const WinningTickets = () => {
   if (loading && pagination.page === 1) return <LoadingSpinner />;
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6">
-      <div className="space-y-4 sm:space-y-6">
-        {/* Header */}
-        <div className="bg-white shadow rounded-lg p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div className="mb-4 sm:mb-0">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center">
-                <TrophyIcon className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500 mr-2 sm:mr-3" />
-                {user.role === 'agent' ? 'My Winning Tickets' : 'Winning Tickets'}
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                {user.role === 'agent' 
-                  ? 'View all your winning lottery tickets and prize details'
-                  : 'View winning lottery tickets and prize details for agents under your supervision'
-                }
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <FunnelIcon className="h-4 w-4 mr-1" />
-                Filters
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title={user.role === 'agent' ? 'My Winning Tickets' : 'Winning Tickets'}
+          subtitle={user.role === 'agent' 
+            ? 'View all your winning lottery tickets and prize details'
+            : 'View winning lottery tickets and prize details for agents under your supervision'
+          }
+          icon={TrophyIcon}
+        >
+          <ModernButton
+            onClick={() => setShowFilters(!showFilters)}
+            variant="secondary"
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            <FunnelIcon className="h-5 w-5 mr-2" />
+            <span className="hidden sm:inline">Toggle Filters</span>
+            <span className="sm:hidden">Filters</span>
+          </ModernButton>
+        </PageHeader>
 
+        <ModernCard>
           {/* Tab Navigation */}
-          <div className="mt-6 border-b border-gray-200">
+          <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab('tickets')}
@@ -300,12 +302,18 @@ const WinningTickets = () => {
               </div>
             </div>
           </div>
-        </div>
+        </ModernCard>
 
         {/* Filters */}
         {showFilters && (
-          <div className="bg-white shadow rounded-lg p-4 sm:p-6">
-            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Filter Winning Tickets</h3>
+          <ModernCard className="mb-6">
+            <div className="bg-gradient-to-r from-blue-50 to-sky-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center">
+                <FunnelIcon className="h-6 w-6 mr-3 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Filter Winning Tickets</h3>
+              </div>
+            </div>
+            <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -406,7 +414,8 @@ const WinningTickets = () => {
                 />
               </div>
             </div>
-          </div>
+            </div>
+          </ModernCard>
         )}
 
         {/* Tab Content */}

@@ -10,8 +10,14 @@ import {
   CalendarDaysIcon, 
   CurrencyDollarIcon,
   ChartBarIcon,
-  CalendarIcon
+  CalendarIcon,
+  DocumentChartBarIcon,
+  TicketIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import PageHeader from '../../components/UI/PageHeader';
+import StatCard from '../../components/UI/StatCard';
+import ModernTable from '../../components/UI/ModernTable';
 
 const SalesPerDraw = () => {
   const { user } = useAuth();
@@ -138,149 +144,133 @@ const SalesPerDraw = () => {
   }
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6">
-      <div className="space-y-4 sm:space-y-6">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-            {user?.role === 'agent' ? 'My Sales Dashboard' : 'Sales Dashboard'}
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            {user?.role === 'agent' 
-              ? 'Track your sales performance and statistics' 
-              : 'Track sales performance and statistics'
-            }
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title={user?.role === 'agent' ? 'My Sales Dashboard' : 'Sales Dashboard'}
+          subtitle={user?.role === 'agent' 
+            ? 'Track your sales performance and statistics' 
+            : 'Track sales performance and statistics'
+          }
+          icon={DocumentChartBarIcon}
+        />
 
         {/* Daily Sales Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
-          {/* Today's Sales */}
-          <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CurrencyDollarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
-              </div>
-              <div className="ml-3 sm:ml-4 min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Today's Sales</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
-                  ₱{dailyStats.today.sales.toLocaleString()}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  {dailyStats.today.tickets} tickets
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+          <StatCard
+            title="Today's Sales"
+            value={`₱${dailyStats.today.sales.toLocaleString()}`}
+            icon={CurrencyDollarIcon}
+            color="success"
+            trend={`${dailyStats.today.tickets} tickets`}
+          />
 
-          {/* This Week */}
-          <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ChartBarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-              </div>
-              <div className="ml-3 sm:ml-4 min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">This Week</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
-                  ₱{dailyStats.thisWeek.sales.toLocaleString()}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  {dailyStats.thisWeek.tickets} tickets
-                </p>
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="This Week"
+            value={`₱${dailyStats.thisWeek.sales.toLocaleString()}`}
+            icon={ChartBarIcon}
+            color="primary"
+            trend={`${dailyStats.thisWeek.tickets} tickets`}
+          />
 
-          {/* This Month */}
-          <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CalendarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
-              </div>
-              <div className="ml-3 sm:ml-4 min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">This Month</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
-                  ₱{dailyStats.thisMonth.sales.toLocaleString()}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  {dailyStats.thisMonth.tickets} tickets
-                </p>
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="This Month"
+            value={`₱${dailyStats.thisMonth.sales.toLocaleString()}`}
+            icon={CalendarIcon}
+            color="secondary"
+            trend={`${dailyStats.thisMonth.tickets} tickets`}
+          />
         </div>
 
         {/* Date Selector */}
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-0">
-              Sales by Draw
-            </h2>
-            <div className="flex items-center space-x-2">
-              <CalendarDaysIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 sm:px-3 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+              <div className="flex items-center">
+                <CalendarDaysIcon className="h-6 w-6 mr-3 text-blue-600" />
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Sales by Draw</h2>
+                  <p className="text-sm text-gray-600 mt-1">Select date to view draw-specific sales</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </ModernCard>
 
         {/* Sales Cards */}
         {salesData.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
             {drawTimes.map((draw) => {
               const drawData = getDrawData(draw.time);
               return (
-                <div key={draw.time} className="bg-white overflow-hidden shadow rounded-lg">
-                  <div className="p-4 sm:p-5">
+                <ModernCard key={draw.time} className="hover:shadow-lg transition-shadow duration-200">
+                  <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4 border-b border-gray-200">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <ClockIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
-                      </div>
-                      <div className="ml-3 sm:ml-5 w-0 flex-1">
-                        <dl>
-                          <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                            {getDrawTimeLabel(draw.time)} Draw Sales
-                          </dt>
-                          <dd className="text-base sm:text-lg font-medium text-gray-900">
-                            ₱{drawData.grossSales.toLocaleString()}
-                          </dd>
-                        </dl>
+                      <ClockIcon className="h-6 w-6 mr-3 text-blue-600" />
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {getDrawTimeLabel(draw.time)} Draw
+                        </h3>
+                        <p className="text-sm text-gray-600">Sales Performance</p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 px-4 sm:px-5 py-2 sm:py-3">
-                    <div className="text-xs sm:text-sm text-gray-600">
-                      {drawData.ticketCount} tickets • ₱{(drawData.totalWinnings || 0).toLocaleString()} winnings
+                  <div className="p-6">
+                    <div className="text-center mb-4">
+                      <div className="text-3xl font-bold text-green-600">
+                        ₱{drawData.grossSales.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-500">Total Sales</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <div className="text-lg font-semibold text-blue-600">
+                          {drawData.ticketCount}
+                        </div>
+                        <div className="text-xs text-gray-600">Tickets</div>
+                      </div>
+                      <div className="bg-red-50 p-3 rounded-lg">
+                        <div className="text-lg font-semibold text-red-600">
+                          ₱{(drawData.totalWinnings || 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-600">Winnings</div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </ModernCard>
               );
             })}
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-3 sm:p-4 lg:p-6">
-              <div className="text-center py-6 sm:py-8">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No sales data</h3>
-                <p className="mt-1 text-xs sm:text-sm text-gray-500">No sales found for the selected date.</p>
-              </div>
+          <ModernCard className="mb-8">
+            <div className="p-12 text-center">
+              <TicketIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Sales Data</h3>
+              <p className="text-gray-500">No sales found for the selected date.</p>
             </div>
-          </div>
+          </ModernCard>
         )}
 
         {/* Summary Table */}
         {salesData.length > 0 && (
-          <div className="bg-white rounded-lg shadow">
-          <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-200">
-            <h3 className="text-base sm:text-lg font-medium text-gray-900">Draw Details Summary</h3>
-          </div>
+          <ModernCard>
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center">
+                <ChartBarIcon className="h-6 w-6 mr-3 text-blue-600" />
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Draw Details Summary</h3>
+                  <p className="text-sm text-gray-600 mt-1">Comprehensive breakdown by draw time</p>
+                </div>
+              </div>
+            </div>
           
           {/* Mobile Card Layout */}
           <div className="block sm:hidden">
@@ -394,7 +384,7 @@ const SalesPerDraw = () => {
               </tfoot>
             </table>
           </div>
-        </div>
+        </ModernCard>
         )}
       </div>
     </div>

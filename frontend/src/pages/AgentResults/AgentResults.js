@@ -2,72 +2,21 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
-// AgentResults.css removed - using Tailwind classes
+import {
+  ChartBarIcon,
+  ClockIcon,
+  CalendarIcon,
+  FunnelIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  EyeIcon
+} from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
 
 const AgentResults = () => {
-  // Custom styles for components
-  const customStyles = {
-    statusBadge: {
-      display: 'inline-block',
-      padding: '2px 8px',
-      borderRadius: '12px',
-      color: 'white',
-      fontSize: '11px',
-      fontWeight: '500',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px'
-    },
-    loadingSpinner: {
-      width: '32px',
-      height: '32px',
-      border: '3px solid #f3f4f6',
-      borderTop: '3px solid #3b82f6',
-      borderRadius: '50%',
-      animation: 'spin 1s linear infinite'
-    },
-    agentResults: {
-      padding: '16px',
-      maxWidth: '100%',
-      margin: '0 auto'
-    },
-    pageHeader: {
-      marginBottom: '24px',
-      borderBottom: '1px solid #e5e7eb',
-      paddingBottom: '16px'
-    },
-    tabsContainer: {
-      marginBottom: '24px'
-    },
-    tabs: {
-      display: 'flex',
-      borderBottom: '2px solid #e5e7eb',
-      gap: '0'
-    },
-    tab: {
-      padding: '12px 24px',
-      border: 'none',
-      background: 'transparent',
-      cursor: 'pointer',
-      borderBottom: '2px solid transparent',
-      transition: 'all 0.2s ease',
-      fontWeight: '500'
-    },
-    tabActive: {
-      borderBottomColor: '#3b82f6',
-      color: '#3b82f6',
-      backgroundColor: '#eff6ff'
-    },
-    section: {
-      marginBottom: '32px'
-    },
-    drawCard: {
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-    },
-    drawCardHover: {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-    }
-  };
 
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
@@ -138,20 +87,15 @@ const AgentResults = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      open: { color: '#10b981', text: 'Open' },
-      closed: { color: '#f59e0b', text: 'Closed' },
-      settled: { color: '#3b82f6', text: 'Settled' }
+      open: { color: 'bg-success-100 text-success-700', text: 'Open' },
+      closed: { color: 'bg-warning-100 text-warning-700', text: 'Closed' },
+      settled: { color: 'bg-primary-100 text-primary-700', text: 'Settled' }
     };
     
-    const config = statusConfig[status] || { color: '#6b7280', text: status };
+    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-700', text: status };
     
     return (
-      <span 
-        style={{ 
-          ...customStyles.statusBadge,
-          backgroundColor: config.color 
-        }}
-      >
+      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${config.color}`}>
         {config.text}
       </span>
     );
@@ -178,214 +122,250 @@ const AgentResults = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div style={customStyles.loadingSpinner}></div>
-        <p className="text-gray-600 mt-4">Loading results...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading draw results...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={customStyles.agentResults}>
-      {/* Add CSS animation keyframes */}
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-      
-      <div style={customStyles.pageHeader}>
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Draw Results</h1>
-        <p className="text-sm sm:text-base text-gray-600">View lottery draw results and winning numbers</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="Draw Results"
+          subtitle="View lottery draw results, winning numbers, and historical data"
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Agent', href: '/agent' },
+            { label: 'Draw Results' }
+          ]}
+        />
 
-      <div style={customStyles.tabsContainer}>
-        <div style={customStyles.tabs}>
-          <button
-            style={{
-              ...customStyles.tab,
-              ...(activeTab === 'dashboard' ? customStyles.tabActive : {})
-            }}
-            className="text-xs sm:text-sm"
-            onClick={() => setActiveTab('dashboard')}
-          >
-            Dashboard
-          </button>
-          <button
-            style={{
-              ...customStyles.tab,
-              ...(activeTab === 'history' ? customStyles.tabActive : {})
-            }}
-            className="text-xs sm:text-sm"
-            onClick={() => setActiveTab('history')}
-          >
-            History
-          </button>
-        </div>
-      </div>
-
-      {activeTab === 'dashboard' && dashboardData && (
-        <div className="dashboard-content">
-          {/* Today's Draws */}
-          <div style={customStyles.section}>
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Today's Draws</h2>
-            <div className="draws-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {dashboardData.todayDraws.map(draw => (
-                <div key={draw.id} className="draw-card bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-                  <div className="draw-header flex items-center justify-between mb-2 sm:mb-3">
-                    <span className="draw-time text-sm sm:text-base font-medium text-gray-900">{formatDrawTime(draw.drawTime)}</span>
-                    {getStatusBadge(draw.status)}
-                  </div>
-                  <div className="draw-result text-center">
-                    {draw.winningNumber ? (
-                      <span className="winning-number text-lg sm:text-xl font-bold text-green-600 bg-green-50 px-2 py-1 rounded">{draw.winningNumber}</span>
-                    ) : (
-                      <span className="no-result text-sm sm:text-base text-gray-500 italic">Result pending</span>
-                    )}
-                  </div>
+        {/* Tab Navigation */}
+        <ModernCard variant="elevated" className="mb-8">
+          <div className="px-4 sm:px-6 py-4">
+            <nav className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4" aria-label="Results Tabs">
+              <ModernButton
+                variant={activeTab === 'dashboard' ? 'primary' : 'ghost'}
+                onClick={() => setActiveTab('dashboard')}
+                className="w-full sm:w-auto justify-center sm:justify-start"
+              >
+                <div className="flex items-center space-x-2">
+                  <ChartBarIcon className="h-5 w-5 flex-shrink-0" />
+                  <span>Dashboard</span>
                 </div>
-              ))}
-            </div>
+              </ModernButton>
+              <ModernButton
+                variant={activeTab === 'history' ? 'primary' : 'ghost'}
+                onClick={() => setActiveTab('history')}
+                className="w-full sm:w-auto justify-center sm:justify-start"
+              >
+                <div className="flex items-center space-x-2">
+                  <ClockIcon className="h-5 w-5 flex-shrink-0" />
+                  <span>History</span>
+                </div>
+              </ModernButton>
+            </nav>
           </div>
+        </ModernCard>
 
-          {/* Recent Results */}
-          <div style={customStyles.section}>
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Recent Results</h2>
-            <div className="results-table overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                    <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Winning Number</th>
-                    <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Tickets</th>
-                    <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Winners</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {dashboardData.recentDraws.map(draw => (
-                    <tr key={draw.id} className="hover:bg-gray-50">
-                      <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-900">{formatDate(draw.drawDate)}</td>
-                      <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-900">{formatDrawTime(draw.drawTime)}</td>
-                      <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
-                        <span className="winning-number-cell text-xs sm:text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded">{draw.winningNumber}</span>
-                      </td>
-                      <td className="px-2 sm:px-3 py-2 whitespace-nowrap">{getStatusBadge(draw.status)}</td>
-                      <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-900">{draw._count?.tickets || 0}</td>
-                      <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-900">{draw._count?.winningTickets || 0}</td>
-                    </tr>
+        {activeTab === 'dashboard' && dashboardData && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Today's Draws */}
+            <ModernCard variant="elevated">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center space-x-2 mb-6">
+                  <CalendarIcon className="h-6 w-6 text-primary-600" />
+                  <h2 className="text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+                    Today's Draws
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {dashboardData.todayDraws.map((draw, index) => (
+                    <ModernCard 
+                      key={draw.id} 
+                      variant="glass" 
+                      className="hover:shadow-glow transition-all duration-300 animate-slide-in"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-base font-semibold text-gray-900">{formatDrawTime(draw.drawTime)}</span>
+                          {getStatusBadge(draw.status)}
+                        </div>
+                        <div className="text-center">
+                          {draw.winningNumber ? (
+                            <span className="inline-block text-2xl font-bold text-success-600 bg-success-50 px-4 py-2 rounded-lg">
+                              {draw.winningNumber}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 italic">Result pending</span>
+                          )}
+                        </div>
+                      </div>
+                    </ModernCard>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'history' && (
-        <div className="history-content bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-          {/* Filters */}
-          <div className="filters-section mb-4 sm:mb-6">
-            <div className="filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              <div className="filter-group">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Start Date:</label>
-                <input
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                  className="w-full text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div className="filter-group">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">End Date:</label>
-                <input
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                  className="w-full text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div className="filter-group">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Draw Time:</label>
-                <select
-                  value={filters.drawTime}
-                  onChange={(e) => handleFilterChange('drawTime', e.target.value)}
-                  className="w-full text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">All Times</option>
-                  <option value="twoPM">2:00 PM</option>
-                  <option value="fivePM">5:00 PM</option>
-                  <option value="ninePM">9:00 PM</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* History Table */}
-          {historyLoading ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <div style={customStyles.loadingSpinner}></div>
-              <p className="text-sm text-gray-600 mt-2">Loading history...</p>
-            </div>
-          ) : (
-            <>
-              <div className="results-table overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                      <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Draw Time</th>
-                      <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Winning Number</th>
-                      <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Total Tickets</th>
-                      <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Winners</th>
-                      <th className="px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {historyData.draws?.map(draw => (
-                      <tr key={draw.id} className="hover:bg-gray-50">
-                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-900">{formatDateTime(draw.drawDate)}</td>
-                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-900">{formatDrawTime(draw.drawTime)}</td>
-                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
-                          <span className="winning-number-cell text-xs sm:text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded">{draw.winningNumber}</span>
-                        </td>
-                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-900">{draw._count?.tickets || 0}</td>
-                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-xs sm:text-sm text-gray-900">{draw._count?.winningTickets || 0}</td>
-                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap">{getStatusBadge(draw.status)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {historyData.pagination && historyData.pagination.totalPages > 1 && (
-                <div className="pagination flex items-center justify-between mt-4 sm:mt-6">
-                  <button
-                    onClick={() => handleFilterChange('page', filters.page - 1)}
-                    disabled={filters.page <= 1}
-                    className="px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <span className="pagination-info text-xs sm:text-sm text-gray-700">
-                    Page {historyData.pagination.currentPage} of {historyData.pagination.totalPages}
-                  </span>
-                  <button
-                    onClick={() => handleFilterChange('page', filters.page + 1)}
-                    disabled={filters.page >= historyData.pagination.totalPages}
-                    className="px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
+              </div>
+            </ModernCard>
+
+            {/* Recent Results */}
+            <ModernCard variant="elevated">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center space-x-2 mb-6">
+                  <EyeIcon className="h-6 w-6 text-primary-600" />
+                  <h2 className="text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+                    Recent Results
+                  </h2>
+                </div>
+                <ModernTable
+                  columns={[
+                    { key: 'drawDate', label: 'Date', sortable: true, render: (value) => formatDate(value) },
+                    { key: 'drawTime', label: 'Time', sortable: true, render: (value) => formatDrawTime(value) },
+                    { 
+                      key: 'winningNumber', 
+                      label: 'Winning Number', 
+                      render: (value) => (
+                        <span className="inline-block font-bold text-success-600 bg-success-50 px-3 py-1 rounded-lg">
+                          {value}
+                        </span>
+                      )
+                    },
+                    { key: 'status', label: 'Status', render: (value) => getStatusBadge(value) },
+                    { key: '_count.tickets', label: 'Tickets', render: (value, row) => row._count?.tickets || 0 },
+                    { key: '_count.winningTickets', label: 'Winners', render: (value, row) => row._count?.winningTickets || 0 }
+                  ]}
+                  data={dashboardData.recentDraws}
+                  emptyMessage="No recent draw results available"
+                />
+              </div>
+            </ModernCard>
+          </div>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Filters */}
+            <ModernCard variant="glass">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <FunnelIcon className="h-5 w-5 text-primary-600 flex-shrink-0" />
+                  <h3 className="text-lg font-semibold text-gray-900">History Filters</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                    <input
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                    <input
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Draw Time</label>
+                    <select
+                      value={filters.drawTime}
+                      onChange={(e) => handleFilterChange('drawTime', e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                    >
+                      <option value="all">All Times</option>
+                      <option value="twoPM">2:00 PM</option>
+                      <option value="fivePM">5:00 PM</option>
+                      <option value="ninePM">9:00 PM</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </ModernCard>
+
+            {/* History Table */}
+            <ModernCard variant="elevated">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center space-x-2 mb-6">
+                  <ClockIcon className="h-6 w-6 text-primary-600" />
+                  <h2 className="text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+                    Draw History
+                  </h2>
+                </div>
+                
+                {historyLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mb-4"></div>
+                    <p className="text-gray-600 font-medium">Loading history...</p>
+                  </div>
+                ) : (
+                  <>
+                    <ModernTable
+                      columns={[
+                        { key: 'drawDate', label: 'Date & Time', sortable: true, render: (value) => formatDateTime(value) },
+                        { key: 'drawTime', label: 'Draw Time', sortable: true, render: (value) => formatDrawTime(value) },
+                        { 
+                          key: 'winningNumber', 
+                          label: 'Winning Number', 
+                          render: (value) => (
+                            <span className="inline-block font-bold text-success-600 bg-success-50 px-3 py-1 rounded-lg">
+                              {value}
+                            </span>
+                          )
+                        },
+                        { key: '_count.tickets', label: 'Total Tickets', render: (value, row) => row._count?.tickets || 0 },
+                        { key: '_count.winningTickets', label: 'Winners', render: (value, row) => row._count?.winningTickets || 0 },
+                        { key: 'status', label: 'Status', render: (value) => getStatusBadge(value) }
+                      ]}
+                      data={historyData.draws || []}
+                      emptyMessage="No draw history found for the selected filters"
+                    />
+
+                    {/* Pagination */}
+                    {historyData.pagination && historyData.pagination.totalPages > 1 && (
+                      <ModernCard variant="glass" className="mt-6">
+                        <div className="px-6 py-4">
+                          <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
+                            <div className="text-sm text-gray-700 font-medium">
+                              Page <span className="font-semibold text-primary-600">{historyData.pagination.currentPage}</span> of <span className="font-semibold text-primary-600">{historyData.pagination.totalPages}</span>
+                            </div>
+                            <div className="flex space-x-2">
+                              <ModernButton
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleFilterChange('page', filters.page - 1)}
+                                disabled={filters.page <= 1}
+                              >
+                                Previous
+                              </ModernButton>
+                              <ModernButton
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleFilterChange('page', filters.page + 1)}
+                                disabled={filters.page >= historyData.pagination.totalPages}
+                              >
+                                Next
+                              </ModernButton>
+                            </div>
+                          </div>
+                        </div>
+                      </ModernCard>
+                    )}
+                  </>
+                )}
+              </div>
+            </ModernCard>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

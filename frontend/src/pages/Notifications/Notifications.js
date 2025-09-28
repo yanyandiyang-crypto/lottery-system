@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import { BellIcon, PlusIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
 
 const Notifications = () => {
   const { user } = useAuth();
@@ -112,184 +116,210 @@ const Notifications = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-600 mt-2">Manage system notifications and announcements</p>
-        </div>
-        {canCreateNotifications && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Create Notification
-          </button>
-        )}
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Notifications"
+          subtitle="Manage system notifications and announcements"
+          icon={BellIcon}
+        >
+          {canCreateNotifications && (
+            <ModernButton
+              onClick={() => setShowCreateModal(true)}
+              variant="primary"
+              size="md"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Create Notification
+            </ModernButton>
+          )}
+        </PageHeader>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            className={`bg-white p-6 rounded-lg shadow ${
-              !notification.isRead ? 'border-l-4 border-blue-500' : ''
-            }`}
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {notification.title}
-                  </h3>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(notification.type)}`}>
-                    {notificationTypes.find(nt => nt.id === notification.type)?.name}
-                  </span>
-                  {!notification.isRead && (
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      New
-                    </span>
-                  )}
-                </div>
-                <p className="text-gray-600 mb-3">{notification.message}</p>
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <span>Created: {new Date(notification.createdAt).toLocaleString()}</span>
-                  <span>Target: {notification.targetRoles?.join(', ') || 'All Users'}</span>
-                  <span>By: {notification.createdBy?.username || 'System'}</span>
-                </div>
-              </div>
-              <div className="flex space-x-2 ml-4">
-                {!notification.isRead && (
-                  <button
-                    onClick={() => handleMarkAsRead(notification.id)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Mark as Read
-                  </button>
-                )}
-                {canCreateNotifications && (
-                  <button
-                    onClick={() => handleDeleteNotification(notification.id)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
+        {error && (
+          <ModernCard className="mb-6 border-l-4 border-red-500 bg-red-50">
+            <div className="p-4">
+              <div className="text-red-700 font-medium">{error}</div>
             </div>
-          </div>
-        ))}
-      </div>
+          </ModernCard>
+        )}
 
-      {notifications.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No notifications found.</p>
-        </div>
-      )}
-
-      {/* Create Notification Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Notification</h3>
-              <form onSubmit={handleCreateNotification}>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    value={newNotification.title}
-                    onChange={(e) => setNewNotification({ ...newNotification, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    value={newNotification.message}
-                    onChange={(e) => setNewNotification({ ...newNotification, message: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows="3"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type
-                  </label>
-                  <select
-                    value={newNotification.type}
-                    onChange={(e) => setNewNotification({ ...newNotification, type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {notificationTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Target Roles
-                  </label>
-                  <div className="space-y-2">
-                    {roles.map((role) => (
-                      <label key={role.id} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={newNotification.targetRoles.includes(role.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNewNotification({
-                                ...newNotification,
-                                targetRoles: [...newNotification.targetRoles, role.id]
-                              });
-                            } else {
-                              setNewNotification({
-                                ...newNotification,
-                                targetRoles: newNotification.targetRoles.filter(r => r !== role.id)
-                              });
-                            }
-                          }}
-                          className="mr-2"
-                        />
-                        <span className="text-sm text-gray-700">{role.name}</span>
-                      </label>
-                    ))}
+        <div className="space-y-4">
+          {notifications.map((notification) => (
+            <ModernCard
+              key={notification.id}
+              className={`transition-all duration-200 hover:shadow-lg ${
+                !notification.isRead ? 'border-l-4 border-blue-500' : ''
+              }`}
+            >
+              <div className="p-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        {notification.title}
+                      </h3>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(notification.type)}`}>
+                        {notificationTypes.find(nt => nt.id === notification.type)?.name}
+                      </span>
+                      {!notification.isRead && (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          New
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-600 mb-4 leading-relaxed">{notification.message}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500">
+                      <span className="truncate">Created: {new Date(notification.createdAt).toLocaleString()}</span>
+                      <span className="truncate">Target: {notification.targetRoles?.join(', ') || 'All Users'}</span>
+                      <span className="truncate">By: {notification.createdBy?.username || 'System'}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-row sm:flex-col gap-2">
+                    {!notification.isRead && (
+                      <ModernButton
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        variant="secondary"
+                        size="sm"
+                      >
+                        <CheckIcon className="h-4 w-4 mr-1" />
+                        Mark as Read
+                      </ModernButton>
+                    )}
+                    {canCreateNotifications && (
+                      <ModernButton
+                        onClick={() => handleDeleteNotification(notification.id)}
+                        variant="danger"
+                        size="sm"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1" />
+                        Delete
+                      </ModernButton>
+                    )}
                   </div>
                 </div>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                  >
-                    Create Notification
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+              </div>
+            </ModernCard>
+          ))}
         </div>
-      )}
+
+        {notifications.length === 0 && !loading && (
+          <ModernCard className="text-center py-12">
+            <div className="flex flex-col items-center">
+              <BellIcon className="h-12 w-12 text-gray-300 mb-4" />
+              <p className="text-gray-500 text-lg">No notifications found</p>
+              <p className="text-gray-400 text-sm mt-1">Notifications will appear here when created</p>
+            </div>
+          </ModernCard>
+        )}
+
+        {/* Create Notification Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <ModernCard className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                <h3 className="text-xl font-semibold text-gray-900">Create New Notification</h3>
+                <p className="text-sm text-gray-600 mt-1">Send a notification to selected user roles</p>
+              </div>
+              <div className="p-6">
+                <form onSubmit={handleCreateNotification} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={newNotification.title}
+                      onChange={(e) => setNewNotification({ ...newNotification, title: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter notification title"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Message
+                    </label>
+                    <textarea
+                      value={newNotification.message}
+                      onChange={(e) => setNewNotification({ ...newNotification, message: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+                      rows="4"
+                      placeholder="Enter notification message"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Type
+                    </label>
+                    <select
+                      value={newNotification.type}
+                      onChange={(e) => setNewNotification({ ...newNotification, type: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {notificationTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Target Roles
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {roles.map((role) => (
+                        <label key={role.id} className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newNotification.targetRoles.includes(role.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewNotification({
+                                  ...newNotification,
+                                  targetRoles: [...newNotification.targetRoles, role.id]
+                                });
+                              } else {
+                                setNewNotification({
+                                  ...newNotification,
+                                  targetRoles: newNotification.targetRoles.filter(r => r !== role.id)
+                                });
+                              }
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
+                          />
+                          <span className="text-sm font-medium text-gray-700">{role.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 sm:justify-end pt-4 border-t border-gray-200">
+                    <ModernButton
+                      type="button"
+                      onClick={() => setShowCreateModal(false)}
+                      variant="secondary"
+                      size="md"
+                      className="order-2 sm:order-1"
+                    >
+                      Cancel
+                    </ModernButton>
+                    <ModernButton
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      className="order-1 sm:order-2"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Create Notification
+                    </ModernButton>
+                  </div>
+                </form>
+              </div>
+            </ModernCard>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

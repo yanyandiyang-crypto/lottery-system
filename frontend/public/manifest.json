@@ -1,17 +1,43 @@
 {
-  "short_name": "NewBetting",
-  "name": "NewBetting 3-Digit Lottery System",
+  "short_name": "Lottery System",
+  "name": "3-Digit Lottery System",
+  "description": "Complete lottery betting and claiming system with QR scanner",
   "icons": [
     {
       "src": "favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    },
+    {
+      "src": "logos/3d-lotto.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logos/pisting-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#0ea5e9",
+  "background_color": "#ffffff",
+  "scope": "/",
+  "categories": ["business", "finance", "games"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "permissions": [
+    "camera"
+  ],
+  "features": [
+    "camera",
+    "geolocation"
+  ]
 }
 
 

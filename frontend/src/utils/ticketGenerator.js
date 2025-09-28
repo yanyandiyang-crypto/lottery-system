@@ -172,12 +172,18 @@ ${signatureImage ? `<div class="signature-section" style="text-align: center; ma
 
   static async printTicket(ticket, user) {
     try {
-      // Fetch system-wide active template
-      const TemplateAssigner = (await import('./templateAssigner')).default;
-      const template = await TemplateAssigner.fetchSystemTemplate();
+      console.log('🖨️ Using backend template for main print ticket');
       
-      // Generate ticket HTML using the assigned template (58mm optimized)
-      const ticketHtml = this.generateWithTemplate(ticket, user, template, {});
+      // Call backend endpoint for consistent template rendering
+      const api = (await import('./api')).default;
+      const response = await api.get(`/ticket-templates/${ticket.id || ticket.ticketNumber}`);
+      
+      if (!response.data || !response.data.html) {
+        throw new Error('Failed to get ticket HTML from backend');
+      }
+      
+      const ticketHtml = response.data.html;
+      console.log('✅ Backend template HTML received for main print');
       
       const fullHtml = `<!DOCTYPE html>
 <html>
@@ -254,9 +260,78 @@ ${ticketHtml}
         printWindow.addEventListener('load', triggerPrintWhenReady, { once: true });
       }
     } catch (error) {
-      console.error('Error printing ticket with template:', error);
-      // Fallback to default template
-      const ticketHtml = `<!DOCTYPE html>
+      console.error('❌ Error printing ticket with backend template:', error);
+      
+      // Fallback to frontend template generation
+      console.log('🔄 Falling back to frontend template for main print...');
+      try {
+        // Fetch system-wide active template
+        const TemplateAssigner = (await import('./templateAssigner')).default;
+        const template = await TemplateAssigner.fetchSystemTemplate();
+        
+        // Generate ticket HTML using the assigned template (frontend fallback)
+        const ticketHtml = this.generateWithTemplate(ticket, user, template, {});
+        
+        const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+<title>Ticket ${ticket.ticketNumber}</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* 58mm Thermal Printer Optimized Styles */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+  font-family: 'Courier New', monospace; 
+  margin: 0; 
+  padding: 2px; 
+  background: #fff; 
+  font-size: 8px;
+  width: 58mm;
+  max-width: 220px;
+}
+@media print {
+  body { margin: 0; padding: 0; }
+  @page { 
+    margin: 0; 
+    size: 58mm auto;
+  }
+}
+</style>
+</head>
+<body>
+${ticketHtml}
+</body>
+</html>`;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(fullHtml);
+        printWindow.document.close();
+        
+        const triggerPrintWhenReady = () => {
+          try {
+            setTimeout(() => {
+              printWindow.focus();
+              printWindow.print();
+              setTimeout(() => {
+                try { printWindow.close(); } catch (_) { /* noop */ }
+              }, 1500);
+            }, 1500);
+          } catch (_) {
+            try { printWindow.print(); } catch (__) { /* noop */ }
+          }
+        };
+        
+        if (printWindow.document.readyState === 'complete') {
+          triggerPrintWhenReady();
+        } else {
+          printWindow.addEventListener('load', triggerPrintWhenReady, { once: true });
+        }
+        
+      } catch (fallbackError) {
+        console.error('❌ Frontend template fallback also failed:', fallbackError);
+        // Final fallback to simple template
+        const ticketHtml = `<!DOCTYPE html>
 <html>
 <head>
 <title>Ticket ${ticket.ticketNumber}</title>
@@ -325,6 +400,7 @@ ${this.generateTicketHTML(ticket, user)}
         triggerPrintWhenReady();
       } else {
         printWindow.addEventListener('load', triggerPrintWhenReady, { once: true });
+      }
       }
     }
   }

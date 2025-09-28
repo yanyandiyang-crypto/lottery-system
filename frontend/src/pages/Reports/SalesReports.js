@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { reportsAPI } from '../../utils/api';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
@@ -14,11 +13,17 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   ClockIcon,
-  UsersIcon
+  UsersIcon,
+  DocumentChartBarIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import StatCard from '../../components/UI/StatCard';
+import ModernTable from '../../components/UI/ModernTable';
 
 const SalesReports = () => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // Removed unused variable
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [reportData, setReportData] = useState(null);
@@ -116,65 +121,72 @@ const SalesReports = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white shadow rounded-lg p-4 sm:p-6 mx-2 sm:mx-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Sales Reports</h1>
-            <p className="text-sm sm:text-base text-gray-600">Comprehensive sales analytics and reporting</p>
-          </div>
-          <div className="flex items-center justify-center sm:justify-end">
-            <button
-              onClick={handleExportExcel}
-              disabled={exporting || !reportData}
-              className="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-            >
-              <DocumentArrowDownIcon className="h-4 w-4 mr-1 sm:mr-2" />
-              {exporting ? 'Exporting...' : 'Export Excel'}
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Sales Reports"
+          subtitle="Comprehensive sales analytics and reporting"
+          icon={DocumentChartBarIcon}
+        >
+          <ModernButton
+            onClick={handleExportExcel}
+            disabled={exporting || !reportData}
+            variant="success"
+            size="md"
+          >
+            <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+            {exporting ? 'Exporting...' : 'Export Excel'}
+          </ModernButton>
+        </PageHeader>
 
-      {/* Filters */}
-      <div className="bg-white shadow rounded-lg mx-2 sm:mx-0">
-        <div className="px-4 sm:px-6 py-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Filters */}
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <CalendarDaysIcon className="h-6 w-6 mr-3 text-blue-600" />
               <div>
-                <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                <h3 className="text-xl font-semibold text-gray-900">Report Filters</h3>
+                <p className="text-sm text-gray-600 mt-1">Configure your sales report parameters</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
                 <input
                   type="date"
                   value={filters.startDate}
                   onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">End Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
                 <input
                   type="date"
                   value={filters.endDate}
                   onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Report Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
                 <select
                   value={filters.reportType}
                   onChange={(e) => setFilters({ ...filters, reportType: e.target.value })}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="summary">Summary</option>
                   <option value="detailed">Detailed</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Group By</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Group By</label>
                 <select
                   value={filters.groupBy}
                   onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="date">Date</option>
                   <option value="agent">Agent</option>
@@ -183,148 +195,96 @@ const SalesReports = () => {
               </div>
             </div>
           </div>
-        </div>
+        </ModernCard>
 
-      {/* Tab Navigation */}
-      <div className="bg-white shadow rounded-lg mx-2 sm:mx-0">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex flex-wrap gap-2 sm:space-x-8 px-3 sm:px-6">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm ${
-                activeTab === 'overview'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5 inline mr-1 sm:mr-2" />
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('userSales')}
-              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm ${
-                activeTab === 'userSales'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 inline mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">User </span>Sales
-            </button>
-          </nav>
-        </div>
+        {/* Tab Navigation */}
+        <ModernCard className="mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex flex-col sm:flex-row px-6">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`py-4 px-4 border-b-2 font-medium text-sm transition-colors duration-200 flex items-center justify-center sm:justify-start mb-2 sm:mb-0 mr-0 sm:mr-8 ${
+                  activeTab === 'overview'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <ChartBarIcon className="h-5 w-5 mr-2" />
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('drawTimes')}
+                className={`py-4 px-4 border-b-2 font-medium text-sm transition-colors duration-200 flex items-center justify-center sm:justify-start mb-2 sm:mb-0 mr-0 sm:mr-8 ${
+                  activeTab === 'drawTimes'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <ClockIcon className="h-5 w-5 mr-2" />
+                Draw Times
+              </button>
+              <button
+                onClick={() => setActiveTab('userSales')}
+                className={`py-4 px-4 border-b-2 font-medium text-sm transition-colors duration-200 flex items-center justify-center sm:justify-start mb-2 sm:mb-0 ${
+                  activeTab === 'userSales'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <UsersIcon className="h-5 w-5 mr-2" />
+                User Sales
+              </button>
+            </nav>
+          </div>
 
         <div className="p-3 sm:p-6">
           {activeTab === 'overview' && reportData && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                  <div className="p-5">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <CurrencyDollarIcon className="h-6 w-6 text-green-400" />
-                      </div>
-                      <div className="ml-5 w-0 flex-1">
-                        <dl>
-                          <dt className="text-sm font-medium text-gray-500 truncate">Total Gross</dt>
-                          <dd className="text-lg font-medium text-gray-900">
-                            {formatCurrency(reportData.summary?.totalGross || reportData.summary?.totalSales || 0)}
-                          </dd>
-                        </dl>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+                <StatCard
+                  title="Total Gross"
+                  value={formatCurrency(reportData.summary?.totalGross || reportData.summary?.totalSales || 0)}
+                  icon={CurrencyDollarIcon}
+                  color="success"
+                  subtitle="Total Revenue"
+                />
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                  <div className="p-5">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <ChartBarIcon className="h-6 w-6 text-blue-400" />
-                      </div>
-                      <div className="ml-5 w-0 flex-1">
-                        <dl>
-                          <dt className="text-sm font-medium text-gray-500 truncate">Total Net</dt>
-                          <dd className="text-lg font-medium text-gray-900">
-                            {formatCurrency(reportData.summary?.totalNet || (reportData.summary?.totalSales || 0) - (reportData.summary?.totalWinnings || 0))}
-                          </dd>
-                        </dl>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <StatCard
+                  title="Total Net"
+                  value={formatCurrency(reportData.summary?.totalNet || (reportData.summary?.totalSales || 0) - (reportData.summary?.totalWinnings || 0))}
+                  icon={ChartBarIcon}
+                  color="primary"
+                  subtitle="After Payouts"
+                />
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                  <div className="p-5">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <CalendarDaysIcon className="h-6 w-6 text-purple-400" />
-                      </div>
-                      <div className="ml-5 w-0 flex-1">
-                        <dl>
-                          <dt className="text-sm font-medium text-gray-500 truncate">Monthly Gross</dt>
-                          <dd className="text-lg font-medium text-gray-900">
-                            {formatCurrency(reportData.summary?.monthlyGross || reportData.summary?.totalSales || 0)}
-                          </dd>
-                        </dl>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <StatCard
+                  title="Monthly Gross"
+                  value={formatCurrency(reportData.summary?.monthlyGross || reportData.summary?.totalSales || 0)}
+                  icon={CalendarDaysIcon}
+                  color="secondary"
+                  subtitle="This Month"
+                />
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                  <div className="p-5">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <ArrowTrendingUpIcon className="h-6 w-6 text-yellow-400" />
-                      </div>
-                      <div className="ml-5 w-0 flex-1">
-                        <dl>
-                          <dt className="text-sm font-medium text-gray-500 truncate">Monthly Net</dt>
-                          <dd className="text-lg font-medium text-gray-900">
-                            {formatCurrency(reportData.summary?.monthlyNet || (reportData.summary?.totalSales || 0) - (reportData.summary?.totalWinnings || 0))}
-                          </dd>
-                        </dl>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <StatCard
+                  title="Monthly Net"
+                  value={formatCurrency(reportData.summary?.monthlyNet || (reportData.summary?.totalSales || 0) - (reportData.summary?.totalWinnings || 0))}
+                  icon={ArrowTrendingUpIcon}
+                  color="warning"
+                  subtitle="Monthly Profit"
+                />
 
-                {/* Winnings Card with Pending/Approved Breakdown */}
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                  <div className="p-5">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <ArrowTrendingDownIcon className="h-6 w-6 text-red-400" />
-                      </div>
-                      <div className="ml-5 w-0 flex-1">
-                        <dl>
-                          <dt className="text-sm font-medium text-gray-500 truncate">Total Winnings</dt>
-                          <dd className="text-lg font-medium text-gray-900">
-                            {formatCurrency(reportData.summary?.totalWinnings || 0)}
-                          </dd>
-                        </dl>
-                        {/* Pending/Approved Breakdown */}
-                        {(reportData.summary?.pendingWinnings || reportData.summary?.approvedWinnings) && (
-                          <div className="mt-2 pt-2 border-t border-gray-100">
-                            <div className="flex justify-between text-xs">
-                              <span className="text-orange-600">
-                                Pending: {formatCurrency(reportData.summary.pendingWinnings || 0)}
-                              </span>
-                              <span className="text-green-600">
-                                Paid: {formatCurrency(reportData.summary.approvedWinnings || 0)}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1 text-center">
-                              *Only paid winnings deducted from net
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <StatCard
+                  title="Total Winnings"
+                  value={formatCurrency(reportData.summary?.totalWinnings || 0)}
+                  icon={ArrowTrendingDownIcon}
+                  color="danger"
+                  subtitle={
+                    (reportData.summary?.pendingWinnings || reportData.summary?.approvedWinnings) ? 
+                    `Pending: ${formatCurrency(reportData.summary.pendingWinnings || 0)} | Paid: ${formatCurrency(reportData.summary.approvedWinnings || 0)}` :
+                    "Prize Payouts"
+                  }
+                />
               </div>
 
               {/* Daily Sales Table */}
@@ -510,7 +470,7 @@ const SalesReports = () => {
               </div>
             )}
           </div>
-        </div>
+        </ModernCard>
       </div>
     </div>
   );

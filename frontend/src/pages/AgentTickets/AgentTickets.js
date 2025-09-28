@@ -11,8 +11,16 @@ import {
   MagnifyingGlassIcon,
   ArrowPathIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  TicketIcon,
+  FunnelIcon,
+  CalendarIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
 
 const AgentTickets = () => {
   const { user } = useAuth();
@@ -207,15 +215,15 @@ const AgentTickets = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
-      won: { bg: 'bg-green-100', text: 'text-green-800', label: 'Won' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' },
-      lost: { bg: 'bg-red-100', text: 'text-red-800', label: 'Lost' }
+      pending: { color: 'bg-warning-100 text-warning-700', label: 'Pending' },
+      won: { color: 'bg-success-100 text-success-700', label: 'Won' },
+      cancelled: { color: 'bg-danger-100 text-danger-700', label: 'Cancelled' },
+      lost: { color: 'bg-danger-100 text-danger-700', label: 'Lost' }
     };
     
     const config = statusConfig[status] || statusConfig.pending;
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${config.color}`}>
         {config.label}
       </span>
     );
@@ -262,225 +270,298 @@ const AgentTickets = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading tickets...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Agent Tickets</h1>
-        <p className="text-gray-600">View and manage lottery tickets</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="Agent Tickets"
+          subtitle="View, manage, and reprint lottery tickets for your agents"
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Agent', href: '/agent' },
+            { label: 'Tickets' }
+          ]}
+        />
 
-      {/* Search and Filter Controls */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search tickets..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+        {/* Search and Filter Controls */}
+        <ModernCard variant="glass" className="mb-6">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <FunnelIcon className="h-5 w-5 text-primary-600 flex-shrink-0" />
+              <h3 className="text-lg font-semibold text-gray-900">Search & Filters</h3>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by ticket number, agent name, or username..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                />
+              </div>
+            </div>
+            
+            {/* Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                <div className="flex items-center space-x-2">
+                  <div className="relative flex-1">
+                    <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="date"
+                      value={dateRange.startDate}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200 text-sm"
+                    />
+                  </div>
+                  <span className="text-gray-500 text-sm flex-shrink-0">to</span>
+                  <div className="relative flex-1">
+                    <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="date"
+                      value={dateRange.endDate}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="won">Won</option>
+                  <option value="lost">Lost</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Draw Time</label>
+                <select
+                  value={drawTimeFilter}
+                  onChange={(e) => setDrawTimeFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                >
+                  <option value="all">All Draw Times</option>
+                  <option value="twoPM">2:00 PM</option>
+                  <option value="fivePM">5:00 PM</option>
+                  <option value="ninePM">9:00 PM</option>
+                </select>
+              </div>
+              
+              <div className="flex items-end">
+                <ModernButton
+                  variant="primary"
+                  onClick={() => refetch()}
+                  icon={ArrowPathIcon}
+                  className="w-full"
+                >
+                  <span className="hidden sm:inline">Refresh</span>
+                  <span className="sm:hidden">Refresh</span>
+                </ModernButton>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex gap-2 items-center">
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              className="px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-            <span className="text-gray-500 text-sm">to</span>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              className="px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="won">Won</option>
-            <option value="lost">Lost</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <select
-            value={drawTimeFilter}
-            onChange={(e) => setDrawTimeFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="all">All Draw Times</option>
-            <option value="twoPM">2:00 PM</option>
-            <option value="fivePM">5:00 PM</option>
-            <option value="ninePM">9:00 PM</option>
-          </select>
-          
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
-          >
-            <ArrowPathIcon className="h-4 w-4 mr-2" />
-            Refresh
-          </button>
-        </div>
-      </div>
+        </ModernCard>
 
-      {/* Tickets Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ticket Number
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Agent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Draw
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Bets
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTickets.map((ticket, index) => (
-                <tr key={ticket.id || ticket.ticketNumber || index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {ticket.ticketNumber}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {ticket.user?.fullName || ticket.user?.username || 'Unknown'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {ticket.draw?.drawDate ? new Date(ticket.draw.drawDate).toLocaleDateString() : ''} {formatDrawTimeForTicket(ticket.draw?.drawTime)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {ticket.bets?.length || 0} bet(s)
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(ticket.totalAmount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(deriveTicketStatus(ticket))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(ticket.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleReprint(ticket)}
-                        className="text-blue-600 hover:text-blue-900 flex items-center"
-                        title="Reprint Ticket"
-                      >
-                        <PrinterIcon className="h-4 w-4" />
-                      </button>
+        {/* Tickets Table */}
+        <ModernCard variant="elevated" className="animate-fade-in">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <TicketIcon className="h-6 w-6 text-primary-600" />
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+                Lottery Tickets
+              </h2>
+              <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
+                {filteredTickets.length} {filteredTickets.length === 1 ? 'ticket' : 'tickets'}
+              </span>
+            </div>
+            
+            <ModernTable
+              columns={[
+                { 
+                  key: 'ticketNumber', 
+                  label: 'Ticket Number', 
+                  sortable: true,
+                  render: (value) => (
+                    <span className="font-semibold text-primary-600">{value}</span>
+                  )
+                },
+                { 
+                  key: 'user', 
+                  label: 'Agent', 
+                  sortable: true,
+                  render: (value) => (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary-100 to-accent-100 rounded-full flex items-center justify-center">
+                        <UserIcon className="h-4 w-4 text-primary-600" />
+                      </div>
+                      <span>{value?.fullName || value?.username || 'Unknown'}</span>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  )
+                },
+                { 
+                  key: 'draw', 
+                  label: 'Draw', 
+                  sortable: true,
+                  render: (value) => (
+                    <div className="text-sm">
+                      <div className="font-medium">
+                        {value?.drawDate ? new Date(value.drawDate).toLocaleDateString() : 'N/A'}
+                      </div>
+                      <div className="text-gray-500">
+                        {formatDrawTimeForTicket(value?.drawTime)}
+                      </div>
+                    </div>
+                  )
+                },
+                { 
+                  key: 'bets', 
+                  label: 'Bets', 
+                  render: (value) => (
+                    <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
+                      {value?.length || 0} bet{(value?.length || 0) !== 1 ? 's' : ''}
+                    </span>
+                  )
+                },
+                { 
+                  key: 'totalAmount', 
+                  label: 'Total Amount', 
+                  sortable: true,
+                  render: (value) => (
+                    <span className="font-semibold text-success-600">{formatCurrency(value)}</span>
+                  )
+                },
+                { 
+                  key: 'status', 
+                  label: 'Status', 
+                  render: (value, row) => getStatusBadge(deriveTicketStatus(row))
+                },
+                { 
+                  key: 'createdAt', 
+                  label: 'Created', 
+                  sortable: true,
+                  render: (value) => new Date(value).toLocaleDateString()
+                },
+                { 
+                  key: 'actions', 
+                  label: 'Actions',
+                  render: (value, row) => (
+                    <div className="flex space-x-2">
+                      <ModernButton
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleReprint(row)}
+                        icon={PrinterIcon}
+                        title="Reprint Ticket"
+                        className="text-primary-600 hover:text-primary-700"
+                      >
+                        <span className="sr-only">Reprint</span>
+                      </ModernButton>
+                    </div>
+                  )
+                }
+              ]}
+              data={filteredTickets}
+              emptyMessage="No tickets found matching your search criteria"
+            />
+          </div>
+        </ModernCard>
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => handlePageChange(pagination.currentPage - 1)}
-                disabled={pagination.currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => handlePageChange(pagination.currentPage + 1)}
-                disabled={pagination.currentPage === pagination.totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing{' '}
-                  <span className="font-medium">
-                    {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
-                  </span>{' '}
-                  to{' '}
-                  <span className="font-medium">
-                    {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
-                  </span>{' '}
-                  of{' '}
-                  <span className="font-medium">{pagination.totalItems}</span>{' '}
-                  results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
+          <ModernCard variant="glass" className="mt-6">
+            <div className="px-4 sm:px-6 py-4">
+              <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-gray-700 font-medium text-center sm:text-left">
+                  <span className="block sm:inline">
+                    Showing <span className="font-semibold text-primary-600">
+                      {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
+                    </span> to <span className="font-semibold text-primary-600">
+                      {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
+                    </span>
+                  </span>
+                  <span className="text-gray-500 block sm:inline sm:ml-1">
+                    of {pagination.totalItems} tickets
+                  </span>
+                </div>
+                
+                <div className="flex justify-center sm:justify-end space-x-2">
+                  <ModernButton
+                    variant="secondary"
+                    size="sm"
                     onClick={() => handlePageChange(pagination.currentPage - 1)}
                     disabled={pagination.currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    icon={ChevronLeftIcon}
+                    className="flex-1 sm:flex-none"
                   >
-                    <ChevronLeftIcon className="h-5 w-5" />
-                  </button>
+                    <span className="hidden sm:inline">Previous</span>
+                    <span className="sm:hidden">Prev</span>
+                  </ModernButton>
                   
-                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                        page === pagination.currentPage
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                  {/* Page Numbers - Show only on larger screens */}
+                  <div className="hidden md:flex space-x-1">
+                    {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                      let page;
+                      if (pagination.totalPages <= 5) {
+                        page = i + 1;
+                      } else if (pagination.currentPage <= 3) {
+                        page = i + 1;
+                      } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                        page = pagination.totalPages - 4 + i;
+                      } else {
+                        page = pagination.currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <ModernButton
+                          key={page}
+                          variant={page === pagination.currentPage ? 'primary' : 'ghost'}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className="min-w-[2.5rem]"
+                        >
+                          {page}
+                        </ModernButton>
+                      );
+                    })}
+                  </div>
                   
-                  <button
+                  <ModernButton
+                    variant="secondary"
+                    size="sm"
                     onClick={() => handlePageChange(pagination.currentPage + 1)}
                     disabled={pagination.currentPage === pagination.totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    icon={ChevronRightIcon}
+                    className="flex-1 sm:flex-none"
                   >
-                    <ChevronRightIcon className="h-5 w-5" />
-                  </button>
-                </nav>
+                    Next
+                  </ModernButton>
+                </div>
               </div>
             </div>
-          </div>
+          </ModernCard>
         )}
       </div>
     </div>

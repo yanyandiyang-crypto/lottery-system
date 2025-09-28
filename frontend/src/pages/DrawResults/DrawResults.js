@@ -15,6 +15,10 @@ import {
   UserGroupIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import StatCard from '../../components/UI/StatCard';
 
 const DrawResults = () => {
   const { user } = useAuth();
@@ -146,20 +150,17 @@ const DrawResults = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Draw Results Dashboard</h1>
-            <p className="text-gray-600">
-              {user.role === 'admin' || user.role === 'superadmin' 
-                ? 'Input and manage draw results for 2PM, 5PM, 9PM draws' 
-                : 'View draw results and winners'
-              }
-            </p>
-          </div>
-          <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Draw Results Dashboard"
+          subtitle={user.role === 'admin' || user.role === 'superadmin' 
+            ? 'Input and manage draw results for 2PM, 5PM, 9PM draws' 
+            : 'View draw results and winners'
+          }
+          icon={TrophyIcon}
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center space-x-2">
               <CalendarDaysIcon className="h-5 w-5 text-gray-400" />
               <input
@@ -169,19 +170,18 @@ const DrawResults = () => {
                   setSelectedDate(e.target.value);
                   fetchDraws(e.target.value);
                 }}
-                className="border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                className="border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2"
               />
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
               Total Draws: {draws.length}
             </div>
           </div>
-        </div>
-      </div>
+        </PageHeader>
 
-      {/* Per-Draw Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {['twoPM', 'fivePM', 'ninePM'].map((drawTime) => {
+        {/* Modern Per-Draw Dashboard Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+          {['twoPM', 'fivePM', 'ninePM'].map((drawTime) => {
           const todayDraw = draws.find(draw => 
             draw.drawTime === drawTime && 
             new Date(draw.drawDate).toDateString() === new Date(selectedDate).toDateString()
@@ -234,157 +234,194 @@ const DrawResults = () => {
             }
           };
 
-          return (
-            <div key={drawTime} className="bg-white shadow rounded-lg overflow-hidden">
-              {/* Header */}
-              <div className={`px-6 py-4 ${getStatusColor(todayDraw?.status)} text-white`}>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">{drawTimeLabels[drawTime]}</h3>
-                  <span className="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm">
-                    {getStatusText(todayDraw?.status)}
-                  </span>
+            return (
+              <ModernCard key={drawTime} className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                {/* Modern Header */}
+                <div className={`px-6 py-4 ${getStatusColor(todayDraw?.status)} bg-gradient-to-r`}>
+                  <div className="flex items-center justify-between">
+                    <h3 className={`text-lg font-semibold ${
+                      todayDraw?.status === 'closed' ? 'text-yellow-900' : 
+                      todayDraw?.status === 'open' ? 'text-green-900' : 'text-white'
+                    }`}>{drawTimeLabels[drawTime]}</h3>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      todayDraw?.status === 'closed' 
+                        ? 'bg-yellow-800 bg-opacity-20 text-yellow-900' 
+                        : todayDraw?.status === 'open'
+                        ? 'bg-green-800 bg-opacity-20 text-green-900'
+                        : 'bg-white bg-opacity-20 text-white'
+                    }`}>
+                      {getStatusText(todayDraw?.status)}
+                    </span>
+                  </div>
+                  <div className={`mt-2 text-sm ${
+                    todayDraw?.status === 'closed' ? 'text-yellow-800' : 
+                    todayDraw?.status === 'open' ? 'text-green-800' : 'text-white opacity-90'
+                  }`}>
+                    🕐 {getDrawTimeLabel(drawTime)}
+                  </div>
+                  <div className={`text-sm mt-1 ${
+                    todayDraw?.status === 'closed' ? 'text-yellow-800' : 
+                    todayDraw?.status === 'open' ? 'text-green-800' : 'text-white opacity-90'
+                  }`}>
+                    {getDrawRemarks(todayDraw)}
+                  </div>
                 </div>
-                <div className="mt-1 text-sm opacity-90">
-                  Draw Time: {getDrawTimeLabel(drawTime)}
-                </div>
-                <div className="text-sm opacity-90">
-                  {getDrawRemarks(todayDraw)}
-                </div>
-              </div>
 
-              {/* Winning Number */}
-              <div className="px-6 py-6 text-center">
-                <div className="text-sm text-gray-600 mb-2">Winning Number</div>
-                <div className="text-4xl font-bold text-gray-900 mb-2">
-                  {todayDraw?.result || todayDraw?.winningNumber || '???'}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {todayDraw?.result || todayDraw?.winningNumber ? 'Result Set' : 'Awaiting Result'}
-                </div>
-              </div>
-
-              {/* Stats - Only show for admin/superadmin */}
-              {(user.role === 'admin' || user.role === 'superadmin') && (
-                <div className="px-6 py-4 bg-gray-50 grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {todayDraw?._count?.tickets || 0}
+                {/* Modern Winning Number Display */}
+                <div className="px-6 py-8 text-center bg-gradient-to-b from-white to-gray-50">
+                  <div className="text-sm font-medium text-gray-600 mb-3">Winning Number</div>
+                  <div className="relative">
+                    <div className="text-5xl font-bold text-gray-900 mb-3 font-mono tracking-wider">
+                      {todayDraw?.result || todayDraw?.winningNumber || '???'}
                     </div>
-                    <div className="text-sm text-gray-600">Tickets</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      ₱{((todayDraw?.totalSales || 0)).toLocaleString()}
-                    </div>
-                    <div className="text-sm text-gray-600">Sales</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {todayDraw?._count?.winningTickets || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">Winners</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      ₱{((todayDraw?.totalPayouts || 0)).toLocaleString()}
-                    </div>
-                    <div className="text-sm text-gray-600">Payouts</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="px-6 py-4 space-y-2">
-                {(user.role === 'admin' || user.role === 'superadmin') && (
-                  <>
-                    {todayDraw?.status === 'closed' && !todayDraw?.result && !todayDraw?.winningNumber ? (
-                      <button
-                        onClick={() => {
-                          setSelectedDraw(todayDraw);
-                          setShowInputModal(true);
-                        }}
-                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center justify-center"
-                      >
-                        <TrophyIcon className="h-4 w-4 mr-2" />
-                        Input Result
-                      </button>
-                    ) : todayDraw?.status === 'settled' && (todayDraw?.result || todayDraw?.winningNumber) ? (
-                      <button
-                        onClick={() => {
-                          setSelectedDraw(todayDraw);
-                          fetchWinnerNotifications(todayDraw.id);
-                          setShowWinnerModal(true);
-                        }}
-                        className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center justify-center"
-                      >
-                        <BellIcon className="h-4 w-4 mr-2" />
-                        View Winners
-                      </button>
-                    ) : todayDraw?.status === 'open' ? (
-                      <button
-                        disabled
-                        className="w-full bg-orange-300 text-orange-700 px-4 py-2 rounded-md cursor-not-allowed"
-                      >
-                        <ClockIcon className="h-4 w-4 mr-2" />
-                        Betting Active
-                      </button>
-                    ) : (
-                      <button
-                        disabled
-                        className="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed"
-                      >
-                        Not Available
-                      </button>
+                    {(todayDraw?.result || todayDraw?.winningNumber) && (
+                      <div className="absolute -top-2 -right-2">
+                        <CheckCircleIcon className="h-6 w-6 text-green-500" />
+                      </div>
                     )}
-                  </>
-                )}
-                
-                <button
-                  onClick={() => {
-                    setSelectedDraw(todayDraw);
-                    // Add view details functionality
-                  }}
-                  className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 flex items-center justify-center"
-                >
-                  <ChartBarIcon className="h-4 w-4 mr-2" />
-                  View Details
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  </div>
+                  <div className={`text-sm font-medium ${
+                    todayDraw?.result || todayDraw?.winningNumber ? 'text-green-600' : 'text-gray-500'
+                  }`}>
+                    {todayDraw?.result || todayDraw?.winningNumber ? '✅ Result Set' : '⏳ Awaiting Result'}
+                  </div>
+                </div>
 
-      {/* Draws Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Recent Draws</h2>
+                {/* Modern Stats Grid - Only show for admin/superadmin */}
+                {(user.role === 'admin' || user.role === 'superadmin') && (
+                  <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-2">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {todayDraw?._count?.tickets || 0}
+                        </div>
+                        <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Tickets</div>
+                      </div>
+                      <div className="text-center p-2">
+                        <div className="text-2xl font-bold text-green-600">
+                          ₱{((todayDraw?.totalSales || 0)).toLocaleString()}
+                        </div>
+                        <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Sales</div>
+                      </div>
+                      <div className="text-center p-2">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {todayDraw?._count?.winningTickets || 0}
+                        </div>
+                        <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Winners</div>
+                      </div>
+                      <div className="text-center p-2">
+                        <div className="text-2xl font-bold text-red-600">
+                          ₱{((todayDraw?.totalPayouts || 0)).toLocaleString()}
+                        </div>
+                        <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Payouts</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modern Action Buttons */}
+                <div className="px-6 py-4 space-y-3 bg-gray-50">
+                  {(user.role === 'admin' || user.role === 'superadmin') && (
+                    <>
+                      {todayDraw?.status === 'closed' && !todayDraw?.result && !todayDraw?.winningNumber ? (
+                        <ModernButton
+                          onClick={() => {
+                            setSelectedDraw(todayDraw);
+                            setShowInputModal(true);
+                          }}
+                          variant="primary"
+                          size="md"
+                          className="w-full justify-center"
+                        >
+                          <TrophyIcon className="h-4 w-4 mr-2" />
+                          Input Result
+                        </ModernButton>
+                      ) : todayDraw?.status === 'settled' && (todayDraw?.result || todayDraw?.winningNumber) ? (
+                        <ModernButton
+                          onClick={() => {
+                            setSelectedDraw(todayDraw);
+                            fetchWinnerNotifications(todayDraw.id);
+                            setShowWinnerModal(true);
+                          }}
+                          variant="success"
+                          size="md"
+                          className="w-full justify-center"
+                        >
+                          <BellIcon className="h-4 w-4 mr-2" />
+                          View Winners
+                        </ModernButton>
+                      ) : todayDraw?.status === 'open' ? (
+                        <ModernButton
+                          disabled
+                          variant="warning"
+                          size="md"
+                          className="w-full justify-center opacity-60"
+                        >
+                          <ClockIcon className="h-4 w-4 mr-2" />
+                          Betting Active
+                        </ModernButton>
+                      ) : (
+                        <ModernButton
+                          disabled
+                          variant="secondary"
+                          size="md"
+                          className="w-full justify-center opacity-60"
+                        >
+                          Not Available
+                        </ModernButton>
+                      )}
+                    </>
+                  )}
+                  
+                  <ModernButton
+                    onClick={() => {
+                      setSelectedDraw(todayDraw);
+                      // Add view details functionality
+                    }}
+                    variant="secondary"
+                    size="md"
+                    className="w-full justify-center"
+                  >
+                    <ChartBarIcon className="h-4 w-4 mr-2" />
+                    View Details
+                  </ModernButton>
+                </div>
+              </ModernCard>
+            );
+          })}
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Draw
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Result
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Winners
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Payout
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
+
+        {/* Modern Draws Table */}
+        <ModernCard className="overflow-hidden">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Draws</h2>
+            <p className="text-sm text-gray-600 mt-1">Complete history of draw results and winners</p>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Draw
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Result
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Winners
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Payout
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {(() => {
                 // Deduplicate draws by drawDate (day) + drawTime to avoid doubled rows
@@ -438,34 +475,35 @@ const DrawResults = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      {(draw.result || draw.winningNumber) ? (
-                        <>
-                          <span className="text-green-600 font-medium">Completed</span>
-                          {(draw._count?.winningTickets || 0) > 0 && (
-                            <button
-                              onClick={() => {
-                                setSelectedDraw(draw);
-                                fetchWinnerNotifications(draw.id);
-                                setShowWinnerModal(true);
-                              }}
-                              className="inline-flex items-center px-2 py-1 border border-blue-300 text-xs leading-4 font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100"
-                            >
-                              <BellIcon className="h-3 w-3 mr-1" />
-                              View Winners
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                        {(draw.result || draw.winningNumber) ? (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-green-600 font-medium">Completed</span>
+                            {(draw._count?.winningTickets || 0) > 0 && (
+                              <ModernButton
+                                onClick={() => {
+                                  setSelectedDraw(draw);
+                                  fetchWinnerNotifications(draw.id);
+                                  setShowWinnerModal(true);
+                                }}
+                                variant="primary"
+                                size="sm"
+                              >
+                                <BellIcon className="h-3 w-3 mr-1" />
+                                View Winners
+                              </ModernButton>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ModernCard>
 
       {/* Input Result Modal */}
       {showInputModal && (
@@ -739,6 +777,7 @@ const DrawResults = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

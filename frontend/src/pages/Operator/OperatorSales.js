@@ -5,12 +5,20 @@ import {
   ArrowPathIcon, 
   ArrowDownTrayIcon,
   CalendarDaysIcon,
-  ChartBarIcon 
+  ChartBarIcon,
+  CurrencyDollarIcon,
+  TrophyIcon,
+  TicketIcon
 } from '@heroicons/react/24/outline';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { getCurrentDatePH } from '../../utils/dateUtils';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import StatCard from '../../components/UI/StatCard';
+import ModernTable from '../../components/UI/ModernTable';
 
 const OperatorSales = () => {
   const { user } = useAuth();
@@ -127,233 +135,260 @@ const OperatorSales = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center mb-4 sm:mb-0">
-            <EyeIcon className="h-8 w-8 text-blue-600 mr-3" />
-            <h1 className="text-3xl font-bold text-gray-900">Operator Sales Dashboard</h1>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* View Mode Toggle */}
-            <select
-              value={viewMode}
-              onChange={(e) => setViewMode(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="today">Live Today</option>
-              <option value="historical">Historical</option>
-            </select>
-            
-            {/* Date Controls */}
-            {viewMode === 'today' ? (
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Operator Sales Dashboard"
+          subtitle="Monitor sales performance and export reports"
+          icon={EyeIcon}
+        >
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+            <ModernCard className="p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                {/* View Mode Toggle */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700">View:</label>
+                  <select
+                    value={viewMode}
+                    onChange={(e) => setViewMode(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="today">Live Today</option>
+                    <option value="historical">Historical</option>
+                  </select>
+                </div>
+                
+                {/* Date Controls */}
+                {viewMode === 'today' ? (
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700">Date:</label>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700">Range:</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="text-gray-500">to</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                )}
               </div>
-            )}
+            </ModernCard>
             
             {/* Action Buttons */}
-            <button
-              onClick={viewMode === 'today' ? fetchTodaySales : fetchHistoricalSales}
-              disabled={loading}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              <ArrowPathIcon className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-            
-            <button
-              onClick={handleExportSales}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-              Export Excel
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ChartBarIcon className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Total Tickets</dt>
-                  <dd className="text-lg font-medium text-blue-600">
-                    {salesData.dailyStats.totalTickets?.toLocaleString() || '0'}
-                  </dd>
-                </dl>
-              </div>
+            <div className="flex gap-3">
+              <ModernButton
+                onClick={viewMode === 'today' ? fetchTodaySales : fetchHistoricalSales}
+                disabled={loading}
+                variant="primary"
+                size="md"
+              >
+                <ArrowPathIcon className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </ModernButton>
+              
+              <ModernButton
+                onClick={handleExportSales}
+                variant="success"
+                size="md"
+              >
+                <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                Export Excel
+              </ModernButton>
             </div>
           </div>
+        </PageHeader>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <StatCard
+            title="Total Tickets"
+            value={salesData.dailyStats.totalTickets?.toLocaleString() || '0'}
+            icon={TicketIcon}
+            color="primary"
+            trend={viewMode === 'today' ? 'Live Updates' : 'Historical Data'}
+          />
+
+          <StatCard
+            title="Gross Sales"
+            value={`₱${salesData.dailyStats.totalGross?.toLocaleString() || '0'}`}
+            icon={CurrencyDollarIcon}
+            color="success"
+            trend="Total Revenue"
+          />
+
+          <StatCard
+            title="Total Winnings"
+            value={`₱${salesData.dailyStats.totalWinnings?.toLocaleString() || '0'}`}
+            icon={TrophyIcon}
+            color="danger"
+            trend="Prize Payouts"
+          />
+
+          <StatCard
+            title="Net Sales"
+            value={`₱${salesData.dailyStats.totalNet?.toLocaleString() || '0'}`}
+            icon={ChartBarIcon}
+            color="primary"
+            trend="After Winnings"
+          />
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ChartBarIcon className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Gross Sales</dt>
-                  <dd className="text-lg font-medium text-green-600">
-                    ₱{salesData.dailyStats.totalGross?.toLocaleString() || '0'}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ChartBarIcon className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Total Winnings</dt>
-                  <dd className="text-lg font-medium text-red-600">
-                    ₱{salesData.dailyStats.totalWinnings?.toLocaleString() || '0'}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ChartBarIcon className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Net Sales</dt>
-                  <dd className="text-lg font-medium text-blue-600">
-                    ₱{salesData.dailyStats.totalNet?.toLocaleString() || '0'}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sales Data Table */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-          <div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              {viewMode === 'today' ? 'Per-Draw Sales (Live)' : 'Historical Daily Sales'}
-            </h3>
-            {viewMode === 'today' && (
-              <p className="mt-1 max-w-2xl text-sm text-green-600">
-                🟢 Auto-refreshing every 30 seconds
-              </p>
-            )}
-          </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {viewMode === 'today' ? (
-                  <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Draw Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Draw Date</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Tickets</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Sales</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Winnings</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Net Sales</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Tickets</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Sales</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Winnings</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Net Sales</th>
-                  </>
+        {/* Sales Data Table */}
+        <ModernCard>
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {viewMode === 'today' ? 'Per-Draw Sales (Live)' : 'Historical Daily Sales'}
+                </h3>
+                {viewMode === 'today' && (
+                  <p className="text-sm text-green-600 mt-1">
+                    🟢 Auto-refreshing every 30 seconds
+                  </p>
                 )}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={viewMode === 'today' ? 7 : 5} className="px-6 py-4 text-center">
-                    <div className="flex justify-center">
-                      <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
-                      <span className="ml-2 text-gray-500">Loading...</span>
+              </div>
+            </div>
+          </div>
+          
+          <ModernTable
+            columns={viewMode === 'today' ? [
+              {
+                key: 'drawTime',
+                label: 'Draw Time',
+                render: (item) => (
+                  <div className="flex items-center">
+                    <CalendarDaysIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatDrawTime(item.drawTime)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {formatDate(item.drawDate)}
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                (viewMode === 'today' ? salesData.perDrawSales : salesData.historicalData).map((item, index) => (
-                  <tr key={viewMode === 'today' ? item.drawId : item.date} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    {viewMode === 'today' ? (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{formatDrawTime(item.drawTime)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(item.drawDate)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{item.totalTickets}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600 text-right">₱{item.grossSales?.toLocaleString() || '0'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600 text-right">₱{item.winnings?.toLocaleString() || '0'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 text-right">₱{item.netSales?.toLocaleString() || '0'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            item.status === 'completed' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {item.status === 'completed' ? 'Completed' : 'Ongoing'}
-                          </span>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{formatDate(item.date)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{item.totalTickets}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600 text-right">₱{item.grossSales?.toLocaleString() || '0'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600 text-right">₱{item.winnings?.toLocaleString() || '0'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 text-right">₱{item.netSales?.toLocaleString() || '0'}</td>
-                      </>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                )
+              },
+              {
+                key: 'totalTickets',
+                label: 'Tickets',
+                render: (item) => (
+                  <span className="text-sm text-gray-900 font-medium">
+                    {item.totalTickets?.toLocaleString() || '0'}
+                  </span>
+                )
+              },
+              {
+                key: 'grossSales',
+                label: 'Gross Sales',
+                render: (item) => (
+                  <span className="text-sm font-medium text-green-600">
+                    ₱{item.grossSales?.toLocaleString() || '0'}
+                  </span>
+                )
+              },
+              {
+                key: 'winnings',
+                label: 'Winnings',
+                render: (item) => (
+                  <span className="text-sm font-medium text-red-600">
+                    ₱{item.winnings?.toLocaleString() || '0'}
+                  </span>
+                )
+              },
+              {
+                key: 'netSales',
+                label: 'Net Sales',
+                render: (item) => (
+                  <span className="text-sm font-medium text-blue-600">
+                    ₱{item.netSales?.toLocaleString() || '0'}
+                  </span>
+                )
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (item) => (
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    item.status === 'completed' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {item.status === 'completed' ? 'Completed' : 'Ongoing'}
+                  </span>
+                )
+              }
+            ] : [
+              {
+                key: 'date',
+                label: 'Date',
+                render: (item) => (
+                  <div className="flex items-center">
+                    <CalendarDaysIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="text-sm font-medium text-gray-900">
+                      {formatDate(item.date)}
+                    </span>
+                  </div>
+                )
+              },
+              {
+                key: 'totalTickets',
+                label: 'Tickets',
+                render: (item) => (
+                  <span className="text-sm text-gray-900 font-medium">
+                    {item.totalTickets?.toLocaleString() || '0'}
+                  </span>
+                )
+              },
+              {
+                key: 'grossSales',
+                label: 'Gross Sales',
+                render: (item) => (
+                  <span className="text-sm font-medium text-green-600">
+                    ₱{item.grossSales?.toLocaleString() || '0'}
+                  </span>
+                )
+              },
+              {
+                key: 'winnings',
+                label: 'Winnings',
+                render: (item) => (
+                  <span className="text-sm font-medium text-red-600">
+                    ₱{item.winnings?.toLocaleString() || '0'}
+                  </span>
+                )
+              },
+              {
+                key: 'netSales',
+                label: 'Net Sales',
+                render: (item) => (
+                  <span className="text-sm font-medium text-blue-600">
+                    ₱{item.netSales?.toLocaleString() || '0'}
+                  </span>
+                )
+              }
+            ]}
+            data={viewMode === 'today' ? salesData.perDrawSales : salesData.historicalData}
+            loading={loading}
+            emptyMessage={`No ${viewMode === 'today' ? 'per-draw' : 'historical'} sales data available`}
+          />
+        </ModernCard>
       </div>
     </div>
   );

@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
 import { getCurrentDatePH } from '../../utils/dateUtils';
+import {
+  ChartBarIcon,
+  CalendarDaysIcon,
+  CurrencyDollarIcon,
+  TicketIcon,
+  UserGroupIcon,
+  TrophyIcon,
+  DocumentChartBarIcon
+} from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import PageHeader from '../../components/UI/PageHeader';
+import StatCard from '../../components/UI/StatCard';
+import ModernTable from '../../components/UI/ModernTable';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
@@ -66,184 +78,169 @@ const Sales = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Sales Report</h1>
-        <p className="text-gray-600 mt-2">View sales performance and analytics</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Sales Report"
+          subtitle="View sales performance and analytics"
+          icon={DocumentChartBarIcon}
+        />
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+        {error && (
+          <ModernCard className="mb-6 border-l-4 border-red-500 bg-red-50">
+            <div className="p-4">
+              <div className="text-red-700 font-medium">{error}</div>
+            </div>
+          </ModernCard>
+        )}
 
-      {/* Date Range Filter */}
-      <div className="mb-6 bg-white p-4 rounded-lg shadow">
-        <h3 className="text-lg font-medium text-gray-900 mb-3">Filter by Date Range</h3>
-        <div className="flex space-x-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Start Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              End Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-600 font-bold">₱</span>
+        {/* Date Range Filter */}
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <CalendarDaysIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Date Range Filter</h3>
+                <p className="text-sm text-gray-600 mt-1">Select date range for sales report</p>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Sales</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ₱{summary.totalSales?.toLocaleString()}
-              </p>
-            </div>
           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 font-bold">#</span>
+          <div className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Tickets</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {summary.totalTickets?.toLocaleString()}
-              </p>
-            </div>
           </div>
+        </ModernCard>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <StatCard
+            title="Total Sales"
+            value={`₱${summary.totalSales?.toLocaleString() || '0'}`}
+            icon={CurrencyDollarIcon}
+            color="success"
+            trend="Gross Revenue"
+          />
+
+          <StatCard
+            title="Total Tickets"
+            value={summary.totalTickets?.toLocaleString() || '0'}
+            icon={TicketIcon}
+            color="primary"
+            trend="Tickets Sold"
+          />
+
+          <StatCard
+            title="Total Commission"
+            value={`₱${summary.totalCommission?.toLocaleString() || '0'}`}
+            icon={UserGroupIcon}
+            color="secondary"
+            trend="Agent Earnings"
+          />
+
+          <StatCard
+            title="Total Winnings"
+            value={`₱${summary.totalWinnings?.toLocaleString() || '0'}`}
+            icon={TrophyIcon}
+            color="danger"
+            trend={
+              (summary.pendingWinnings || summary.approvedWinnings) ? 
+              `Pending: ₱${summary.pendingWinnings?.toLocaleString() || '0'} | Paid: ₱${summary.approvedWinnings?.toLocaleString() || '0'}` :
+              "Prize Payouts"
+            }
+          />
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <span className="text-purple-600 font-bold">%</span>
+        {/* Sales Table */}
+        <ModernCard>
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <ChartBarIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Sales Details</h2>
+                <p className="text-sm text-gray-600 mt-1">Detailed sales transactions and performance</p>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Commission</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ₱{summary.totalCommission?.toLocaleString()}
-              </p>
-            </div>
           </div>
-        </div>
-
-        {/* Winnings Card with Pending/Approved Breakdown */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                <span className="text-red-600 font-bold">🏆</span>
-              </div>
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Total Winnings</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ₱{summary.totalWinnings?.toLocaleString() || '0'}
-              </p>
-              {/* Pending/Approved Breakdown */}
-              {(summary.pendingWinnings || summary.approvedWinnings) && (
-                <div className="mt-2 pt-2 border-t border-gray-100">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-orange-600">
-                      Pending: ₱{summary.pendingWinnings?.toLocaleString() || '0'}
-                    </span>
-                    <span className="text-green-600">
-                      Paid: ₱{summary.approvedWinnings?.toLocaleString() || '0'}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1 text-center">
-                    *Only paid winnings deducted from net
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sales Table */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Sales Details</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Agent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tickets Sold
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Commission
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {sales.map((sale) => (
-                <tr key={sale.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {sale.agent?.username || 'N/A'}
+          
+          {sales.length > 0 ? (
+            <ModernTable
+              columns={[
+                {
+                  key: 'agent',
+                  label: 'Agent',
+                  render: (sale) => (
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {sale.agent?.username || 'N/A'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {sale.agent?.role || 'N/A'}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {sale.agent?.role || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(sale.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.ticketCount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₱{sale.totalAmount?.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₱{sale.commission?.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  )
+                },
+                {
+                  key: 'date',
+                  label: 'Date',
+                  render: (sale) => (
+                    <span className="text-sm text-gray-500">
+                      {new Date(sale.date).toLocaleDateString()}
+                    </span>
+                  )
+                },
+                {
+                  key: 'ticketCount',
+                  label: 'Tickets Sold',
+                  render: (sale) => (
+                    <span className="text-sm font-medium text-gray-900">
+                      {sale.ticketCount}
+                    </span>
+                  )
+                },
+                {
+                  key: 'totalAmount',
+                  label: 'Total Amount',
+                  render: (sale) => (
+                    <span className="text-sm font-medium text-green-600">
+                      ₱{sale.totalAmount?.toLocaleString()}
+                    </span>
+                  )
+                },
+                {
+                  key: 'commission',
+                  label: 'Commission',
+                  render: (sale) => (
+                    <span className="text-sm font-medium text-blue-600">
+                      ₱{sale.commission?.toLocaleString()}
+                    </span>
+                  )
+                },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  render: (sale) => (
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       sale.status === 'completed' 
                         ? 'bg-green-100 text-green-800' 
@@ -251,19 +248,20 @@ const Sales = () => {
                     }`}>
                       {sale.status}
                     </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  )
+                }
+              ]}
+              data={sales}
+            />
+          ) : (
+            <div className="p-12 text-center">
+              <ChartBarIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Sales Data</h3>
+              <p className="text-gray-500">No sales data found for the selected date range.</p>
+            </div>
+          )}
+        </ModernCard>
       </div>
-
-      {sales.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No sales data found for the selected date range.</p>
-        </div>
-      )}
     </div>
   );
 };

@@ -5,6 +5,20 @@ import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate'
 import MobileTicketUtils from '../../utils/mobileTicketUtils';
 import api from '../../utils/api';
 import { toast } from 'react-hot-toast';
+import {
+  ShareIcon,
+  PrinterIcon,
+  ArrowDownTrayIcon,
+  HomeIcon,
+  TicketIcon,
+  CalendarDaysIcon,
+  CurrencyDollarIcon,
+  CheckCircleIcon
+} from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import LoadingSpinner from '../../components/UI/LoadingSpinner';
 
 const MobileTicketShare = () => {
   const { ticketNumber } = useParams();
@@ -69,29 +83,29 @@ const MobileTicketShare = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading ticket...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading ticket..." />;
   }
 
   if (error || !ticketData?.data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">❌</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Ticket Not Found</h1>
-          <p className="text-gray-600 mb-4">The ticket you're looking for doesn't exist or has been removed.</p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-          >
-            Go Home
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+        <div className="w-full max-w-md mx-auto px-4 sm:px-6 py-12">
+          <ModernCard className="text-center p-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+              <TicketIcon className="h-8 w-8 text-red-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Ticket Not Found</h1>
+            <p className="text-gray-600 mb-6">The ticket you're looking for doesn't exist or has been removed.</p>
+            <ModernButton
+              onClick={() => navigate('/')}
+              variant="primary"
+              size="lg"
+              className="w-full"
+            >
+              <HomeIcon className="h-5 w-5 mr-2" />
+              Go Home
+            </ModernButton>
+          </ModernCard>
         </div>
       </div>
     );
@@ -100,92 +114,140 @@ const MobileTicketShare = () => {
   const ticket = ticketData.data;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-md mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Lottery Ticket</h1>
-          <p className="text-gray-600">Ticket #{ticket.ticketNumber}</p>
-        </div>
-
-        {/* Mobile Ticket */}
-        <MobileTicketTemplate
-          ticket={ticket}
-          user={user}
-          onShare={handleShare}
-          onPrint={handlePrint}
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full max-w-md mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <PageHeader
+          title="Lottery Ticket"
+          subtitle={`Ticket #${ticket.ticketNumber}`}
+          icon={TicketIcon}
+          className="mb-8"
         />
 
-        {/* Action Buttons */}
-        <div className="mt-6 space-y-3">
-          <button
-            onClick={handleShare}
-            className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium flex items-center justify-center space-x-2"
-          >
-            <span>📱</span>
-            <span>Share Ticket</span>
-          </button>
-          
-          <button
-            onClick={handlePrint}
-            className="w-full px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center justify-center space-x-2"
-          >
-            <span>🖨️</span>
-            <span>Print Ticket</span>
-          </button>
-          
-          <button
-            onClick={handleDownload}
-            className="w-full px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium flex items-center justify-center space-x-2"
-          >
-            <span>📥</span>
-            <span>Download Image</span>
-          </button>
+        {/* Mobile Ticket */}
+        <div className="mb-8">
+          <MobileTicketTemplate
+            ticket={ticket}
+            user={user}
+            onShare={handleShare}
+            onPrint={handlePrint}
+          />
         </div>
 
-        {/* Ticket Info */}
-        <div className="mt-8 bg-white rounded-lg p-4 shadow-sm">
-          <h3 className="font-bold text-gray-900 mb-3">Ticket Information</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Ticket Number:</span>
-              <span className="font-medium">{ticket.ticketNumber}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Draw Time:</span>
-              <span className="font-medium">{ticket.draw?.drawTime || 'N/A'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Draw Date:</span>
-              <span className="font-medium">
-                {ticket.draw?.drawDate ? new Date(ticket.draw.drawDate).toLocaleDateString() : 'N/A'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Total Amount:</span>
-              <span className="font-medium">₱{parseFloat(ticket.totalAmount).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Status:</span>
-              <span className={`font-medium ${
-                ticket.status === 'won' ? 'text-green-600' : 
-                ticket.status === 'pending' ? 'text-yellow-600' : 
-                'text-gray-600'
-              }`}>
-                {ticket.status?.charAt(0).toUpperCase() + ticket.status?.slice(1) || 'Unknown'}
-              </span>
+        {/* Action Buttons */}
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+            <p className="text-sm text-gray-600 mt-1">Share, print, or download your ticket</p>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <ModernButton
+                onClick={handleShare}
+                variant="primary"
+                size="md"
+                className="w-full"
+              >
+                <ShareIcon className="h-5 w-5 mr-2" />
+                Share
+              </ModernButton>
+              
+              <ModernButton
+                onClick={handlePrint}
+                variant="success"
+                size="md"
+                className="w-full"
+              >
+                <PrinterIcon className="h-5 w-5 mr-2" />
+                Print
+              </ModernButton>
+              
+              <ModernButton
+                onClick={handleDownload}
+                variant="secondary"
+                size="md"
+                className="w-full"
+              >
+                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                Download
+              </ModernButton>
             </div>
           </div>
-        </div>
+        </ModernCard>
+
+        {/* Ticket Info */}
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <TicketIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Ticket Information</h3>
+                <p className="text-sm text-gray-600 mt-1">Complete ticket details</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <div className="flex items-center">
+                  <TicketIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600">Ticket Number</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-900">{ticket.ticketNumber}</span>
+              </div>
+              
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <div className="flex items-center">
+                  <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600">Draw Time</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-900">{ticket.draw?.drawTime || 'N/A'}</span>
+              </div>
+              
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <div className="flex items-center">
+                  <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600">Draw Date</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-900">
+                  {ticket.draw?.drawDate ? new Date(ticket.draw.drawDate).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <div className="flex items-center">
+                  <CurrencyDollarIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600">Total Amount</span>
+                </div>
+                <span className="text-sm font-semibold text-green-600">₱{parseFloat(ticket.totalAmount).toFixed(2)}</span>
+              </div>
+              
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center">
+                  <CheckCircleIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600">Status</span>
+                </div>
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                  ticket.status === 'won' ? 'bg-green-100 text-green-800' : 
+                  ticket.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {ticket.status?.charAt(0).toUpperCase() + ticket.status?.slice(1) || 'Unknown'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </ModernCard>
 
         {/* Back Button */}
-        <div className="mt-6 text-center">
-          <button
+        <div className="text-center">
+          <ModernButton
             onClick={() => navigate('/')}
-            className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium"
+            variant="ghost"
+            size="md"
           >
-            ← Back to Home
-          </button>
+            <HomeIcon className="h-4 w-4 mr-2" />
+            Back to Home
+          </ModernButton>
         </div>
       </div>
     </div>

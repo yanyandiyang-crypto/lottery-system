@@ -8,8 +8,13 @@ import {
   PencilIcon,
   CheckIcon,
   XMarkIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  CalculatorIcon,
+  TrophyIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
 
 const PrizeConfiguration = () => {
   const [loading, setLoading] = useState(true);
@@ -130,124 +135,145 @@ const PrizeConfiguration = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-          <CogIcon className="h-8 w-8 mr-3 text-blue-600" />
-          Prize Configuration
-        </h1>
-        <p className="mt-2 text-gray-600">
-          Configure winning prize multipliers for different bet types
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Prize Configuration"
+          subtitle="Configure winning prize multipliers for different bet types"
+          icon={CogIcon}
+        />
 
-      {/* Prize Calculator */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-            <CurrencyDollarIcon className="h-5 w-5 mr-2 text-green-600" />
-            Prize Calculator
-          </h2>
-          <button
-            onClick={() => setShowCalculator(!showCalculator)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-          >
-            {showCalculator ? 'Hide' : 'Show'} Calculator
-          </button>
-        </div>
-
-        {showCalculator && (
-          <div key="calculator-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div key="calc-bet-type-container">
-              <label key="calc-bet-type-label" className="block text-sm font-medium text-gray-700 mb-2">
-                Bet Type
-              </label>
-              <select
-                key="calc-bet-type-select"
-                value={calculatorData.betType}
-                onChange={(e) => setCalculatorData({ ...calculatorData, betType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option key="standard" value="standard">Standard</option>
-                <option key="rambolito" value="rambolito">Rambolito</option>
-              </select>
-            </div>
-
-            <div key="calc-bet-amount-container">
-              <label key="calc-bet-amount-label" className="block text-sm font-medium text-gray-700 mb-2">
-                Bet Amount (₱)
-              </label>
-              <input
-                key="calc-bet-amount-input"
-                type="number"
-                value={calculatorData.betAmount}
-                onChange={(e) => setCalculatorData({ ...calculatorData, betAmount: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="0"
-                step="0.01"
-              />
-            </div>
-
-            {calculatorData.betType === 'rambolito' && (
-              <div key="calc-bet-digits-container">
-                <label key="calc-bet-digits-label" className="block text-sm font-medium text-gray-700 mb-2">
-                  Bet Digits (3 digits)
-                </label>
-                <input
-                  key="calc-bet-digits-input"
-                  type="text"
-                  value={calculatorData.betDigits}
-                  onChange={(e) => setCalculatorData({ ...calculatorData, betDigits: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  maxLength="3"
-                  placeholder="e.g., 123, 556"
-                />
+        {/* Prize Calculator */}
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <CalculatorIcon className="h-6 w-6 mr-3 text-blue-600" />
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Prize Calculator</h2>
+                  <p className="text-sm text-gray-600 mt-1">Calculate potential winnings for different bet types</p>
+                </div>
               </div>
-            )}
-
-            <div key="calc-button-container" className="flex items-end">
-              <button
-                key="calc-button"
-                onClick={calculatePrize}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <ModernButton
+                onClick={() => setShowCalculator(!showCalculator)}
+                variant="secondary"
+                size="sm"
               >
-                Calculate Prize
-              </button>
+                {showCalculator ? 'Hide' : 'Show'} Calculator
+              </ModernButton>
             </div>
           </div>
-        )}
 
-        {calculationResult && (
-          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">Calculation Result</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div key="bet-type">
-                <span className="font-medium">Bet Type:</span> {calculationResult.betType}
+          {showCalculator && (
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bet Type
+                  </label>
+                  <select
+                    value={calculatorData.betType}
+                    onChange={(e) => setCalculatorData({ ...calculatorData, betType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="standard">Standard</option>
+                    <option value="rambolito">Rambolito</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bet Amount (₱)
+                  </label>
+                  <input
+                    type="number"
+                    value={calculatorData.betAmount}
+                    onChange={(e) => setCalculatorData({ ...calculatorData, betAmount: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter bet amount"
+                  />
+                </div>
+
+                {calculatorData.betType === 'rambolito' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bet Digits (3 digits)
+                    </label>
+                    <input
+                      type="text"
+                      value={calculatorData.betDigits}
+                      onChange={(e) => setCalculatorData({ ...calculatorData, betDigits: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      maxLength="3"
+                      placeholder="e.g., 123, 556"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-end">
+                  <ModernButton
+                    onClick={calculatePrize}
+                    variant="primary"
+                    size="md"
+                    className="w-full"
+                  >
+                    <CalculatorIcon className="h-4 w-4 mr-2" />
+                    Calculate Prize
+                  </ModernButton>
+                </div>
               </div>
-              <div key="bet-amount">
-                <span className="font-medium">Bet Amount:</span> {formatCurrency(calculationResult.betAmount)}
+            </div>
+          )}
+
+          {calculationResult && (
+            <div className="mx-6 mb-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+              <div className="flex items-center mb-4">
+                <TrophyIcon className="h-6 w-6 text-green-600 mr-2" />
+                <h3 className="text-xl font-semibold text-green-800">Calculation Result</h3>
               </div>
-              <div key="bet-digits">
-                <span className="font-medium">Bet Digits:</span> {calculationResult.betDigits}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <span className="text-sm font-medium text-gray-600">Bet Type</span>
+                  <div className="text-lg font-semibold text-gray-900 capitalize">
+                    {calculationResult.betType}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <span className="text-sm font-medium text-gray-600">Bet Amount</span>
+                  <div className="text-lg font-semibold text-blue-600">
+                    {formatCurrency(calculationResult.betAmount)}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <span className="text-sm font-medium text-gray-600">Multiplier</span>
+                  <div className="text-lg font-semibold text-orange-600">
+                    {calculationResult.multiplier}x
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm border-2 border-green-200">
+                  <span className="text-sm font-medium text-gray-600">Prize Amount</span>
+                  <div className="text-xl font-bold text-green-600">
+                    {formatCurrency(calculationResult.prizeAmount)}
+                  </div>
+                </div>
               </div>
-              <div key="multiplier">
-                <span className="font-medium">Multiplier:</span> {calculationResult.multiplier}x
-              </div>
-              <div key="prize-amount" className="col-span-2">
-                <span className="font-medium text-lg text-green-600">
-                  Prize Amount: {formatCurrency(calculationResult.prizeAmount)}
-                </span>
+            </div>
+          )}
+        </ModernCard>
+
+        {/* Configuration List */}
+        <ModernCard>
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <CogIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Current Configurations</h2>
+                <p className="text-sm text-gray-600 mt-1">Manage prize multipliers and settings</p>
               </div>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Configuration List */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Current Configurations</h2>
-        </div>
 
         <div className="divide-y divide-gray-200">
           {configurations.map((config) => (
@@ -299,32 +325,35 @@ const PrizeConfiguration = () => {
                   </div>
                 </div>
 
-                <div className="ml-6 flex space-x-2">
-                  <button
-                    key={`${config.id}-edit-btn`}
+                <div className="ml-6 flex space-x-3">
+                  <ModernButton
                     onClick={() => handleEdit(config)}
-                    className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md"
+                    variant="secondary"
+                    size="sm"
                     title="Edit Configuration"
                   >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
+                    <PencilIcon className="h-4 w-4 mr-1" />
+                    Edit
+                  </ModernButton>
                   
-                  <button
-                    key={`${config.id}-toggle-btn`}
+                  <ModernButton
                     onClick={() => handleToggleActive(config.betType)}
-                    className={`p-2 rounded-md ${
-                      config.isActive
-                        ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
-                        : 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                    }`}
+                    variant={config.isActive ? "danger" : "success"}
+                    size="sm"
                     title={config.isActive ? 'Deactivate' : 'Activate'}
                   >
                     {config.isActive ? (
-                      <XMarkIcon key={`${config.id}-xmark`} className="h-5 w-5" />
+                      <>
+                        <XMarkIcon className="h-4 w-4 mr-1" />
+                        Deactivate
+                      </>
                     ) : (
-                      <CheckIcon key={`${config.id}-check`} className="h-5 w-5" />
+                      <>
+                        <CheckIcon className="h-4 w-4 mr-1" />
+                        Activate
+                      </>
                     )}
-                  </button>
+                  </ModernButton>
                 </div>
               </div>
 
@@ -390,21 +419,23 @@ const PrizeConfiguration = () => {
                     </div>
                   </div>
 
-                  <div key="edit-buttons" className="mt-4 flex space-x-3">
-                    <button
-                      key="save-button"
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                    <ModernButton
                       onClick={handleSave}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      variant="primary"
+                      size="md"
                     >
+                      <CheckIcon className="h-4 w-4 mr-2" />
                       Save Changes
-                    </button>
-                    <button
-                      key="cancel-button"
+                    </ModernButton>
+                    <ModernButton
                       onClick={handleCancel}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      variant="secondary"
+                      size="md"
                     >
+                      <XMarkIcon className="h-4 w-4 mr-2" />
                       Cancel
-                    </button>
+                    </ModernButton>
                   </div>
                 </div>
               )}
@@ -412,13 +443,15 @@ const PrizeConfiguration = () => {
           ))}
         </div>
 
-        {configurations.length === 0 && (
-          <div key="no-config-message" className="p-6 text-center text-gray-500">
-            <ExclamationTriangleIcon key="warning-icon" className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p key="no-config-text">No prize configurations found.</p>
-            <p key="init-script-text" className="text-sm">Run the initialization script to create default configurations.</p>
-          </div>
-        )}
+          {configurations.length === 0 && (
+            <div className="p-12 text-center">
+              <ExclamationTriangleIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Configurations Found</h3>
+              <p className="text-gray-500 mb-4">No prize configurations are currently available.</p>
+              <p className="text-sm text-gray-400">Run the initialization script to create default configurations.</p>
+            </div>
+          )}
+        </ModernCard>
       </div>
     </div>
   );

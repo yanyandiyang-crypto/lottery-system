@@ -9,8 +9,18 @@ import {
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  DocumentDuplicateIcon
+  DocumentDuplicateIcon,
+  TicketIcon,
+  CalendarDaysIcon,
+  UserIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
 
 const TicketReprint = () => {
   const { user } = useAuth();
@@ -125,54 +135,71 @@ const TicketReprint = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Ticket Reprint</h1>
-            <p className="text-gray-600">Reprint tickets (maximum 2 reprints per ticket)</p>
-          </div>
-          <div className="text-sm text-gray-500">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Ticket Reprint"
+          subtitle="Reprint tickets (maximum 2 reprints per ticket)"
+          icon={PrinterIcon}
+        >
+          <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
             {user.role === 'agent' ? 'Your tickets only' : 'All tickets'}
           </div>
-        </div>
-      </div>
+        </PageHeader>
 
-      {/* Search Section */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Search Ticket</h2>
-        
-        <form onSubmit={handleSearchTicket} className="flex space-x-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Enter ticket number (e.g., T240915001)"
-              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-            />
+        {/* Search Section */}
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <MagnifyingGlassIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Search Ticket</h2>
+                <p className="text-sm text-gray-600 mt-1">Enter ticket number to find and reprint</p>
+              </div>
+            </div>
           </div>
-          <button
-            type="submit"
-            disabled={searching}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-          >
-            <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
-            {searching ? 'Searching...' : 'Search'}
-          </button>
-        </form>
-      </div>
+          <div className="p-6">
+            <form onSubmit={handleSearchTicket} className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Enter ticket number (e.g., T240915001)"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                />
+              </div>
+              <ModernButton
+                type="submit"
+                disabled={searching}
+                variant="primary"
+                size="lg"
+                className="w-full sm:w-auto"
+              >
+                <MagnifyingGlassIcon className="h-5 w-5 mr-2" />
+                {searching ? 'Searching...' : 'Search'}
+              </ModernButton>
+            </form>
+          </div>
+        </ModernCard>
 
-      {/* Ticket Details */}
-      {ticket && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-medium text-gray-900">Ticket Details</h2>
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
-              {ticket.status.toUpperCase()}
-            </span>
-          </div>
+        {/* Ticket Details */}
+        {ticket && (
+          <ModernCard className="mb-8">
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <TicketIcon className="h-6 w-6 mr-3 text-blue-600" />
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Ticket Details</h2>
+                    <p className="text-sm text-gray-600 mt-1">Complete ticket information</p>
+                  </div>
+                </div>
+                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                  {ticket.status.toUpperCase()}
+                </span>
+              </div>
+            </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -268,93 +295,124 @@ const TicketReprint = () => {
               </div>
             )}
           </div>
-        </div>
-      )}
+          </ModernCard>
+        )}
 
-      {/* Recent Reprint History */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Recent Reprints</h2>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ticket Number
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Agent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reprinted By
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reprint Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Count
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {reprintHistory.map((reprint) => (
-                <tr key={reprint.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-mono font-medium text-gray-900">
-                      {reprint.ticket?.ticketNumber}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {reprint.ticket?.agent?.fullName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {reprint.reprintedBy?.fullName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(reprint.createdAt).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {reprint.reprintNumber}/2
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {reprintHistory.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No recent reprints found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Information Panel */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-yellow-800">
-              Reprint Guidelines
-            </h3>
-            <div className="mt-2 text-sm text-yellow-700">
-              <ul className="list-disc list-inside space-y-1">
-                <li>Each ticket can only be reprinted a maximum of 2 times</li>
-                <li>Agents can only reprint their own tickets</li>
-                <li>Tickets that have already been settled or won cannot be reprinted</li>
-                <li>All reprints are logged and tracked for audit purposes</li>
-                <li>Original ticket remains valid - reprints are exact duplicates</li>
-              </ul>
+        {/* Recent Reprint History */}
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <DocumentDuplicateIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Recent Reprints</h2>
+                <p className="text-sm text-gray-600 mt-1">History of recently reprinted tickets</p>
+              </div>
             </div>
           </div>
-        </div>
+          
+          <ModernTable
+            columns={[
+              {
+                key: 'ticketNumber',
+                label: 'Ticket Number',
+                render: (reprint) => (
+                  <div className="text-sm font-mono font-medium text-gray-900">
+                    {reprint.ticket?.ticketNumber}
+                  </div>
+                )
+              },
+              {
+                key: 'agent',
+                label: 'Agent',
+                render: (reprint) => (
+                  <div className="text-sm text-gray-900">
+                    {reprint.ticket?.agent?.fullName}
+                  </div>
+                )
+              },
+              {
+                key: 'reprintedBy',
+                label: 'Reprinted By',
+                render: (reprint) => (
+                  <div className="text-sm text-gray-900">
+                    {reprint.reprintedBy?.fullName}
+                  </div>
+                )
+              },
+              {
+                key: 'reprintDate',
+                label: 'Reprint Date',
+                render: (reprint) => (
+                  <div className="text-sm text-gray-500">
+                    {new Date(reprint.createdAt).toLocaleString()}
+                  </div>
+                )
+              },
+              {
+                key: 'count',
+                label: 'Count',
+                render: (reprint) => (
+                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    {reprint.reprintNumber}/2
+                  </span>
+                )
+              }
+            ]}
+            data={reprintHistory}
+            emptyMessage="No recent reprints found"
+          />
+        </ModernCard>
+
+        {/* Information Panel */}
+        <ModernCard>
+          <div className="bg-gradient-to-r from-yellow-50 to-amber-50 px-6 py-4 border-b border-yellow-200">
+            <div className="flex items-center">
+              <InformationCircleIcon className="h-6 w-6 mr-3 text-yellow-600" />
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-800">Reprint Guidelines</h3>
+                <p className="text-sm text-yellow-600 mt-1">Important rules and limitations</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-start">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <div className="text-sm text-gray-700">
+                    Each ticket can only be reprinted a maximum of <strong>2 times</strong>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <div className="text-sm text-gray-700">
+                    Agents can only reprint their <strong>own tickets</strong>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <div className="text-sm text-gray-700">
+                    Tickets that have already been <strong>settled or won</strong> cannot be reprinted
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-start">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <div className="text-sm text-gray-700">
+                    All reprints are <strong>logged and tracked</strong> for audit purposes
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <div className="text-sm text-gray-700">
+                    Original ticket remains valid - reprints are <strong>exact duplicates</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModernCard>
       </div>
     </div>
   );

@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import toast from 'react-hot-toast';
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  UserIcon,
+  CurrencyDollarIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import StatCard from '../../components/UI/StatCard';
+import ModernTable from '../../components/UI/ModernTable';
 
 const ClaimApprovals = () => {
   const { user } = useAuth();
@@ -180,12 +195,18 @@ const ClaimApprovals = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([
-        loadPendingClaims(),
-        loadApprovalHistory(),
-        loadStats()
-      ]);
-      setLoading(false);
+      try {
+        await Promise.all([
+          loadPendingClaims(),
+          loadApprovalHistory(),
+          loadStats()
+        ]);
+      } catch (err) {
+        console.error('Error loading data:', err);
+        toast.error('Failed to load claim data');
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadData();
@@ -274,511 +295,339 @@ const ClaimApprovals = () => {
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ color: '#1f2937', marginBottom: '10px' }}>
-          ✅ Claim Approvals Dashboard
-        </h1>
-        <p style={{ color: '#6b7280' }}>
-          Review and approve winning ticket claims from agents
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Claim Approvals Dashboard"
+          subtitle="Review and approve winning ticket claims from agents"
+          icon={CheckCircleIcon}
+        />
 
-      {/* Stats Cards */}
-      {stats && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '20px',
-          marginBottom: '30px'
-        }}>
-          <div style={{
-            backgroundColor: '#fef3c7',
-            padding: '20px',
-            borderRadius: '10px',
-            border: '2px solid #f59e0b'
-          }}>
-            <h3 style={{ color: '#92400e', marginBottom: '10px' }}>⏳ Pending</h3>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400e' }}>
-              {stats.pending}
-            </div>
+        {/* Modern Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            <StatCard
+              title="Pending"
+              value={stats.pending}
+              icon={ClockIcon}
+              color="warning"
+              trend="⏳ Awaiting Review"
+            />
+            <StatCard
+              title="Approved"
+              value={stats.approved}
+              icon={CheckCircleIcon}
+              color="success"
+              trend="✅ Processed"
+            />
+            <StatCard
+              title="Rejected"
+              value={stats.rejected}
+              icon={XCircleIcon}
+              color="danger"
+              trend="❌ Declined"
+            />
+            <StatCard
+              title="Avg Time"
+              value={`${stats.averageApprovalTimeHours.toFixed(1)}h`}
+              icon={DocumentTextIcon}
+              color="primary"
+              trend="⏱️ Processing Time"
+            />
           </div>
+        )}
 
-          <div style={{
-            backgroundColor: '#d1fae5',
-            padding: '20px',
-            borderRadius: '10px',
-            border: '2px solid #10b981'
-          }}>
-            <h3 style={{ color: '#065f46', marginBottom: '10px' }}>✅ Approved</h3>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#065f46' }}>
-              {stats.approved}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: '#fecaca',
-            padding: '20px',
-            borderRadius: '10px',
-            border: '2px solid #ef4444'
-          }}>
-            <h3 style={{ color: '#991b1b', marginBottom: '10px' }}>❌ Rejected</h3>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#991b1b' }}>
-              {stats.rejected}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: '#dbeafe',
-            padding: '20px',
-            borderRadius: '10px',
-            border: '2px solid #3b82f6'
-          }}>
-            <h3 style={{ color: '#1e40af', marginBottom: '10px' }}>⏱️ Avg Time</h3>
-            <div style={{ fontSize: '18px', fontWeight: '700', color: '#1e40af' }}>
-              {stats.averageApprovalTimeHours.toFixed(1)}h
-            </div>
-          </div>
+        {/* Modern Tab Navigation */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-6">
+          <ModernButton
+            onClick={() => setActiveTab('pending')}
+            variant={activeTab === 'pending' ? 'primary' : 'secondary'}
+            size="md"
+            className="flex-1 sm:flex-none justify-center"
+          >
+            <ClockIcon className="h-4 w-4 mr-2" />
+            Pending Claims ({pendingClaims.length})
+          </ModernButton>
+          <ModernButton
+            onClick={() => setActiveTab('history')}
+            variant={activeTab === 'history' ? 'primary' : 'secondary'}
+            size="md"
+            className="flex-1 sm:flex-none justify-center"
+          >
+            <DocumentTextIcon className="h-4 w-4 mr-2" />
+            Approval History
+          </ModernButton>
         </div>
-      )}
 
-      {/* Tab Navigation */}
-      <div style={{ marginBottom: '20px' }}>
-        <button
-          onClick={() => setActiveTab('pending')}
-          style={{
-            padding: '12px 24px',
-            marginRight: '10px',
-            backgroundColor: activeTab === 'pending' ? '#dc2626' : '#f3f4f6',
-            color: activeTab === 'pending' ? 'white' : '#374151',
-            border: '1px solid #d1d5db',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}
-        >
-          ⏳ Pending Claims ({pendingClaims.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('history')}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: activeTab === 'history' ? '#dc2626' : '#f3f4f6',
-            color: activeTab === 'history' ? 'white' : '#374151',
-            border: '1px solid #d1d5db',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}
-        >
-          📋 Approval History
-        </button>
-      </div>
-
-      {/* Pending Claims Tab */}
-      {activeTab === 'pending' && (
-        <div>
-          {pendingClaims.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '50px',
-              backgroundColor: '#f9fafb',
-              borderRadius: '10px',
-              border: '1px solid #e5e7eb'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>🎉</div>
-              <h3 style={{ color: '#374151', marginBottom: '10px' }}>No Pending Claims</h3>
-              <p style={{ color: '#6b7280' }}>All claims have been processed!</p>
-            </div>
-          ) : (
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '10px',
-              border: '1px solid #e5e7eb',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                backgroundColor: '#f9fafb',
-                padding: '20px',
-                borderBottom: '1px solid #e5e7eb'
-              }}>
-                <h3 style={{ color: '#374151', margin: 0 }}>Pending Claim Requests</h3>
+        {/* Pending Claims Tab */}
+        {activeTab === 'pending' && (
+          <ModernCard className="overflow-hidden">
+            {pendingClaims.length === 0 ? (
+              <div className="text-center py-12 px-6">
+                <div className="text-6xl mb-6">🎉</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Pending Claims</h3>
+                <p className="text-gray-600">All claims have been processed!</p>
               </div>
+            ) : (
+              <div>
+                <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Pending Claim Requests</h3>
+                  <p className="text-sm text-gray-600 mt-1">{pendingClaims.length} claims awaiting review</p>
+                </div>
               
-              {pendingClaims.map((claim, index) => (
-                <div key={claim.id} style={{
-                  padding: '20px',
-                  borderBottom: index < pendingClaims.length - 1 ? '1px solid #e5e7eb' : 'none',
-                  backgroundColor: claim.daysPending > 2 ? '#fef2f2' : 'white'
-                }}>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr auto',
-                    gap: '20px',
-                    alignItems: 'center'
-                  }}>
-                    {/* Ticket Info */}
-                    <div>
-                      <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '5px' }}>
-                        {formatTicketNumber(claim.ticketNumber)}
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                        Agent: {claim.user?.fullName || claim.user?.username}
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                        Total: {formatCurrency(claim.totalAmount)}
+                <div className="divide-y divide-gray-200">
+                  {pendingClaims.map((claim, index) => (
+                    <div key={claim.id} className={`p-4 sm:p-6 transition-colors hover:bg-gray-50 ${
+                      claim.daysPending > 2 ? 'bg-red-50 border-l-4 border-red-400' : ''
+                    }`}>
+                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 items-start lg:items-center">
+                        {/* Ticket Info */}
+                        <div className="space-y-2">
+                          <div className="font-bold text-lg text-gray-900">
+                            {formatTicketNumber(claim.ticketNumber)}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <UserIcon className="h-4 w-4 mr-1" />
+                            {claim.user?.fullName || claim.user?.username}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <CurrencyDollarIcon className="h-4 w-4 mr-1" />
+                            {formatCurrency(claim.totalAmount)}
+                          </div>
+                        </div>
+
+                        {/* Claimer Info */}
+                        <div className="space-y-2">
+                          <div className="font-semibold text-gray-900">
+                            {claim.claimerName}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            📞 {claim.claimerPhone}
+                          </div>
+                          <div className="text-xs text-gray-500 line-clamp-2">
+                            📍 {claim.claimerAddress}
+                          </div>
+                        </div>
+
+                        {/* Prize & Timing */}
+                        <div className="space-y-2">
+                          <div className="text-xl font-bold text-red-600">
+                            {formatCurrency(calculateActualPrizeAmount(claim))}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            🕒 {formatDate(claim?.approvalRequestedAt || claim?.createdAt)}
+                          </div>
+                          <div className={`text-xs font-medium ${
+                            (claim?.daysPending || 0) > 2 ? 'text-red-600' : 'text-gray-500'
+                          }`}>
+                            ⏱️ {claim?.daysPending || 0} days pending
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-col sm:flex-row gap-2 lg:justify-end">
+                          <ModernButton
+                            onClick={() => setSelectedClaim(claim)}
+                            variant="success"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                          >
+                            <CheckCircleIcon className="h-4 w-4 mr-1" />
+                            Review
+                          </ModernButton>
+                          <ModernButton
+                            onClick={() => handleReject(claim.id)}
+                            variant="danger"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                          >
+                            <XCircleIcon className="h-4 w-4 mr-1" />
+                            Reject
+                          </ModernButton>
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </ModernCard>
+        )}
 
-                    {/* Claimer Info */}
+        {/* Approval History Tab */}
+        {activeTab === 'history' && (
+          <ModernCard className="overflow-hidden">
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Recent Approval History</h3>
+              <p className="text-sm text-gray-600 mt-1">Complete audit trail of all approval actions</p>
+            </div>
+            <div className="overflow-x-auto">
+              <ModernTable
+                headers={[
+                  { key: 'date', label: 'Date' },
+                  { key: 'ticket', label: 'Ticket' },
+                  { key: 'claimer', label: 'Claimer' },
+                  { key: 'action', label: 'Action' },
+                  { key: 'by', label: 'By' },
+                  { key: 'amount', label: 'Amount' }
+                ]}
+                data={approvalHistory.map((record) => ({
+                  date: formatDate(record.createdAt),
+                  ticket: formatTicketNumber(record.ticket?.ticketNumber),
+                  claimer: record.ticket?.claimerName,
+                  action: (
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      record.action === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {record.action.toUpperCase()}
+                    </span>
+                  ),
+                  by: record.performedByUser?.fullName || record.performedByUser?.username,
+                  amount: formatCurrency(record.ticket?.prizeAmount || 0)
+                }))}
+                emptyMessage="No approval history found"
+              />
+            </div>
+          </ModernCard>
+        )}
+
+        {/* Modern Approval Modal */}
+        {selectedClaim && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <ModernCard className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                <h3 className="text-xl font-semibold text-gray-900">Review Claim Request</h3>
+                <p className="text-sm text-gray-600 mt-1">Verify claim details and approve or reject</p>
+              </div>
+              <div className="p-6 space-y-6">
+
+                {/* Claim Details */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <div style={{ fontWeight: '600', marginBottom: '5px' }}>
-                        {claim.claimerName}
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                        {claim.claimerPhone}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                        {claim.claimerAddress}
-                      </div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Agent</label>
+                      <div className="text-gray-900">{selectedClaim.user?.fullName || selectedClaim.user?.username}</div>
                     </div>
-
-                    {/* Prize & Timing */}
                     <div>
-                      <div style={{ 
-                        fontWeight: '700', 
-                        fontSize: '18px', 
-                        color: '#dc2626',
-                        marginBottom: '5px'
-                      }}>
-                        {formatCurrency(calculateActualPrizeAmount(claim))}
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                        Requested: {formatDate(claim?.approvalRequestedAt || claim?.createdAt)}
-                      </div>
-                      <div style={{ 
-                        fontSize: '12px', 
-                        color: (claim?.daysPending || 0) > 2 ? '#dc2626' : '#6b7280',
-                        fontWeight: (claim?.daysPending || 0) > 2 ? '600' : 'normal'
-                      }}>
-                        {claim?.daysPending || 0} days pending
-                      </div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Ticket Number</label>
+                      <div className="font-mono text-gray-900">{selectedClaim.ticketNumber}</div>
                     </div>
-
-                    {/* Actions */}
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button
-                        onClick={() => setSelectedClaim(claim)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontWeight: '600'
-                        }}
-                      >
-                        ✅ Review
-                      </button>
-                      <button
-                        onClick={() => handleReject(claim.id)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontWeight: '600'
-                        }}
-                      >
-                        ❌ Reject
-                      </button>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Claim Time</label>
+                      <div className="text-gray-900">{formatDate(selectedClaim?.approvalRequestedAt || selectedClaim?.createdAt)}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Prize Amount</label>
+                      <div className="text-xl font-bold text-red-600">
+                        {formatCurrency(calculateActualPrizeAmount(selectedClaim))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Approval History Tab */}
-      {activeTab === 'history' && (
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '10px',
-          border: '1px solid #e5e7eb',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            backgroundColor: '#f9fafb',
-            padding: '20px',
-            borderBottom: '1px solid #e5e7eb'
-          }}>
-            <h3 style={{ color: '#374151', margin: 0 }}>Recent Approval History</h3>
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f3f4f6' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Date</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Ticket</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Claimer</th>
-                  <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Action</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>By</th>
-                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {approvalHistory.map((record, index) => (
-                  <tr key={record.id} style={{
-                    backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb'
-                  }}>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb', fontSize: '14px' }}>
-                      {formatDate(record.createdAt)}
-                    </td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb' }}>
-                      <div style={{ fontWeight: '600' }}>
-                        {formatTicketNumber(record.ticket?.ticketNumber)}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb' }}>
-                      {record.ticket?.claimerName}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        backgroundColor: record.action === 'approved' ? '#d1fae5' : '#fecaca',
-                        color: record.action === 'approved' ? '#065f46' : '#991b1b'
-                      }}>
-                        {record.action.toUpperCase()}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb', fontSize: '14px' }}>
-                      {record.performedByUser?.fullName || record.performedByUser?.username}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', fontWeight: '600' }}>
-                      {formatCurrency(record.ticket?.prizeAmount || 0)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Approval Modal */}
-      {selectedClaim && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '10px',
-            padding: '30px',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '80vh',
-            overflowY: 'auto'
-          }}>
-            <h3 style={{ marginBottom: '20px', color: '#374151' }}>
-              Review Claim Request
-            </h3>
-
-            {/* Claim Details */}
-            <div style={{
-              backgroundColor: '#f9fafb',
-              padding: '20px',
-              borderRadius: '8px',
-              marginBottom: '20px'
-            }}>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 1fr', 
-                gap: '15px',
-                marginBottom: '20px'
-              }}>
-                <div>
-                  <strong>Agent:</strong><br />
-                  {selectedClaim.user?.fullName || selectedClaim.user?.username}
-                </div>
-                <div>
-                  <strong>Ticket Number:</strong><br />
-                  {selectedClaim.ticketNumber}
-                </div>
-                <div>
-                  <strong>Claim Time:</strong><br />
-                  {formatDate(selectedClaim?.approvalRequestedAt || selectedClaim?.createdAt)}
-                </div>
-                <div>
-                  <strong>Prize Amount:</strong><br />
-                  <span style={{ fontSize: '18px', fontWeight: '700', color: '#dc2626' }}>
-                    {formatCurrency(calculateActualPrizeAmount(selectedClaim))}
-                  </span>
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <strong>Winning Combinations & Bet Types:</strong><br />
-                  {(() => {
-                    const winningNumbers = selectedClaim.draw?.drawResult?.winningNumber ? 
-                                          [selectedClaim.draw.drawResult.winningNumber] : 
-                                          [];
-                    
-                    console.log('🎯 Display: Winning numbers for filtering:', winningNumbers);
-                    
-                    const winningBets = selectedClaim.bets?.filter(bet => {
-                      const isWinning = checkIfBetIsWinning(bet.betCombination, bet.betType, winningNumbers);
-                      console.log('🎲 Display: Bet check result:', { bet: bet.betCombination, isWinning });
-                      return isWinning;
-                    }) || [];
-
-                    if (winningBets.length === 0) {
-                      return <div style={{ color: '#6b7280', fontStyle: 'italic' }}>No winning combinations found</div>;
-                    }
-
-                    return winningBets.map((bet, index) => {
-                      const betAmount = parseFloat(bet.betAmount || bet.amount || 0);
-                      const betType = (bet.betType || 'standard').toLowerCase();
-                      const multiplier = betType === 'rambolito' ? 75 : 450;
-                      const betPrize = betAmount * multiplier;
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Winning Combinations & Bet Types</label>
+                    {(() => {
+                      const winningNumbers = selectedClaim.draw?.drawResult?.winningNumber ? 
+                                            [selectedClaim.draw.drawResult.winningNumber] : 
+                                            [];
                       
-                      return (
-                        <div key={index} style={{ 
-                          backgroundColor: '#f0f9ff', 
-                          padding: '12px', 
-                          borderRadius: '6px', 
-                          margin: '6px 0',
-                          border: '1px solid #bfdbfe'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                              <strong>{bet.betType}:</strong> {bet.betCombination}
-                              <div style={{ fontSize: '12px', color: '#059669', fontWeight: '600' }}>
-                                ✅ WINNING BET
+                      const winningBets = selectedClaim.bets?.filter(bet => {
+                        const isWinning = checkIfBetIsWinning(bet.betCombination, bet.betType, winningNumbers);
+                        return isWinning;
+                      }) || [];
+
+                      if (winningBets.length === 0) {
+                        return <div className="text-gray-500 italic">No winning combinations found</div>;
+                      }
+
+                      return winningBets.map((bet, index) => {
+                        const betAmount = parseFloat(bet.betAmount || bet.amount || 0);
+                        const betType = (bet.betType || 'standard').toLowerCase();
+                        const multiplier = betType === 'rambolito' ? 75 : 450;
+                        const betPrize = betAmount * multiplier;
+                        
+                        return (
+                          <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <div className="font-semibold">{bet.betType}: {bet.betCombination}</div>
+                                <div className="text-xs text-green-600 font-medium">✅ WINNING BET</div>
                               </div>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                ₱{betAmount} × {multiplier}x
-                              </div>
-                              <div style={{ fontSize: '16px', fontWeight: '700', color: '#dc2626' }}>
-                                ₱{betPrize.toLocaleString()}
+                              <div className="text-right">
+                                <div className="text-xs text-gray-600">₱{betAmount} × {multiplier}x</div>
+                                <div className="text-lg font-bold text-red-600">₱{betPrize.toLocaleString()}</div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    });
-                  })()}
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Approval Form */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prize Amount (Optional - will use calculated amount if empty)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={prizeAmount}
+                      onChange={(e) => setPrizeAmount(e.target.value)}
+                      placeholder={calculateActualPrizeAmount(selectedClaim)?.toString() || '0.00'}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Approval Notes
+                    </label>
+                    <textarea
+                      value={approvalNotes}
+                      onChange={(e) => setApprovalNotes(e.target.value)}
+                      placeholder="Enter any notes about this approval..."
+                      rows="3"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+                  <ModernButton
+                    onClick={() => setSelectedClaim(null)}
+                    variant="secondary"
+                    size="md"
+                    className="order-3 sm:order-1"
+                  >
+                    Cancel
+                  </ModernButton>
+                  <ModernButton
+                    onClick={() => handleReject(selectedClaim.id, 'Rejected after review')}
+                    variant="danger"
+                    size="md"
+                    className="order-2"
+                  >
+                    <XCircleIcon className="h-4 w-4 mr-2" />
+                    Reject
+                  </ModernButton>
+                  <ModernButton
+                    onClick={() => handleApprove(selectedClaim.id)}
+                    variant="success"
+                    size="md"
+                    className="order-1 sm:order-3"
+                  >
+                    <CheckCircleIcon className="h-4 w-4 mr-2" />
+                    Approve
+                  </ModernButton>
                 </div>
               </div>
-            </div>
-
-            {/* Approval Form */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                Prize Amount (Optional - will use calculated amount if empty):
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={prizeAmount}
-                onChange={(e) => setPrizeAmount(e.target.value)}
-                placeholder={calculateActualPrizeAmount(selectedClaim)?.toString() || '0.00'}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '16px'
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                Approval Notes:
-              </label>
-              <textarea
-                value={approvalNotes}
-                onChange={(e) => setApprovalNotes(e.target.value)}
-                placeholder="Enter any notes about this approval..."
-                rows="3"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  resize: 'vertical'
-                }}
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setSelectedClaim(null)}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#6b7280',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleReject(selectedClaim.id, 'Rejected after review')}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#ef4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                ❌ Reject
-              </button>
-              <button
-                onClick={() => handleApprove(selectedClaim.id)}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                ✅ Approve
-              </button>
-            </div>
+            </ModernCard>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

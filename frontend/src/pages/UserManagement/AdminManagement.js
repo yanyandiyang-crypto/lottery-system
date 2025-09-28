@@ -9,8 +9,16 @@ import {
   EyeSlashIcon,
   UserIcon,
   ShieldCheckIcon,
-  ComputerDesktopIcon
+  ComputerDesktopIcon,
+  XCircleIcon,
+  CalendarDaysIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
+import LoadingSpinner from '../../components/UI/LoadingSpinner';
 
 const AdminManagement = () => {
   const { user } = useAuth();
@@ -36,10 +44,11 @@ const AdminManagement = () => {
     try {
       setLoading(true);
       const response = await api.get('/admin-users/admins');
-      // Filter out SuperAdmins unless current user is SuperAdmin
-      const filteredAdmins = canViewSuperAdmins 
+      // Filter out SuperAdmins unless current user is SuperAdmin and remove null/undefined entries
+      const filteredAdmins = (canViewSuperAdmins 
         ? response.data.data 
-        : response.data.data.filter(admin => admin.role !== 'superadmin');
+        : response.data.data.filter(admin => admin && admin.role !== 'superadmin'))
+        .filter(admin => admin != null); // Remove null/undefined entries
       setAdmins(filteredAdmins);
     } catch (err) {
       setError('Failed to fetch administrators');
@@ -153,146 +162,186 @@ const AdminManagement = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading administrators..." />;
   }
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6">
-      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900">Administrator Management</h1>
-          <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1 sm:mt-2">Manage system administrators, operators, and their permissions</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center text-sm sm:text-base"
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Administrator Management"
+          subtitle="Manage system administrators, operators, and their permissions"
+          icon={ShieldCheckIcon}
         >
-          <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">Create Admin/Operator</span>
-          <span className="sm:hidden">Create</span>
-        </button>
-      </div>
+          <ModernButton
+            onClick={() => setShowCreateModal(true)}
+            variant="primary"
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            <span className="hidden sm:inline">Create Admin/Operator</span>
+            <span className="sm:hidden">Create</span>
+          </ModernButton>
+        </PageHeader>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+        {error && (
+          <ModernCard className="mb-8 border-l-4 border-red-500 bg-red-50">
+            <div className="p-4">
+              <div className="flex items-center">
+                <XCircleIcon className="h-5 w-5 text-red-500 mr-2" />
+                <div className="text-red-700 font-medium">{error}</div>
+              </div>
+            </div>
+          </ModernCard>
+        )}
 
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-200">
-          <h2 className="text-base sm:text-lg font-medium text-gray-900">Administrators & Operators</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Administrator
-                </th>
-                <th className="hidden sm:table-cell px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="hidden lg:table-cell px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="hidden lg:table-cell px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {admins.map((admin) => (
-                <tr key={admin.id} className={admin.role === 'superadmin' ? 'bg-red-50' : admin.role === 'operator' ? 'bg-purple-50' : ''}>
-                  <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
-                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          {getRoleIcon(admin.role)}
-                        </div>
-                      </div>
-                      <div className="ml-2 sm:ml-4">
-                        <div className="text-xs sm:text-sm font-medium text-gray-900">
-                          {admin.fullName || admin.username}
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-500">@{admin.username}</div>
-                        <div className="sm:hidden mt-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(admin.role)}`}>
-                            {admin.role}
-                          </span>
-                        </div>
+        <ModernCard>
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <ShieldCheckIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Administrators & Operators</h2>
+                <p className="text-sm text-gray-600 mt-1">Manage system access and permissions</p>
+              </div>
+            </div>
+          </div>
+          
+          <ModernTable
+            columns={[
+              {
+                key: 'user',
+                label: 'Administrator',
+                render: (admin) => (
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        {admin && getRoleIcon(admin.role)}
                       </div>
                     </div>
-                  </td>
-                  <td className="hidden sm:table-cell px-4 lg:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeColor(admin.role)}`}>
-                      {admin.role}
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {admin?.fullName || admin?.username}
+                      </div>
+                      <div className="text-sm text-gray-500">@{admin?.username}</div>
+                      <div className="sm:hidden mt-1">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${admin && getRoleBadgeColor(admin.role)}`}>
+                          {admin?.role}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              },
+              {
+                key: 'role',
+                label: 'Role',
+                className: 'hidden sm:table-cell',
+                render: (admin) => (
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${admin && getRoleBadgeColor(admin.role)}`}>
+                    {admin?.role}
+                  </span>
+                )
+              },
+              {
+                key: 'email',
+                label: 'Email',
+                className: 'hidden lg:table-cell',
+                render: (admin) => (
+                  <div className="flex items-center">
+                    <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span className="text-sm text-gray-900">{admin?.email}</span>
+                  </div>
+                )
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (admin) => (
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    admin?.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {admin?.status === 'active' ? 'Active' : 'Inactive'}
+                  </span>
+                )
+              },
+              {
+                key: 'created',
+                label: 'Created',
+                className: 'hidden lg:table-cell',
+                render: (admin) => (
+                  <div className="flex items-center">
+                    <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span className="text-sm text-gray-500">
+                      {admin?.createdAt ? new Date(admin.createdAt).toLocaleDateString() : 'N/A'}
                     </span>
-                  </td>
-                  <td className="hidden lg:table-cell px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
-                    {admin.email}
-                  </td>
-                  <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      admin.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {admin.status === 'active' ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="hidden lg:table-cell px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
-                    {new Date(admin.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
-                    <div className="flex space-x-1 sm:space-x-2">
-                      <button
-                        onClick={() => handleToggleStatus(admin.id, admin.status)}
-                        className={`${admin.status === 'active' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
-                        title={admin.status === 'active' ? 'Deactivate' : 'Activate'}
-                      >
-                        {admin.status === 'active' ? <EyeSlashIcon className="h-3 w-3 sm:h-4 sm:w-4" /> : <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4" />}
-                      </button>
-                      <button
-                        onClick={() => openEditModal(admin)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Edit"
-                      >
-                        <PencilIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </button>
-                      {/* Only allow deletion if not SuperAdmin or current user is SuperAdmin */}
-                      {(admin.role !== 'superadmin' || canViewSuperAdmins) && admin.id !== user.id && (
-                        <button
-                          onClick={() => handleDeleteAdmin(admin.id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete"
-                        >
-                          <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </button>
+                  </div>
+                )
+              },
+              {
+                key: 'actions',
+                label: 'Actions',
+                render: (admin) => (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <ModernButton
+                      onClick={() => handleToggleStatus(admin?.id, admin?.status)}
+                      variant={admin?.status === 'active' ? "danger" : "success"}
+                      size="sm"
+                      className="w-full sm:w-auto"
+                    >
+                      {admin?.status === 'active' ? (
+                        <>
+                          <EyeSlashIcon className="h-4 w-4 mr-1" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <EyeIcon className="h-4 w-4 mr-1" />
+                          Activate
+                        </>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    </ModernButton>
+                    <ModernButton
+                      onClick={() => openEditModal(admin)}
+                      variant="secondary"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                    >
+                      <PencilIcon className="h-4 w-4 mr-1" />
+                      Edit
+                    </ModernButton>
+                    {(admin?.role !== 'superadmin' || canViewSuperAdmins) && admin?.id !== user?.id && (
+                      <ModernButton
+                        onClick={() => handleDeleteAdmin(admin?.id)}
+                        variant="danger"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1" />
+                        Delete
+                      </ModernButton>
+                    )}
+                  </div>
+                )
+              }
+            ]}
+            data={admins}
+            emptyMessage={
+              <div className="text-center py-12">
+                <ShieldCheckIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No administrators found</h3>
+                <p className="text-sm text-gray-500">Get started by creating your first administrator.</p>
+              </div>
+            }
+          />
+        </ModernCard>
 
-      {/* Create Administrator Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 px-4">
-          <div className="relative top-10 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        {/* Create Administrator Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 px-4">
+            <div className="relative top-10 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md shadow-lg rounded-xl bg-white">
             <div className="mt-3">
               <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Create New Admin/Operator</h3>
               <form onSubmit={handleCreateAdmin}>
@@ -365,34 +414,39 @@ const AdminManagement = () => {
                   </div>
                 )}
 
-                <div className="flex justify-end space-x-3">
-                  <button
+                <div className="flex flex-col sm:flex-row justify-end gap-3">
+                  <ModernButton
                     type="button"
                     onClick={() => {
                       setShowCreateModal(false);
                       resetForm();
                     }}
-                    className="px-4 py-2 text-gray-500 border border-gray-300 rounded-md hover:bg-gray-50"
+                    variant="ghost"
+                    size="md"
+                    className="w-full sm:w-auto"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </ModernButton>
+                  <ModernButton
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    variant="primary"
+                    size="md"
+                    className="w-full sm:w-auto"
                   >
+                    <PlusIcon className="h-4 w-4 mr-2" />
                     Create Account
-                  </button>
+                  </ModernButton>
                 </div>
               </form>
             </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Edit Administrator Modal */}
-      {showEditModal && selectedAdmin && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        {/* Edit Administrator Modal */}
+        {showEditModal && selectedAdmin && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 px-4">
+            <div className="relative top-10 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md shadow-lg rounded-xl bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Account</h3>
               <form onSubmit={handleEditAdmin}>
@@ -465,30 +519,36 @@ const AdminManagement = () => {
                   </div>
                 )}
 
-                <div className="flex justify-end space-x-3">
-                  <button
+                <div className="flex flex-col sm:flex-row justify-end gap-3">
+                  <ModernButton
                     type="button"
                     onClick={() => {
                       setShowEditModal(false);
                       setSelectedAdmin(null);
                       resetForm();
                     }}
-                    className="px-4 py-2 text-gray-500 border border-gray-300 rounded-md hover:bg-gray-50"
+                    variant="ghost"
+                    size="md"
+                    className="w-full sm:w-auto"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </ModernButton>
+                  <ModernButton
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    variant="primary"
+                    size="md"
+                    className="w-full sm:w-auto"
                   >
+                    <PencilIcon className="h-4 w-4 mr-2" />
                     Update Account
-                  </button>
+                  </ModernButton>
                 </div>
               </form>
             </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

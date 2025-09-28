@@ -9,6 +9,9 @@ import {
   CurrencyDollarIcon,
   TicketIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import StatCard from '../../components/UI/StatCard';
+import PageHeader from '../../components/UI/PageHeader';
 
 const AgentSales = () => {
   const { user } = useAuth();
@@ -70,102 +73,117 @@ const AgentSales = () => {
   };
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6">
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Sales Dashboard</h1>
-        <p className="text-sm sm:text-base text-gray-600">Track your sales performance and statistics</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="Sales Dashboard"
+          subtitle="Track your sales performance, statistics, and draw-by-draw analytics"
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Agent', href: '/agent' },
+            { label: 'Sales Dashboard' }
+          ]}
+        />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CurrencyDollarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0 flex-1">
-              <p className="text-xs sm:text-sm font-medium text-gray-500">Today's Sales</p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{formatCurrency(salesData.today.totalSales)}</p>
-              <p className="text-xs sm:text-sm text-gray-500">{salesData.today.totalTickets} tickets</p>
-            </div>
-          </div>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+          <StatCard
+            title="Today's Sales"
+            value={formatCurrency(salesData.today.totalSales)}
+            subtitle={`${salesData.today.totalTickets} tickets`}
+            icon={CurrencyDollarIcon}
+            color="success"
+            className="animate-bounce-in"
+            style={{ animationDelay: '0ms' }}
+          />
+          <StatCard
+            title="This Week"
+            value={formatCurrency(salesData.thisWeek.totalSales)}
+            subtitle={`${salesData.thisWeek.totalTickets} tickets`}
+            icon={ChartBarIcon}
+            color="primary"
+            className="animate-bounce-in"
+            style={{ animationDelay: '100ms' }}
+          />
+          <StatCard
+            title="This Month"
+            value={formatCurrency(salesData.thisMonth.totalSales)}
+            subtitle={`${salesData.thisMonth.totalTickets} tickets`}
+            icon={CalendarIcon}
+            color="accent"
+            className="animate-bounce-in sm:col-span-2 lg:col-span-1"
+            style={{ animationDelay: '200ms' }}
+          />
         </div>
 
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <ChartBarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0 flex-1">
-              <p className="text-xs sm:text-sm font-medium text-gray-500">This Week</p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{formatCurrency(salesData.thisWeek.totalSales)}</p>
-              <p className="text-xs sm:text-sm text-gray-500">{salesData.thisWeek.totalTickets} tickets</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 sm:col-span-2 lg:col-span-1">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CalendarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0 flex-1">
-              <p className="text-xs sm:text-sm font-medium text-gray-500">This Month</p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{formatCurrency(salesData.thisMonth.totalSales)}</p>
-              <p className="text-xs sm:text-sm text-gray-500">{salesData.thisMonth.totalTickets} tickets</p>
+        {/* Per-Draw Sales */}
+        <ModernCard variant="elevated" className="animate-fade-in">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center space-x-2">
+                <ChartBarIcon className="h-6 w-6 text-primary-600 flex-shrink-0" />
+                <h2 className="text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+                  Sales by Draw
+                </h2>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CalendarIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Per-Draw Sales */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-0">Sales by Draw</h2>
-            <div className="flex items-center space-x-2">
-              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 sm:px-3 py-1 text-xs sm:text-sm"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-3 sm:p-4 lg:p-6">
-          {loading ? (
-            <div className="flex justify-center py-6 sm:py-8">
-              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : perDrawSales.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {perDrawSales.map((draw) => (
-                <div key={draw.drawTime} className="border border-gray-200 rounded-lg p-3 sm:p-4">
-                  <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{formatDrawTime(draw.drawTime)}</h3>
-                    <TicketIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 truncate">{formatCurrency(draw.totalSales)}</p>
-                    <p className="text-xs sm:text-sm text-gray-500">{draw.totalTickets} tickets sold</p>
-                    <p className="text-xs text-gray-400">
-                      Avg: {formatCurrency(draw.totalTickets > 0 ? draw.totalSales / draw.totalTickets : 0)}
-                    </p>
-                  </div>
+          <div className="p-4 sm:p-6">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mb-4"></div>
+                <p className="text-gray-600 font-medium">Loading draw sales...</p>
+              </div>
+            ) : perDrawSales.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {perDrawSales.map((draw, index) => (
+                  <ModernCard 
+                    key={draw.drawTime} 
+                    variant="glass" 
+                    className="hover:shadow-glow transition-all duration-300 animate-slide-in"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-base font-semibold text-gray-900">{formatDrawTime(draw.drawTime)}</h3>
+                        <div className="p-2 rounded-full bg-gradient-to-br from-primary-50 to-accent-50">
+                          <TicketIcon className="h-5 w-5 text-primary-600" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-2xl font-bold text-success-600">{formatCurrency(draw.totalSales)}</p>
+                        <p className="text-sm text-gray-600 font-medium">{draw.totalTickets} tickets sold</p>
+                        <p className="text-xs text-gray-500">
+                          Avg per ticket: {formatCurrency(draw.totalTickets > 0 ? draw.totalSales / draw.totalTickets : 0)}
+                        </p>
+                      </div>
+                    </div>
+                  </ModernCard>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <TicketIcon className="h-10 w-10 text-gray-400" />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6 sm:py-8">
-              <TicketIcon className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No sales data</h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-500">No sales found for the selected date.</p>
-            </div>
-          )}
-        </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No sales data</h3>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  No sales found for the selected date. Try selecting a different date or check back later.
+                </p>
+              </div>
+            )}
+          </div>
+        </ModernCard>
       </div>
     </div>
   );

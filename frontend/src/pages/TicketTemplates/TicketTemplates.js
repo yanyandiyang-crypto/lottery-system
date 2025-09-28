@@ -16,8 +16,15 @@ import {
   DocumentDuplicateIcon,
   TicketIcon,
   UserGroupIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import LoadingSpinner from '../../components/UI/LoadingSpinner';
 
 const TicketTemplates = () => {
   const { user } = useAuth();
@@ -1658,161 +1665,194 @@ const TicketTemplates = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading templates..." />;
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Ticket Templates</h1>
-          <p className="text-gray-600 mt-2">Manage ticket design templates</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {user?.role === 'superadmin' && (
-            <>
-              <button
-                onClick={() => createProfessionalTemplate()}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center shadow-lg"
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Ticket Templates"
+          subtitle="Manage ticket design templates"
+          icon={SwatchIcon}
+        >
+          <div className="flex flex-col sm:flex-row gap-3">
+            {user?.role === 'superadmin' && (
+              <>
+                <ModernButton
+                  onClick={() => createProfessionalTemplate()}
+                  variant="primary"
+                  size="md"
+                  className="w-full sm:w-auto"
+                >
+                  <Square3Stack3DIcon className="h-5 w-5 mr-2" />
+                  Professional
+                </ModernButton>
+                <ModernButton
+                  onClick={() => createModernTemplate()}
+                  variant="success"
+                  size="md"
+                  className="w-full sm:w-auto"
+                >
+                  <Square3Stack3DIcon className="h-5 w-5 mr-2" />
+                  Modern
+                </ModernButton>
+                <ModernButton
+                  onClick={() => openDesigner()}
+                  variant="secondary"
+                  size="md"
+                  className="w-full sm:w-auto"
+                >
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  Design New
+                </ModernButton>
+                <ModernButton
+                  onClick={() => setShowCreateModal(true)}
+                  variant="ghost"
+                  size="md"
+                  className="w-full sm:w-auto"
+                >
+                  <DocumentTextIcon className="h-5 w-5 mr-2" />
+                  Quick Create
+                </ModernButton>
+              </>
+            )}
+            {(user?.role === 'superadmin' || user?.role === 'admin') && (
+              <ModernButton
+                onClick={() => setShowAssignModal(true)}
+                variant="warning"
+                size="md"
+                className="w-full sm:w-auto"
               >
-                <Square3Stack3DIcon className="h-5 w-5 mr-2" />
-                Professional Template
-              </button>
-              <button
-                onClick={() => createModernTemplate()}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
-              >
-                <Square3Stack3DIcon className="h-5 w-5 mr-2" />
-                Modern Template
-              </button>
-              <button
-                onClick={() => openDesigner()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Design New Template
-              </button>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center"
-              >
-                <DocumentTextIcon className="h-5 w-5 mr-2" />
-                Quick Create
-              </button>
-            </>
-          )}
-          {(user?.role === 'superadmin' || user?.role === 'admin') && (
-            <button
-              onClick={() => setShowAssignModal(true)}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center"
-            >
-              <Cog6ToothIcon className="h-5 w-5 mr-2" />
-              Manage Assignments
-            </button>
-          )}
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      {user?.role !== 'superadmin' && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
-          <div className="flex items-center">
-            <Cog6ToothIcon className="h-5 w-5 mr-2" />
-            <div>
-              <p className="font-medium">Template Management</p>
-              <p className="text-sm">
-                {user?.role === 'admin' 
-                  ? 'You can assign templates to agents using the "Manage Assignments" button above.'
-                  : 'Contact your administrator to manage ticket templates.'
-                }
-              </p>
-            </div>
+                <Cog6ToothIcon className="h-5 w-5 mr-2" />
+                Assignments
+              </ModernButton>
+            )}
           </div>
-        </div>
-      )}
+        </PageHeader>
 
-      {user?.role === 'superadmin' && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {templates.map((template) => (
-          <div key={template.id} className="bg-white shadow rounded-lg p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">{template.name}</h3>
-                <p className="text-sm text-gray-500">
-                  {template.isActive ? 'Active' : 'Inactive'}
-                </p>
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => openPreviewModal(template)}
-                  className="text-gray-400 hover:text-gray-600"
-                  title="Preview"
-                >
-                  <EyeIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => openDesigner(template)}
-                  className="text-blue-400 hover:text-blue-600"
-                  title="Design Editor"
-                >
-                  <PencilIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => openEditModal(template)}
-                  className="text-green-400 hover:text-green-600"
-                  title="Quick Edit"
-                >
-                  <AdjustmentsHorizontalIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => openAssignModal(template)}
-                  className="text-purple-400 hover:text-purple-600"
-                  title="Assign Template"
-                >
-                  <UserGroupIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => toggleActiveTemplate(template.id)}
-                  className={`${template.isActive ? 'text-green-500 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
-                  title={template.isActive ? 'Set as Inactive' : 'Set as Active'}
-                >
-                  <TicketIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => handleDeleteTemplate(template.id)}
-                  className="text-red-400 hover:text-red-600"
-                  title="Delete"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
+        {error && (
+          <ModernCard className="mb-8 border-l-4 border-red-500 bg-red-50">
+            <div className="p-4">
+              <div className="flex items-center">
+                <XCircleIcon className="h-5 w-5 text-red-500 mr-2" />
+                <div className="text-red-700 font-medium">{error}</div>
               </div>
             </div>
-            
-            <div className="border rounded p-3 bg-gray-50">
-              <div className="text-xs text-gray-600 mb-2">Preview:</div>
-              <div 
-                className="text-center p-2 rounded border"
-                style={{
-                  backgroundColor: template.design?.backgroundColor || '#ffffff',
-                  color: template.design?.textColor || '#000000',
-                  fontSize: template.design?.fontSize || '12px'
-                }}
-              >
-                <div className="font-bold">{template.design?.headerText || 'LOTTERY TICKET'}</div>
-                <div className="my-2">--- TICKET CONTENT ---</div>
-                <div className="text-xs">{template.design?.footerText || 'Good Luck!'}</div>
+          </ModernCard>
+        )}
+
+        {user?.role !== 'superadmin' && (
+          <ModernCard className="mb-8 border-l-4 border-blue-500 bg-blue-50">
+            <div className="p-4">
+              <div className="flex items-center">
+                <Cog6ToothIcon className="h-5 w-5 mr-3 text-blue-600" />
+                <div>
+                  <p className="font-medium text-blue-800">Template Management</p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    {user?.role === 'admin' 
+                      ? 'You can assign templates to agents using the "Assignments" button above.'
+                      : 'Contact your administrator to manage ticket templates.'
+                    }
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          </ModernCard>
+        )}
+
+        {user?.role === 'superadmin' && (
+          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {templates.map((template) => (
+            <ModernCard key={template.id}>
+              <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <SwatchIcon className="h-6 w-6 mr-3 text-blue-600" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
+                      <div className="flex items-center mt-1">
+                        {template.isActive ? (
+                          <>
+                            <CheckCircleIcon className="h-4 w-4 mr-1 text-green-600" />
+                            <span className="text-sm text-green-600 font-medium">Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircleIcon className="h-4 w-4 mr-1 text-gray-400" />
+                            <span className="text-sm text-gray-500">Inactive</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <ModernButton
+                    onClick={() => openPreviewModal(template)}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <EyeIcon className="h-4 w-4 mr-1" />
+                    Preview
+                  </ModernButton>
+                  <ModernButton
+                    onClick={() => openEditModal(template)}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    <PencilIcon className="h-4 w-4 mr-1" />
+                    Edit
+                  </ModernButton>
+                  <ModernButton
+                    onClick={() => handleDeleteTemplate(template.id)}
+                    variant="danger"
+                    size="sm"
+                  >
+                    <TrashIcon className="h-4 w-4 mr-1" />
+                    Delete
+                  </ModernButton>
+                </div>
+                
+                <div className="mb-4">
+                  <div className="w-full h-32 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <div className="text-center">
+                      <SwatchIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <span className="text-sm text-gray-500">Template Preview</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <ModernButton
+                    onClick={() => toggleActiveTemplate(template.id)}
+                    variant={template.isActive ? "success" : "secondary"}
+                    size="sm"
+                    className="flex-1"
+                  >
+                    {template.isActive ? (
+                      <>
+                        <CheckCircleIcon className="h-4 w-4 mr-1" />
+                        Active
+                      </>
+                    ) : (
+                      'Activate'
+                    )}
+                  </ModernButton>
+                  <ModernButton
+                    onClick={() => openAssignModal(template)}
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <UserGroupIcon className="h-4 w-4 mr-1" />
+                    Assign
+                  </ModernButton>
+                </div>
+              </div>
+            </ModernCard>
         ))}
         </div>
       )}
@@ -2955,6 +2995,7 @@ const TicketTemplates = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
@@ -12,8 +12,12 @@ import {
   XMarkIcon,
   BackspaceIcon,
   PlusIcon,
-  MinusIcon
+  MinusIcon,
+  CurrencyDollarIcon,
+  TicketIcon
 } from '@heroicons/react/24/outline';
+import ModernButton from '../../components/UI/ModernButton';
+import ModernCard from '../../components/UI/ModernCard';
 
 // Default Template Preview Component
 const DefaultTemplatePreview = ({ ticket, user, onShare, onPrint }) => {
@@ -486,97 +490,129 @@ const BettingInterface = () => {
 
 
 
+  // Memoize expensive calculations for performance
+  const totalBetAmount = useMemo(() => {
+    return addedBets.reduce((total, bet) => total + bet.amount, 0);
+  }, [addedBets]);
+
+  const hasInsufficientBalance = useMemo(() => {
+    return balance && balance.currentBalance < totalBetAmount;
+  }, [balance, totalBetAmount]);
+
+  // Optimize digit input handler with useCallback
+  const handleDigitInputOptimized = useCallback((digit) => {
+    if (currentDigitIndex < 3) {
+      setBetDigits(prev => {
+        const newDigits = [...prev];
+        newDigits[currentDigitIndex] = digit.toString();
+        return newDigits;
+      });
+      setCurrentDigitIndex(prev => Math.min(prev + 1, 2));
+    }
+  }, [currentDigitIndex]);
+
+  // Optimize bet amount changes
+  const handleBetAmountChange = useCallback((newAmount) => {
+    setBetAmount(Math.max(1, newAmount));
+  }, []);
+
   if (drawsLoading || balanceLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+          <p className="text-primary-600 font-medium">Loading betting interface...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 p-2 sm:p-4">
       <div className="max-w-md mx-auto space-y-3 sm:space-y-4">
         
         {/* Draw Header with Countdown Timer */}
         {selectedDraw && timeRemaining && (
-          <div className={`rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-4 border-l-4 ${
-            timeRemaining.isCutoff && timeRemaining.total < 300000 // 5 minutes
-              ? 'bg-white border-red-500 animate-pulse'
-              : timeRemaining.isCutoff && timeRemaining.total < 600000 // 10 minutes
-              ? 'bg-white border-yellow-500'
-              : 'bg-white border-blue-500'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                  {formatDrawTimeForTicket(selectedDraw.drawTime)} Draw
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600">
-                  {new Date(selectedDraw.drawDate).toLocaleDateString()}
-                  {timeRemaining.isCutoff && timeRemaining.total < 300000 && (
-                    <span className="ml-2 font-bold text-red-600">⚠️ HURRY!</span>
-                  )}
-                </p>
-              </div>
-              <div className="text-right flex-shrink-0 ml-2">
-                <div className="flex items-center space-x-1 sm:space-x-2">
-                  <ClockIcon className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                    timeRemaining.isCutoff && timeRemaining.total < 300000
-                      ? 'text-red-500'
-                      : timeRemaining.isCutoff && timeRemaining.total < 600000
-                      ? 'text-yellow-500'
-                      : 'text-blue-500'
-                  }`} />
-                  <span className={`text-sm sm:text-lg font-bold ${
-                    timeRemaining.isCutoff && timeRemaining.total < 300000
-                      ? 'text-red-600'
-                      : timeRemaining.isCutoff && timeRemaining.total < 600000
-                      ? 'text-yellow-600'
-                      : 'text-blue-600'
-                  }`}>
-                    {timeRemaining.hours > 0 && `${timeRemaining.hours}:`}
-                    {timeRemaining.minutes.toString().padStart(2, '0')}:
-                    {timeRemaining.seconds.toString().padStart(2, '0')}
-                  </span>
+          <ModernCard 
+            variant="elevated" 
+            className={`border-l-4 ${
+              timeRemaining.isCutoff && timeRemaining.total < 300000 // 5 minutes
+                ? 'border-danger-500 animate-pulse'
+                : timeRemaining.isCutoff && timeRemaining.total < 600000 // 10 minutes
+                ? 'border-warning-500'
+                : 'border-primary-500'
+            }`}
+          >
+            <div className="p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent truncate">
+                    {formatDrawTimeForTicket(selectedDraw.drawTime)} Draw
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600">
+                    {new Date(selectedDraw.drawDate).toLocaleDateString()}
+                    {timeRemaining.isCutoff && timeRemaining.total < 300000 && (
+                      <span className="ml-2 font-bold text-danger-600 animate-pulse">⚠️ HURRY!</span>
+                    )}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {timeRemaining.isCutoff ? 'Betting Closes In' : 'Draw Starts In'}
-                </p>
+                <div className="text-right flex-shrink-0 ml-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <ClockIcon className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                      timeRemaining.isCutoff && timeRemaining.total < 300000
+                        ? 'text-danger-500'
+                        : timeRemaining.isCutoff && timeRemaining.total < 600000
+                        ? 'text-warning-500'
+                        : 'text-primary-500'
+                    }`} />
+                    <span className={`text-sm sm:text-lg font-bold ${
+                      timeRemaining.isCutoff && timeRemaining.total < 300000
+                        ? 'text-danger-600'
+                        : timeRemaining.isCutoff && timeRemaining.total < 600000
+                        ? 'text-warning-600'
+                        : 'text-primary-600'
+                    }`}>
+                      {timeRemaining.hours > 0 && `${timeRemaining.hours}:`}
+                      {timeRemaining.minutes.toString().padStart(2, '0')}:
+                      {timeRemaining.seconds.toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {timeRemaining.isCutoff ? 'Betting Closes In' : 'Draw Starts In'}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          </ModernCard>
         )}
 
         {/* 3D Lotto Betting Card */}
-        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
+        <ModernCard variant="elevated" className="animate-fade-in">
+          <div className="p-4 sm:p-6">
 
-          {/* Bet Type Selection */}
-          <div className="mb-4 sm:mb-6">
-            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Bet Type</p>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <button
-                onClick={() => setBetType('standard')}
-                className={`p-2 sm:p-3 rounded-lg border-2 text-center text-xs sm:text-sm font-medium transition-colors ${
-                  betType === 'standard'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                Standard
-              </button>
-              <button
-                onClick={() => setBetType('rambolito')}
-                className={`p-2 sm:p-3 rounded-lg border-2 text-center text-xs sm:text-sm font-medium transition-colors ${
-                  betType === 'rambolito'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                Rambolito
-              </button>
+            {/* Bet Type Selection */}
+            <div className="mb-4 sm:mb-6">
+              <div className="flex items-center space-x-2 mb-2 sm:mb-3">
+                <TicketIcon className="h-4 w-4 text-primary-600" />
+                <p className="text-xs sm:text-sm font-semibold text-gray-700">Bet Type</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <ModernButton
+                  variant={betType === 'standard' ? 'primary' : 'ghost'}
+                  onClick={() => setBetType('standard')}
+                  className="w-full py-2 sm:py-3 text-xs sm:text-sm"
+                >
+                  Standard
+                </ModernButton>
+                <ModernButton
+                  variant={betType === 'rambolito' ? 'primary' : 'ghost'}
+                  onClick={() => setBetType('rambolito')}
+                  className="w-full py-2 sm:py-3 text-xs sm:text-sm"
+                >
+                  Rambolito
+                </ModernButton>
+              </div>
             </div>
-          </div>
 
           {/* Number Selection Display */}
           <div className="mb-4 sm:mb-6">
@@ -607,102 +643,122 @@ const BettingInterface = () => {
               ))}
             </div>
 
-            {/* Number Pad */}
+            {/* Number Pad - Optimized for performance */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                <button
+                <ModernButton
                   key={num}
-                  onClick={() => handleDigitInput(num)}
-                  className="h-10 sm:h-12 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm sm:text-lg font-medium transition-colors"
+                  variant="secondary"
+                  onClick={() => handleDigitInputOptimized(num)}
+                  className="h-10 sm:h-12 text-sm sm:text-lg font-medium"
                 >
                   {num}
-                </button>
+                </ModernButton>
               ))}
-              <button
+              <ModernButton
+                variant="ghost"
                 onClick={handleBackspace}
-                className="h-10 sm:h-12 rounded-lg border border-gray-300 bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-              >
-                <BackspaceIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-              <button
-                onClick={() => handleDigitInput(0)}
-                className="h-10 sm:h-12 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm sm:text-lg font-medium transition-colors"
+                className="h-10 sm:h-12"
+                icon={BackspaceIcon}
+              />
+              <ModernButton
+                variant="secondary"
+                onClick={() => handleDigitInputOptimized(0)}
+                className="h-10 sm:h-12 text-sm sm:text-lg font-medium"
               >
                 0
-              </button>
-              <button 
+              </ModernButton>
+              <ModernButton
+                variant="success"
                 onClick={handleAddBet}
                 disabled={betDigits.includes('?')}
-                className="h-10 sm:h-12 rounded-lg bg-green-400 hover:bg-green-500 disabled:bg-gray-300 text-white flex items-center justify-center transition-colors"
-              >
-                <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Bet Amount */}
-          <div className="mb-4 sm:mb-6">
-            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Bet Amount</p>
-            <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-2 sm:mb-3">
-              <button
-                onClick={() => setBetAmount(Math.max(1, betAmount - 1))}
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center"
-              >
-                <MinusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-              </button>
-              <input
-                type="number"
-                min="1"
-                value={betAmount}
-                onChange={(e) => setBetAmount(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-16 sm:w-20 px-2 sm:px-3 py-1 sm:py-2 text-center text-sm sm:text-lg font-bold text-blue-700 bg-blue-50 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-400"
+                className="h-10 sm:h-12"
+                icon={PlusIcon}
               />
-              <button
-                onClick={() => setBetAmount(betAmount + 1)}
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center"
-              >
-                <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-5 gap-1 sm:gap-2">
-              {availableAmounts.map(amount => (
-                <button
-                  key={amount}
-                  onClick={() => setBetAmount(amount)}
-                  className={`py-1 px-1 sm:px-2 text-xs rounded border transition-colors ${
-                    betAmount === amount 
-                      ? 'bg-blue-500 text-white border-blue-500' 
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  ₱{amount}
-                </button>
-              ))}
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-2 sm:space-y-3">
-            {addedBets.length > 0 && (
-              <>
-                <button
-                  onClick={() => setShowViewBets(true)}
-                  className="w-full bg-blue-500 text-white py-2 sm:py-3 rounded-lg font-bold text-sm sm:text-lg hover:bg-blue-600 transition-all"
-                >
-                  View Bets ({addedBets.length})
-                </button>
-                
-                <button
-                  onClick={handleConfirmAllBets}
-                  disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 sm:py-4 rounded-lg font-bold text-sm sm:text-lg hover:from-orange-600 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all"
-                >
-                  {isSubmitting ? 'Processing...' : `Confirm All Bets (₱${getTotalBetAmount()})`}
-                </button>
-              </>
-            )}
+            {/* Bet Amount */}
+            <div className="mb-4 sm:mb-6">
+              <div className="flex items-center space-x-2 mb-2 sm:mb-3">
+                <CurrencyDollarIcon className="h-4 w-4 text-primary-600" />
+                <p className="text-xs sm:text-sm font-semibold text-gray-700">Bet Amount</p>
+              </div>
+              <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-2 sm:mb-3">
+                <ModernButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleBetAmountChange(betAmount - 1)}
+                  disabled={betAmount <= 1}
+                  className="w-8 h-8 sm:w-10 sm:h-10"
+                  icon={MinusIcon}
+                />
+                <input
+                  type="number"
+                  min="1"
+                  value={betAmount}
+                  onChange={(e) => handleBetAmountChange(parseInt(e.target.value) || 1)}
+                  className="w-16 sm:w-20 px-2 sm:px-3 py-1 sm:py-2 text-center text-sm sm:text-lg font-bold text-primary-700 bg-primary-50 border-2 border-primary-200 rounded-xl focus:outline-none focus:border-primary-400 transition-all duration-200"
+                />
+                <ModernButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleBetAmountChange(betAmount + 1)}
+                  className="w-8 h-8 sm:w-10 sm:h-10"
+                  icon={PlusIcon}
+                />
+              </div>
+              <div className="grid grid-cols-5 gap-1 sm:gap-2">
+                {availableAmounts.map(amount => (
+                  <ModernButton
+                    key={amount}
+                    variant={betAmount === amount ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleBetAmountChange(amount)}
+                    className="py-1 px-1 sm:px-2 text-xs"
+                  >
+                    ₱{amount}
+                  </ModernButton>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2 sm:space-y-3">
+              {addedBets.length > 0 && (
+                <>
+                  <ModernButton
+                    variant="primary"
+                    onClick={() => setShowViewBets(true)}
+                    className="w-full py-2 sm:py-3 text-sm sm:text-lg font-bold"
+                  >
+                    View Bets ({addedBets.length})
+                  </ModernButton>
+                  
+                  <ModernButton
+                    variant="success"
+                    onClick={handleConfirmAllBets}
+                    disabled={isSubmitting || hasInsufficientBalance}
+                    loading={isSubmitting}
+                    className={`w-full py-3 sm:py-4 text-sm sm:text-lg font-bold ${
+                      hasInsufficientBalance ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isSubmitting ? 'Creating Ticket...' : `Confirm All Bets (₱${totalBetAmount})`}
+                  </ModernButton>
+                  
+                  {hasInsufficientBalance && (
+                    <div className="text-center p-2 bg-danger-50 border border-danger-200 rounded-lg">
+                      <p className="text-xs text-danger-600 font-medium">
+                        Insufficient balance. Need ₱{totalBetAmount - (balance?.currentBalance || 0)} more.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </ModernCard>
 
         {/* View Bets Modal */}
         {showViewBets && (

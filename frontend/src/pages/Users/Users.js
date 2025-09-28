@@ -5,8 +5,15 @@ import {
   MagnifyingGlassIcon,
   UserIcon,
   UsersIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  PlusIcon,
+  FunnelIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
 
 const Users = () => {
   const { user } = useAuth();
@@ -61,7 +68,10 @@ const Users = () => {
       setLoading(true);
       const response = await api.get('/users');
       console.log('Users API response:', response.data);
-      setUsers(response.data.items || response.data.data || []);
+      // Handle the nested data structure: response.data.data.items
+      const usersData = response.data.data?.items || response.data.items || response.data.data || [];
+      console.log('Extracted users:', usersData);
+      setUsers(usersData);
     } catch (err) {
       setError('Failed to fetch users');
       console.error('Error fetching users:', err);
@@ -147,22 +157,53 @@ const Users = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 font-medium">Loading users...</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-              <p className="text-gray-600 mt-2">Manage users and their roles</p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Modern Header */}
+        <PageHeader
+          title="User Management"
+          subtitle="Manage users, roles, and permissions across your lottery system"
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'User Management' }
+          ]}
+        >
+          <div className="flex items-center space-x-3">
+            <ModernButton
+              variant="secondary"
+              size="sm"
+              icon={ArrowDownTrayIcon}
+              className="hidden sm:inline-flex"
+            >
+              Export
+            </ModernButton>
+            <ModernButton
+              variant="primary"
+              size="sm"
+              icon={PlusIcon}
+            >
+              Add User
+            </ModernButton>
+          </div>
+        </PageHeader>
+
+        {/* Search and Stats Bar */}
+        <ModernCard className="p-6 mb-6" variant="glass">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -173,26 +214,54 @@ const Users = () => {
                   placeholder="Search users..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="block w-64 pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl bg-white/50 backdrop-blur-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm transition-all duration-200"
                 />
               </div>
-              <div className="text-sm text-gray-500">
-                Total Users: {Array.isArray(users) ? users.length : 0}
+              <ModernButton
+                variant="ghost"
+                size="sm"
+                icon={FunnelIcon}
+                className="hidden md:inline-flex"
+              >
+                Filters
+              </ModernButton>
+            </div>
+            <div className="flex items-center space-x-6">
+              <div className="text-sm">
+                <span className="text-gray-500">Total Users:</span>
+                <span className="ml-2 font-bold text-primary-600">
+                  {Array.isArray(users) ? users.length : 0}
+                </span>
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Active:</span>
+                <span className="ml-2 font-bold text-success-600">
+                  {Array.isArray(users) ? users.filter(u => u.status === 'active').length : 0}
+                </span>
               </div>
             </div>
           </div>
-        </div>
+        </ModernCard>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
+          <ModernCard className="p-4 mb-6 border-danger-200 bg-danger-50">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-danger-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-danger-800">{error}</p>
+              </div>
+            </div>
+          </ModernCard>
         )}
 
-        {/* Tab Navigation */}
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+        {/* Modern Tab Navigation */}
+        <ModernCard className="mb-6" variant="elevated">
+          <div className="px-6 py-4">
+            <nav className="flex space-x-8" aria-label="Tabs">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -204,17 +273,19 @@ const Users = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`${
+                    className={`group relative flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
                       isActive
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-glow'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    }`}
                   >
                     <Icon className="h-5 w-5" />
                     <span>{tab.name}</span>
-                    <span className={`${
-                      isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                    } ml-2 py-0.5 px-2.5 rounded-full text-xs font-medium`}>
+                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-bold ${
+                      isActive 
+                        ? 'bg-white/20 text-white' 
+                        : 'bg-gray-200 text-gray-600 group-hover:bg-gray-300'
+                    }`}>
                       {count}
                     </span>
                   </button>
@@ -222,183 +293,170 @@ const Users = () => {
               })}
             </nav>
           </div>
-        </div>
+        </ModernCard>
 
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
-              {activeTab === 'all' ? 'All Users' : 
-               activeTab === 'area_coordinator' ? 'Area Coordinators' :
-               activeTab === 'coordinator' ? 'Coordinators' : 'Agents'}
-            </h2>
-          </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  User
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((userData) => (
-                <tr key={userData.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-700">
-                            {userData.username?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {userData.username}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {userData.email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {(user.role === 'admin' || user.role === 'superadmin') ? (
-                      <select
-                        value={userData.role}
-                        onChange={(e) => handleRoleChange(userData.id, e.target.value)}
-                        className="text-sm border border-gray-300 rounded px-2 py-1"
-                        disabled={userData.id === user.id} // Can't change own role
-                      >
-                        <option value="agent">Agent</option>
-                        <option value="coordinator">Coordinator</option>
-                        <option value="area_coordinator">Area Coordinator</option>
-                        <option value="admin">Admin</option>
-                        <option value="superadmin">Super Admin</option>
-                      </select>
-                    ) : (
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        userData.role === 'agent' ? 'bg-blue-100 text-blue-800' :
-                        userData.role === 'coordinator' ? 'bg-green-100 text-green-800' :
-                        userData.role === 'area_coordinator' ? 'bg-purple-100 text-purple-800' :
-                        userData.role === 'admin' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {userData.role === 'area_coordinator' ? 'Area Coordinator' :
-                         userData.role === 'superadmin' ? 'Super Admin' :
-                         userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
+        {/* Modern Users Table */}
+        <ModernTable
+          loading={loading}
+          data={filteredUsers}
+          emptyMessage={`No ${activeTab === 'all' ? 'users' : activeTab.replace('_', ' ')} found`}
+          columns={[
+            {
+              key: 'user',
+              title: 'User',
+              render: (_, userData) => (
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 h-12 w-12">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center ring-2 ring-white shadow-soft">
+                      <span className="text-sm font-bold text-primary-600">
+                        {userData.username?.charAt(0).toUpperCase()}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      userData.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : userData.status === 'suspended'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {userData.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(userData.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      {userData.status === 'active' && (
-                        <>
-                          <button
-                            onClick={() => handleStatusChange(userData.id, 'inactive')}
-                            className="inline-flex items-center px-3 py-1 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                            disabled={userData.id === user.id}
-                          >
-                            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
-                            </svg>
-                            Deactivate
-                          </button>
-                          <button
-                            onClick={() => handleStatusChange(userData.id, 'suspended')}
-                            className="inline-flex items-center px-3 py-1 border border-yellow-300 text-sm leading-4 font-medium rounded-md text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50"
-                            disabled={userData.id === user.id}
-                          >
-                            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Suspend
-                          </button>
-                        </>
-                      )}
-                      {userData.status === 'inactive' && (
-                        <button
-                          onClick={() => handleStatusChange(userData.id, 'active')}
-                          className="inline-flex items-center px-3 py-1 border border-green-300 text-sm leading-4 font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                          disabled={userData.id === user.id}
-                        >
-                          <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Activate
-                        </button>
-                      )}
-                      {userData.status === 'suspended' && (
-                        <>
-                          <button
-                            onClick={() => handleStatusChange(userData.id, 'active')}
-                            className="inline-flex items-center px-3 py-1 border border-green-300 text-sm leading-4 font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                            disabled={userData.id === user.id}
-                          >
-                            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Unlock
-                          </button>
-                          <button
-                            onClick={() => handleStatusChange(userData.id, 'inactive')}
-                            className="inline-flex items-center px-3 py-1 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                            disabled={userData.id === user.id}
-                          >
-                            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
-                            </svg>
-                            Deactivate
-                          </button>
-                        </>
-                      )}
-                      {/* Delete button - only show for non-current user */}
-                      {userData.id !== user.id && (
-                        <button
-                          onClick={() => handleDeleteUser(userData.id)}
-                          className="inline-flex items-center px-3 py-1 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        >
-                          <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Delete
-                        </button>
-                      )}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        </div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {userData.username}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {userData.email}
+                    </div>
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'role',
+              title: 'Role',
+              render: (_, userData) => (
+                (user.role === 'admin' || user.role === 'superadmin') ? (
+                  <select
+                    value={userData.role}
+                    onChange={(e) => handleRoleChange(userData.id, e.target.value)}
+                    className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    disabled={userData.id === user.id}
+                  >
+                    <option value="agent">Agent</option>
+                    <option value="coordinator">Coordinator</option>
+                    <option value="area_coordinator">Area Coordinator</option>
+                    <option value="admin">Admin</option>
+                    <option value="superadmin">Super Admin</option>
+                  </select>
+                ) : (
+                  <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
+                    userData.role === 'agent' ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800' :
+                    userData.role === 'coordinator' ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800' :
+                    userData.role === 'area_coordinator' ? 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800' :
+                    userData.role === 'admin' ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800' :
+                    'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800'
+                  }`}>
+                    {userData.role === 'area_coordinator' ? 'Area Coordinator' :
+                     userData.role === 'superadmin' ? 'Super Admin' :
+                     userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
+                  </span>
+                )
+              )
+            },
+            {
+              key: 'status',
+              title: 'Status',
+              render: (_, userData) => (
+                <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
+                  userData.status === 'active' 
+                    ? 'bg-gradient-to-r from-success-100 to-success-200 text-success-800' 
+                    : userData.status === 'suspended'
+                    ? 'bg-gradient-to-r from-warning-100 to-warning-200 text-warning-800'
+                    : 'bg-gradient-to-r from-danger-100 to-danger-200 text-danger-800'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full mr-2 ${
+                    userData.status === 'active' ? 'bg-success-500' :
+                    userData.status === 'suspended' ? 'bg-warning-500' : 'bg-danger-500'
+                  }`}></div>
+                  {userData.status.charAt(0).toUpperCase() + userData.status.slice(1)}
+                </span>
+              )
+            },
+            {
+              key: 'createdAt',
+              title: 'Created',
+              render: (createdAt) => (
+                <div className="text-sm text-gray-600">
+                  {new Date(createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </div>
+              )
+            },
+            {
+              key: 'actions',
+              title: 'Actions',
+              render: (_, userData) => (
+                <div className="flex items-center space-x-2">
+                  {userData.status === 'active' && (
+                    <>
+                      <ModernButton
+                        variant="danger"
+                        size="xs"
+                        onClick={() => handleStatusChange(userData.id, 'inactive')}
+                        disabled={userData.id === user.id}
+                      >
+                        Deactivate
+                      </ModernButton>
+                      <ModernButton
+                        variant="warning"
+                        size="xs"
+                        onClick={() => handleStatusChange(userData.id, 'suspended')}
+                        disabled={userData.id === user.id}
+                      >
+                        Suspend
+                      </ModernButton>
+                    </>
+                  )}
+                  {userData.status === 'inactive' && (
+                    <ModernButton
+                      variant="success"
+                      size="xs"
+                      onClick={() => handleStatusChange(userData.id, 'active')}
+                      disabled={userData.id === user.id}
+                    >
+                      Activate
+                    </ModernButton>
+                  )}
+                  {userData.status === 'suspended' && (
+                    <>
+                      <ModernButton
+                        variant="success"
+                        size="xs"
+                        onClick={() => handleStatusChange(userData.id, 'active')}
+                        disabled={userData.id === user.id}
+                      >
+                        Unlock
+                      </ModernButton>
+                      <ModernButton
+                        variant="danger"
+                        size="xs"
+                        onClick={() => handleStatusChange(userData.id, 'inactive')}
+                        disabled={userData.id === user.id}
+                      >
+                        Deactivate
+                      </ModernButton>
+                    </>
+                  )}
+                  {userData.id !== user.id && (
+                    <ModernButton
+                      variant="danger"
+                      size="xs"
+                      onClick={() => handleDeleteUser(userData.id)}
+                    >
+                      Delete
+                    </ModernButton>
+                  )}
+                </div>
+              )
+            }
+          ]}
+        />
       </div>
     </div>
   );

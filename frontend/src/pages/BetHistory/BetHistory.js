@@ -12,8 +12,15 @@ import {
   TrophyIcon,
   MagnifyingGlassIcon,
   EyeIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  FunnelIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import StatCard from '../../components/UI/StatCard';
+import ModernTable from '../../components/UI/ModernTable';
 
 const BetHistory = () => {
   const { user } = useAuth();
@@ -233,170 +240,218 @@ const BetHistory = () => {
   if (loading && pagination.page === 1) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bet History</h1>
-            <p className="text-gray-600">View your betting history and track performance</p>
-          </div>
-          <div className="text-sm text-gray-500">
-            Total {activeTab === 'winning' ? 'Winning ' : ''}Bets: {stats.totalBets}
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="Bet History"
+          subtitle="View your betting history, track performance, and analyze winning patterns"
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Betting', href: '/betting' },
+            { label: 'Bet History' }
+          ]}
+        />
+        
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <StatCard
+            title="Total Bets"
+            value={stats.totalBets}
+            subtitle={activeTab === 'winning' ? 'winning tickets' : 'all tickets'}
+            icon={TicketIcon}
+            color="primary"
+            className="animate-bounce-in"
+            style={{ animationDelay: '0ms' }}
+          />
+          <StatCard
+            title="Total Amount"
+            value={`₱${stats.totalAmount.toLocaleString()}`}
+            subtitle="total wagered"
+            icon={CurrencyDollarIcon}
+            color="accent"
+            className="animate-bounce-in"
+            style={{ animationDelay: '100ms' }}
+          />
+          <StatCard
+            title="Total Winnings"
+            value={`₱${stats.totalWinnings.toLocaleString()}`}
+            subtitle={`${stats.winningTickets} winning tickets`}
+            icon={TrophyIcon}
+            color="success"
+            className="animate-bounce-in"
+            style={{ animationDelay: '200ms' }}
+          />
+          <StatCard
+            title="Win Rate"
+            value={`${stats.winRate.toFixed(1)}%`}
+            subtitle={`Net: ₱${stats.netResult.toLocaleString()}`}
+            icon={DocumentTextIcon}
+            color={stats.netResult >= 0 ? 'success' : 'danger'}
+            className="animate-bounce-in"
+            style={{ animationDelay: '300ms' }}
+          />
         </div>
         
         {/* Tab Navigation */}
-        <div className="mt-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => {
-                setActiveTab('all');
-                setPagination(prev => ({ ...prev, page: 1 }));
-              }}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'all'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center">
-                <TicketIcon className="h-5 w-5 mr-2" />
+        <ModernCard variant="elevated" className="mb-6">
+          <div className="px-4 sm:px-6 py-4">
+            <nav className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4" aria-label="Bet History Tabs">
+              <ModernButton
+                variant={activeTab === 'all' ? 'primary' : 'ghost'}
+                onClick={() => {
+                  setActiveTab('all');
+                  setPagination(prev => ({ ...prev, page: 1 }));
+                }}
+                icon={TicketIcon}
+                className="w-full sm:w-auto justify-center sm:justify-start"
+              >
                 All Tickets
-              </div>
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('winning');
-                setPagination(prev => ({ ...prev, page: 1 }));
-              }}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'winning'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center">
-                <TrophyIcon className="h-5 w-5 mr-2" />
+                <span className="ml-2 px-2 py-1 bg-white/20 text-xs rounded-full">({stats.totalBets})</span>
+              </ModernButton>
+              <ModernButton
+                variant={activeTab === 'winning' ? 'success' : 'ghost'}
+                onClick={() => {
+                  setActiveTab('winning');
+                  setPagination(prev => ({ ...prev, page: 1 }));
+                }}
+                icon={TrophyIcon}
+                className="w-full sm:w-auto justify-center sm:justify-start"
+              >
                 Winning Tickets
+                <span className="ml-2 px-2 py-1 bg-white/20 text-xs rounded-full">({stats.winningTickets})</span>
+              </ModernButton>
+            </nav>
+          </div>
+        </ModernCard>
+
+
+        {/* Role-based scopes */}
+        {['superadmin', 'admin', 'area_coordinator', 'coordinator'].includes(user.role) && (
+          <ModernCard variant="glass" className="mb-6">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <MagnifyingGlassIcon className="h-5 w-5 text-primary-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Scope Selection</h3>
               </div>
-            </button>
-          </nav>
-        </div>
-      </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {['superadmin', 'admin', 'area_coordinator'].includes(user.role) && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Coordinator</label>
+                    <select
+                      value={selectedCoordinatorId}
+                      onChange={(e) => {
+                        setSelectedCoordinatorId(e.target.value);
+                        setSelectedAgentId('');
+                      }}
+                      className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                    >
+                      <option value="">All / None</option>
+                      {coordinators.map((c) => (
+                        <option key={c.id} value={c.id}>{c.fullName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Agent</label>
+                  <select
+                    value={selectedAgentId}
+                    onChange={(e) => setSelectedAgentId(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                  >
+                    <option value="">Select Agent</option>
+                    {(
+                      // For area coordinator, show agents under selected coordinator (if any); for admin show all; for coordinator show own agents
+                      user.role === 'area_coordinator' && selectedCoordinatorId
+                        ? agents.filter(a => String(a.coordinatorId) === String(selectedCoordinatorId))
+                        : agents
+                    ).map((a) => (
+                      <option key={a.id} value={a.id}>{a.fullName}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </ModernCard>
+        )}
 
-
-      {/* Role-based scopes */}
-      {['superadmin', 'admin', 'area_coordinator', 'coordinator'].includes(user.role) && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Scope</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {['superadmin', 'admin', 'area_coordinator'].includes(user.role) && (
+        {/* Filters */}
+        <ModernCard variant="glass" className="mb-6">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <FunnelIcon className="h-5 w-5 text-primary-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Coordinator</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
+                <input
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
+                <input
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                />
+              </div>
+              {activeTab === 'all' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                    <option value="settled">Settled</option>
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Draw Time</label>
                 <select
-                  value={selectedCoordinatorId}
-                  onChange={(e) => {
-                    setSelectedCoordinatorId(e.target.value);
-                    setSelectedAgentId('');
-                  }}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  value={filters.drawTime}
+                  onChange={(e) => setFilters(prev => ({ ...prev, drawTime: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 >
-                  <option value="">All / None</option>
-                  {coordinators.map((c) => (
-                    <option key={c.id} value={c.id}>{c.fullName}</option>
-                  ))}
+                  <option value="all">All Times</option>
+                  <option value="twoPM">{formatDrawTime('twoPM')}</option>
+                  <option value="fivePM">{formatDrawTime('fivePM')}</option>
+                  <option value="ninePM">{formatDrawTime('ninePM')}</option>
                 </select>
               </div>
+            </div>
+          </div>
+        </ModernCard>
+
+        {/* Bet History Table */}
+        <ModernCard variant="elevated" className="animate-fade-in">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <TicketIcon className="h-6 w-6 text-primary-600" />
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+                {activeTab === 'winning' ? 'Winning Tickets' : 'Betting History'}
+              </h2>
+              <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
+                {tickets.length} tickets
+              </span>
+            </div>
+            {activeTab === 'winning' && (
+              <p className="text-sm text-gray-600 mb-4 bg-success-50 border border-success-200 rounded-lg p-3">
+                <TrophyIcon className="h-4 w-4 inline mr-2 text-success-600" />
+                Showing only tickets that have won prizes
+              </p>
             )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Agent</label>
-              <select
-                value={selectedAgentId}
-                onChange={(e) => setSelectedAgentId(e.target.value)}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="">Select Agent</option>
-                {(
-                  // For area coordinator, show agents under selected coordinator (if any); for admin show all; for coordinator show own agents
-                  user.role === 'area_coordinator' && selectedCoordinatorId
-                    ? agents.filter(a => String(a.coordinatorId) === String(selectedCoordinatorId))
-                    : agents
-                ).map((a) => (
-                  <option key={a.id} value={a.id}>{a.fullName}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Filters</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Start Date</label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">End Date</label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-          {activeTab === 'all' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="won">Won</option>
-                <option value="lost">Lost</option>
-                <option value="settled">Settled</option>
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Draw Time</label>
-            <select
-              value={filters.drawTime}
-              onChange={(e) => setFilters(prev => ({ ...prev, drawTime: e.target.value }))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="all">All Times</option>
-              <option value="twoPM">{formatDrawTime('twoPM')}</option>
-              <option value="fivePM">{formatDrawTime('fivePM')}</option>
-              <option value="ninePM">{formatDrawTime('ninePM')}</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Bet History Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
-            {activeTab === 'winning' ? 'Winning Tickets' : 'Betting History'}
-          </h2>
-          {activeTab === 'winning' && (
-            <p className="text-sm text-gray-600 mt-1">
-              Showing only tickets that have won prizes
-            </p>
-          )}
-        </div>
         
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -491,13 +546,14 @@ const BetHistory = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
+                    <ModernButton
+                      variant="secondary"
+                      size="sm"
                       onClick={() => handleViewTicket(ticket.id)}
-                      className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      icon={EyeIcon}
                     >
-                      <EyeIcon className="h-4 w-4 mr-1" />
                       View
-                    </button>
+                    </ModernButton>
                   </td>
                 </tr>
               ))}
@@ -571,21 +627,29 @@ const BetHistory = () => {
             </div>
           </div>
         )}
-      </div>
+          </div>
+        </ModernCard>
 
-      {/* Ticket Detail Modal */}
-      {showTicketModal && selectedTicket && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-4/5 max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-900">Ticket Details</h3>
-              <button
-                onClick={() => setShowTicketModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ×
-              </button>
-            </div>
+        {/* Ticket Detail Modal */}
+        {showTicketModal && selectedTicket && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+            <ModernCard variant="elevated" className="w-full max-w-4xl animate-bounce-in">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-2">
+                    <DocumentTextIcon className="h-6 w-6 text-primary-600" />
+                    <h3 className="text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+                      Ticket Details
+                    </h3>
+                  </div>
+                  <ModernButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowTicketModal(false)}
+                    icon={XMarkIcon}
+                    className="text-gray-400 hover:text-gray-600"
+                  />
+                </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
@@ -665,9 +729,11 @@ const BetHistory = () => {
                 Created: {new Date(selectedTicket.createdAt).toLocaleString()}
               </div>
             </div>
+              </div>
+            </ModernCard>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

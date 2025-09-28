@@ -188,12 +188,42 @@ router.post('/create',
         }
       });
 
+      // Generate and SAVE ticket image immediately (pre-generate)
+      try {
+        console.log('🖼️ Pre-generating ticket image for:', completeTicket.ticketNumber);
+        
+        // Generate HTML using same template system as print
+        const { generateTicketHTML } = require('../utils/ticketTemplateRenderer');
+        const activeTemplate = await prisma.ticketTemplate.findFirst({
+          where: { isActive: true }
+        });
+        
+        if (activeTemplate) {
+          const ticketHTML = generateTicketHTML(completeTicket, activeTemplate);
+          
+          // Save HTML to database for instant access
+          await prisma.ticket.update({
+            where: { id: completeTicket.id },
+            data: { 
+              generatedHTML: ticketHTML,
+              imageGenerated: true,
+              imageGeneratedAt: new Date()
+            }
+          });
+          
+          console.log('✅ Ticket HTML pre-generated and saved');
+        }
+      } catch (imageError) {
+        console.error('❌ Error pre-generating ticket image:', imageError);
+      }
+
       // Return response in the same format as the old route for frontend compatibility
       return res.json({
         success: true,
         message: 'Ticket created successfully',
         ticket: completeTicket,
-        remainingBalance: result.remainingBalance
+        remainingBalance: result.remainingBalance,
+        imageUrl: `/api/v1/tickets/${completeTicket.ticketNumber}/image` // Pre-generated image URL
       });
 
     } catch (error) {

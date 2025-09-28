@@ -9,8 +9,17 @@ import {
   TrashIcon,
   EyeIcon,
   EyeSlashIcon,
-  XMarkIcon
+  XMarkIcon,
+  CalendarDaysIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  UserGroupIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
 
 const CoordinatorManagement = () => {
   const [loading, setLoading] = useState(true);
@@ -41,7 +50,9 @@ const CoordinatorManagement = () => {
     try {
       const response = await userAPI.getUsers({ role: 'coordinator' });
       console.log('Fetched coordinators:', response.data.data);
-      setCoordinators(response.data.data);
+      // Filter out null/undefined entries
+      const filteredCoordinators = response.data.data.filter(coordinator => coordinator != null);
+      setCoordinators(filteredCoordinators);
     } catch (error) {
       console.error('Failed to fetch coordinators:', error);
       toast.error('Failed to fetch coordinators');
@@ -215,131 +226,180 @@ const CoordinatorManagement = () => {
     return areaCoordinator ? areaCoordinator.fullName : 'No Area Coordinator';
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner message="Loading coordinators..." />;
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Coordinator Management</h1>
-            <p className="text-gray-600">Manage coordinators and assign them to area coordinators</p>
-          </div>
-          <button
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Coordinator Management"
+          subtitle="Manage coordinators and assign them to area coordinators"
+          icon={UserGroupIcon}
+        >
+          <ModernButton
             onClick={handleCreateCoordinator}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            variant="primary"
+            size="lg"
+            className="w-full sm:w-auto"
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
+            <PlusIcon className="h-5 w-5 mr-2" />
             Create Coordinator
-          </button>
-        </div>
-      </div>
+          </ModernButton>
+        </PageHeader>
 
-      {/* Coordinators Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">All Coordinators ({coordinators.length})</h2>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Coordinator
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Area Coordinator
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {coordinators.map((coordinator) => (
-                <tr key={coordinator.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                          <UserIcon className="h-5 w-5 text-green-600" />
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{coordinator.fullName}</div>
-                        <div className="text-sm text-gray-500">@{coordinator.username}</div>
+        <ModernCard>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <UserGroupIcon className="h-6 w-6 mr-3 text-green-600" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Coordinators</h2>
+                <p className="text-sm text-gray-600 mt-1">Manage coordinator assignments and permissions</p>
+              </div>
+            </div>
+          </div>
+
+          <ModernTable
+            columns={[
+              {
+                key: 'coordinator',
+                label: 'Coordinator',
+                render: (coordinator) => (
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                        <UserIcon className="h-5 w-5 text-green-600" />
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{getAreaCoordinatorName(coordinator.coordinatorId)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{coordinator.email || 'N/A'}</div>
-                    <div className="text-sm text-gray-500">{coordinator.phone || 'N/A'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      coordinator.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {coordinator.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(coordinator.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEditCoordinator(coordinator)}
-                      className="text-primary-600 hover:text-primary-900"
-                      title="Edit Coordinator"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
-                    {coordinator.status === 'active' ? (
-                      <button
-                        onClick={() => handleDeactivateCoordinator(coordinator.id)}
-                        className="text-orange-600 hover:text-orange-900"
-                        title="Deactivate Coordinator"
-                      >
-                        <EyeSlashIcon className="h-4 w-4" />
-                      </button>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">{coordinator?.fullName}</div>
+                      <div className="text-sm text-gray-500">@{coordinator?.username}</div>
+                    </div>
+                  </div>
+                )
+              },
+              {
+                key: 'areaCoordinator',
+                label: 'Area Coordinator',
+                render: (coordinator) => (
+                  <div className="text-sm text-gray-900">
+                    {getAreaCoordinatorName(coordinator?.coordinatorId) === 'No Area Coordinator' ? (
+                      <span className="text-gray-400 italic">Unassigned</span>
                     ) : (
-                      <button
-                        onClick={() => handleActivateCoordinator(coordinator.id)}
-                        className="text-green-600 hover:text-green-900"
-                        title="Activate Coordinator"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                      </button>
+                      getAreaCoordinatorName(coordinator?.coordinatorId)
                     )}
-                    <button
-                      onClick={() => handleDeleteCoordinator(coordinator.id)}
-                      className="text-red-600 hover:text-red-900"
-                      title="Deactivate Coordinator"
+                  </div>
+                )
+              },
+              {
+                key: 'contact',
+                label: 'Contact',
+                className: 'hidden lg:table-cell',
+                render: (coordinator) => (
+                  <div>
+                    {coordinator?.email && (
+                      <div className="flex items-center text-sm text-gray-900 mb-1">
+                        <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
+                        {coordinator.email}
+                      </div>
+                    )}
+                    {coordinator?.phone && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
+                        {coordinator.phone}
+                      </div>
+                    )}
+                    {!coordinator?.email && !coordinator?.phone && (
+                      <span className="text-gray-400 italic text-sm">No contact info</span>
+                    )}
+                  </div>
+                )
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (coordinator) => (
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    coordinator?.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {coordinator?.status}
+                  </span>
+                )
+              },
+              {
+                key: 'created',
+                label: 'Created',
+                className: 'hidden lg:table-cell',
+                render: (coordinator) => (
+                  <div className="flex items-center">
+                    <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span className="text-sm text-gray-500">
+                      {coordinator?.createdAt ? new Date(coordinator.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                )
+              },
+              {
+                key: 'actions',
+                label: 'Actions',
+                render: (coordinator) => (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <ModernButton
+                      onClick={() => handleEditCoordinator(coordinator)}
+                      variant="secondary"
+                      size="sm"
+                      className="w-full sm:w-auto"
                     >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                      <PencilIcon className="h-4 w-4 mr-1" />
+                      Edit
+                    </ModernButton>
+                    {coordinator?.status === 'active' ? (
+                      <ModernButton
+                        onClick={() => handleDeactivateCoordinator(coordinator?.id)}
+                        variant="warning"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <EyeSlashIcon className="h-4 w-4 mr-1" />
+                        Deactivate
+                      </ModernButton>
+                    ) : (
+                      <ModernButton
+                        onClick={() => handleActivateCoordinator(coordinator?.id)}
+                        variant="success"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <EyeIcon className="h-4 w-4 mr-1" />
+                        Activate
+                      </ModernButton>
+                    )}
+                    <ModernButton
+                      onClick={() => handleDeleteCoordinator(coordinator?.id)}
+                      variant="danger"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                    >
+                      <TrashIcon className="h-4 w-4 mr-1" />
+                      Delete
+                    </ModernButton>
+                  </div>
+                )
+              }
+            ]}
+            data={coordinators.filter(coordinator => coordinator != null)}
+            emptyMessage={
+              <div className="text-center py-12">
+                <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No coordinators found</h3>
+                <p className="text-sm text-gray-500">Get started by creating your first coordinator.</p>
+              </div>
+            }
+          />
+        </ModernCard>
 
       {/* Create/Edit Modal */}
       {showCreateModal && (
@@ -503,6 +563,7 @@ const CoordinatorManagement = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -7,8 +7,14 @@ import {
   CheckCircleIcon, 
   ExclamationTriangleIcon,
   CogIcon,
-  TicketIcon
+  TicketIcon,
+  SwatchIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import LoadingSpinner from '../../components/UI/LoadingSpinner';
 
 const TemplateAssignment = () => {
   const { user } = useAuth();
@@ -199,161 +205,214 @@ const TemplateAssignment = () => {
 
   if (!canManage) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center">
-            <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+        <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-12">
+          <ModernCard className="text-center p-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+              <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
+            </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-            <p className="text-gray-600">Only SuperAdmin and Admin can manage system ticket templates.</p>
-          </div>
+            <p className="text-gray-600 mb-6">Only SuperAdmin and Admin can manage system ticket templates.</p>
+            <ModernButton
+              onClick={() => window.history.back()}
+              variant="primary"
+              size="lg"
+            >
+              Go Back
+            </ModernButton>
+          </ModernCard>
         </div>
       </div>
     );
   }
 
+  if (loading && !currentSystemTemplate) {
+    return <LoadingSpinner message="Loading template settings..." />;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">System Ticket Template</h1>
-          <p className="text-gray-600">Choose the ticket template that will be used system-wide for all lottery tickets.</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="System Ticket Template"
+          subtitle="Choose the ticket template that will be used system-wide for all lottery tickets"
+          icon={SwatchIcon}
+        />
 
         {/* Current Active Template Status */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircleIcon className="h-6 w-6 text-green-600" />
-              </div>
+        <ModernCard className="mb-8">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-green-200">
+            <div className="flex items-center">
+              <CheckCircleIcon className="h-6 w-6 mr-3 text-green-600" />
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Currently Active Template</h3>
-                <p className="text-sm text-gray-600">This template is being used for all new tickets</p>
+                <h3 className="text-lg font-semibold text-green-800">Currently Active Template</h3>
+                <p className="text-sm text-green-600 mt-1">This template is being used for all new tickets</p>
               </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-green-600">
-                {templateOptions.find(t => t.key === currentSystemTemplate)?.name || 'Default'}
-              </div>
-              <div className="text-sm text-gray-500">System-wide</div>
             </div>
           </div>
-        </div>
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-4 sm:mb-0">
+                <div className="text-2xl font-bold text-green-600">
+                  {templateOptions.find(t => t.key === currentSystemTemplate)?.name || 'Default'}
+                </div>
+                <div className="text-sm text-gray-500">System-wide template</div>
+              </div>
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <CheckCircleIcon className="h-4 w-4 mr-1" />
+                Active
+              </div>
+            </div>
+          </div>
+        </ModernCard>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Template Selection */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Choose Template</h3>
+          <ModernCard>
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center">
+                <SwatchIcon className="h-6 w-6 mr-3 text-blue-600" />
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Choose Template</h3>
+                  <p className="text-sm text-gray-600 mt-1">Select a template design for all tickets</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
             
-            <form onSubmit={updateSystemTemplate} className="space-y-4">
-              <div className="space-y-3">
-                {templateOptions.map((template) => {
-                  const IconComponent = template.icon;
-                  const isActive = currentSystemTemplate === template.key;
-                  const isSelected = selectedTemplateKey === template.key;
-                  
-                  return (
-                    <div
-                      key={template.key}
-                      className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 ${
-                        isSelected 
-                          ? `border-${template.color}-500 bg-${template.color}-50` 
-                          : 'border-gray-200 hover:border-gray-300'
-                      } ${isActive ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
-                      onClick={() => setSelectedTemplateKey(template.key)}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className={`p-2 rounded-lg ${
-                          isSelected ? `bg-${template.color}-100` : 'bg-gray-100'
-                        }`}>
-                          <IconComponent className={`h-6 w-6 ${
-                            isSelected ? `text-${template.color}-600` : 'text-gray-600'
-                          }`} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-gray-900">{template.name}</h4>
-                            {isActive && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Active
-                              </span>
-                            )}
+              <form onSubmit={updateSystemTemplate} className="space-y-4">
+                <div className="space-y-4">
+                  {templateOptions.map((template) => {
+                    const IconComponent = template.icon;
+                    const isActive = currentSystemTemplate === template.key;
+                    const isSelected = selectedTemplateKey === template.key;
+                    
+                    return (
+                      <div
+                        key={template.key}
+                        className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                          isSelected 
+                            ? 'border-blue-500 bg-blue-50 shadow-md' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        } ${isActive ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
+                        onClick={() => setSelectedTemplateKey(template.key)}
+                      >
+                        <div className="flex items-start space-x-4">
+                          <div className={`p-3 rounded-lg ${
+                            isSelected ? 'bg-blue-100' : 'bg-gray-100'
+                          }`}>
+                            <IconComponent className={`h-6 w-6 ${
+                              isSelected ? 'text-blue-600' : 'text-gray-600'
+                            }`} />
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">{template.description}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-gray-900">{template.name}</h4>
+                              <div className="flex items-center space-x-2">
+                                {isActive && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                    Active
+                                  </span>
+                                )}
+                                <input
+                                  type="radio"
+                                  name="template"
+                                  value={template.key}
+                                  checked={isSelected}
+                                  onChange={() => setSelectedTemplateKey(template.key)}
+                                  className="text-blue-600 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">{template.description}</p>
+                          </div>
                         </div>
-                        <input
-                          type="radio"
-                          name="template"
-                          value={template.key}
-                          checked={isSelected}
-                          onChange={() => setSelectedTemplateKey(template.key)}
-                          className={`text-${template.color}-600 focus:ring-${template.color}-500`}
-                        />
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
 
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={loading || selectedTemplateKey === currentSystemTemplate}
-                  className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-sm text-white transition-colors ${
-                    loading || selectedTemplateKey === currentSystemTemplate
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-                  }`}
-                >
-                  {loading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Updating...
-                    </>
-                  ) : selectedTemplateKey === currentSystemTemplate ? (
-                    'Template Already Active'
-                  ) : (
-                    `Activate ${templateOptions.find(t => t.key === selectedTemplateKey)?.name}`
+                <div className="pt-6">
+                  <ModernButton
+                    type="submit"
+                    disabled={loading || selectedTemplateKey === currentSystemTemplate}
+                    variant={selectedTemplateKey === currentSystemTemplate ? "secondary" : "primary"}
+                    size="lg"
+                    className="w-full"
+                  >
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Updating...
+                      </>
+                    ) : selectedTemplateKey === currentSystemTemplate ? (
+                      <>
+                        <CheckCircleIcon className="h-5 w-5 mr-2" />
+                        Template Already Active
+                      </>
+                    ) : (
+                      <>
+                        <SwatchIcon className="h-5 w-5 mr-2" />
+                        Activate {templateOptions.find(t => t.key === selectedTemplateKey)?.name}
+                      </>
+                    )}
+                  </ModernButton>
+                  
+                  {success && (
+                    <ModernCard className="mt-4 border-l-4 border-green-500 bg-green-50">
+                      <div className="p-4">
+                        <div className="flex items-center">
+                          <CheckCircleIcon className="h-5 w-5 text-green-600 mr-2" />
+                          <span className="text-green-800 text-sm font-medium">{success}</span>
+                        </div>
+                      </div>
+                    </ModernCard>
                   )}
-                </button>
-                
-                {success && (
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center">
-                      <CheckCircleIcon className="h-5 w-5 text-green-600 mr-2" />
-                      <span className="text-green-800 text-sm font-medium">{success}</span>
-                    </div>
-                  </div>
-                )}
-                
-                {error && (
-                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center">
-                      <ExclamationTriangleIcon className="h-5 w-5 text-red-600 mr-2" />
-                      <span className="text-red-800 text-sm font-medium">{error}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </form>
-          </div>
+                  
+                  {error && (
+                    <ModernCard className="mt-4 border-l-4 border-red-500 bg-red-50">
+                      <div className="p-4">
+                        <div className="flex items-center">
+                          <ExclamationTriangleIcon className="h-5 w-5 text-red-600 mr-2" />
+                          <span className="text-red-800 text-sm font-medium">{error}</span>
+                        </div>
+                      </div>
+                    </ModernCard>
+                  )}
+                </div>
+              </form>
+            </div>
+          </ModernCard>
 
           {/* Live Preview */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Live Preview</h3>
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
-              <div className="overflow-auto max-h-96">
-                <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+          <ModernCard>
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center">
+                <EyeIcon className="h-6 w-6 mr-3 text-blue-600" />
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Live Preview</h3>
+                  <p className="text-sm text-gray-600 mt-1">See how tickets will look with selected template</p>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-3 text-center">
-              Preview shows how tickets will look with the selected template
-            </p>
-          </div>
+            <div className="p-6">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
+                <div className="overflow-auto max-h-96">
+                  <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                </div>
+              </div>
+              <div className="mt-4 text-center">
+                <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <EyeIcon className="h-3 w-3 mr-1" />
+                  Preview shows how tickets will look with the selected template
+                </div>
+              </div>
+            </div>
+          </ModernCard>
         </div>
       </div>
     </div>

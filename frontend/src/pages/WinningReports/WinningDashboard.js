@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import {
+  TrophyIcon,
+  CalendarDaysIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  UserGroupIcon,
+  ClockIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon
+} from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import LoadingSpinner from '../../components/UI/LoadingSpinner';
+import StatCard from '../../components/UI/StatCard';
 
 const WinningDashboard = () => {
   const { user } = useAuth();
@@ -70,160 +85,120 @@ const WinningDashboard = () => {
   };
 
   if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <div style={{ fontSize: '18px', color: '#6b7280' }}>Loading winning reports...</div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading winning reports..." />;
   }
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <div style={{ fontSize: '18px', color: '#dc2626' }}>{error}</div>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white flex items-center justify-center">
+        <ModernCard className="max-w-md mx-auto">
+          <div className="text-center p-6">
+            <div className="text-red-600 text-lg font-medium">{error}</div>
+            <ModernButton 
+              onClick={loadWinningReports}
+              variant="primary"
+              className="mt-4"
+            >
+              Try Again
+            </ModernButton>
+          </div>
+        </ModernCard>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ color: '#1f2937', marginBottom: '10px' }}>
-          💰 Winning Reports & Claims Dashboard
-        </h1>
-        <p style={{ color: '#6b7280' }}>
-          Track expected winnings, claimed prizes, and net sales for management oversight
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Winning Reports & Claims Dashboard"
+          subtitle="Track expected winnings, claimed prizes, and net sales for management oversight"
+          icon={TrophyIcon}
+        />
 
-      {/* Date Range Filter */}
-      <div style={{
-        backgroundColor: '#f9fafb',
-        padding: '20px',
-        borderRadius: '10px',
-        marginBottom: '30px',
-        border: '1px solid #e5e7eb'
-      }}>
-        <h3 style={{ marginBottom: '15px', color: '#374151' }}>📅 Filter by Date Range</h3>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'end', flexWrap: 'wrap' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600', color: '#374151' }}>
-              Start Date:
-            </label>
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
+        {/* Date Range Filter */}
+        <ModernCard className="mb-6 sm:mb-8">
+          <div className="bg-gradient-to-r from-blue-50 to-sky-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <CalendarDaysIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Filter by Date Range</h3>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <ModernButton
+                  onClick={applyDateFilter}
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                >
+                  Apply Filter
+                </ModernButton>
+              </div>
+            </div>
+          </div>
+        </ModernCard>
+
+        {/* Main Summary Cards */}
+        {reportData && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <StatCard
+              title="Gross Sales"
+              value={formatCurrency(reportData.summary.grossSales)}
+              subtitle={`Total tickets: ${reportData.summary.totalTickets}`}
+              icon={CurrencyDollarIcon}
+              trend="up"
+              color="blue"
+            />
+            <StatCard
+              title="Expected Winnings"
+              value={formatCurrency(reportData.summary.expectedWinnings)}
+              subtitle={`Pending: ${formatCurrency(reportData.summary.pendingClaims)}`}
+              icon={TrophyIcon}
+              trend="neutral"
+              color="amber"
+            />
+            <StatCard
+              title="Claimed Winnings"
+              value={formatCurrency(reportData.summary.claimedWinnings)}
+              subtitle={`Claimed tickets: ${reportData.summary.claimedTickets}`}
+              icon={ChartBarIcon}
+              trend="up"
+              color="red"
+            />
+            <StatCard
+              title="Net Sales"
+              value={formatCurrency(reportData.summary.netSales)}
+              subtitle={`Profit margin: ${formatPercentage(reportData.metrics.profitMargin)}`}
+              icon={ArrowTrendingUpIcon}
+              trend="up"
+              color="green"
             />
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600', color: '#374151' }}>
-              End Date:
-            </label>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-          <button
-            onClick={applyDateFilter}
-            style={{
-              padding: '8px 20px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
-          >
-            Apply Filter
-          </button>
-        </div>
-      </div>
-
-      {/* Main Summary Cards */}
-      {reportData && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '20px',
-          marginBottom: '30px'
-        }}>
-          <div style={{
-            backgroundColor: '#f0f9ff',
-            padding: '20px',
-            borderRadius: '10px',
-            border: '2px solid #0ea5e9'
-          }}>
-            <h3 style={{ color: '#0c4a6e', marginBottom: '10px' }}>💰 Gross Sales</h3>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#0c4a6e' }}>
-              {formatCurrency(reportData.summary.grossSales)}
-            </div>
-            <div style={{ fontSize: '14px', color: '#075985', marginTop: '5px' }}>
-              Total tickets: {reportData.summary.totalTickets}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: '#fef3c7',
-            padding: '20px',
-            borderRadius: '10px',
-            border: '2px solid #f59e0b'
-          }}>
-            <h3 style={{ color: '#92400e', marginBottom: '10px' }}>🎯 Expected Winnings</h3>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400e' }}>
-              {formatCurrency(reportData.summary.expectedWinnings)}
-            </div>
-            <div style={{ fontSize: '14px', color: '#a16207', marginTop: '5px' }}>
-              Pending: {formatCurrency(reportData.summary.pendingClaims)}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: '#fecaca',
-            padding: '20px',
-            borderRadius: '10px',
-            border: '2px solid #ef4444'
-          }}>
-            <h3 style={{ color: '#991b1b', marginBottom: '10px' }}>🏆 Claimed Winnings</h3>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#991b1b' }}>
-              {formatCurrency(reportData.summary.claimedWinnings)}
-            </div>
-            <div style={{ fontSize: '14px', color: '#b91c1c', marginTop: '5px' }}>
-              Claimed tickets: {reportData.summary.claimedTickets}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: '#d1fae5',
-            padding: '20px',
-            borderRadius: '10px',
-            border: '2px solid #10b981'
-          }}>
-            <h3 style={{ color: '#065f46', marginBottom: '10px' }}>📈 Net Sales</h3>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#065f46' }}>
-              {formatCurrency(reportData.summary.netSales)}
-            </div>
-            <div style={{ fontSize: '14px', color: '#047857', marginTop: '5px' }}>
-              Profit margin: {formatPercentage(reportData.metrics.profitMargin)}
-            </div>
-          </div>
-        </div>
-      )}
+        )}
 
       {/* Metrics Row */}
       {reportData && (
@@ -418,6 +393,7 @@ const WinningDashboard = () => {
           <li><strong>Claim Rate:</strong> Percentage of expected winnings that have been claimed</li>
           <li><strong>Profit Margin:</strong> Net Sales as percentage of Gross Sales</li>
         </ul>
+      </div>
       </div>
     </div>
   );

@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import {
+  TicketIcon,
+  UserIcon,
+  CurrencyDollarIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  DocumentTextIcon
+} from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
+import LoadingSpinner from '../../components/UI/LoadingSpinner';
 
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -59,154 +74,192 @@ const Tickets = () => {
     }
   };
 
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'all': return <DocumentTextIcon className="h-4 w-4" />;
+      case 'pending': return <ClockIcon className="h-4 w-4" />;
+      case 'confirmed': return <CheckCircleIcon className="h-4 w-4" />;
+      case 'cancelled': return <XCircleIcon className="h-4 w-4" />;
+      case 'won': return <TicketIcon className="h-4 w-4" />;
+      case 'lost': return <XCircleIcon className="h-4 w-4" />;
+      default: return <DocumentTextIcon className="h-4 w-4" />;
+    }
+  };
+
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading tickets..." />;
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Tickets</h1>
-        <p className="text-gray-600 mt-2">View and manage all tickets</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Tickets"
+          subtitle="View and manage all tickets"
+          icon={TicketIcon}
+        />
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+        {error && (
+          <ModernCard className="mb-8 border-l-4 border-red-500 bg-red-50">
+            <div className="p-4">
+              <div className="flex items-center">
+                <XCircleIcon className="h-5 w-5 text-red-500 mr-2" />
+                <div className="text-red-700 font-medium">{error}</div>
+              </div>
+            </div>
+          </ModernCard>
+        )}
 
-      {/* Filter Tabs */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {['all', 'pending', 'confirmed', 'cancelled', 'won', 'lost'].map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  filter === status
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
+        {/* Filter Tabs */}
+        <ModernCard className="mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex flex-col sm:flex-row px-6">
+              {['all', 'pending', 'confirmed', 'cancelled', 'won', 'lost'].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilter(status)}
+                  className={`py-4 px-4 border-b-2 font-medium text-sm transition-colors duration-200 flex items-center justify-center sm:justify-start mb-2 sm:mb-0 mr-0 sm:mr-8 ${
+                    filter === status
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {getStatusIcon(status)}
+                  <span className="ml-2">{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+        </ModernCard>
 
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
-            {filter === 'all' ? 'All Tickets' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Tickets`}
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ticket ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Agent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Numbers
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {tickets.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <p className="text-lg font-medium text-gray-900 mb-2">No tickets found</p>
-                      <p className="text-sm text-gray-500">
-                        {filter === 'all' 
-                          ? 'There are no tickets in the system yet.' 
-                          : `There are no ${filter} tickets.`}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                tickets.map((ticket) => (
-                  <tr key={ticket.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{ticket.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <ModernCard>
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <TicketIcon className="h-6 w-6 mr-3 text-blue-600" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {filter === 'all' ? 'All Tickets' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Tickets`}
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">Manage and track ticket status</p>
+              </div>
+            </div>
+          </div>
+          
+          <ModernTable
+            columns={[
+              {
+                key: 'id',
+                label: 'Ticket ID',
+                render: (ticket) => (
+                  <div className="text-sm font-medium text-gray-900">
+                    #{ticket.id}
+                  </div>
+                )
+              },
+              {
+                key: 'agent',
+                label: 'Agent',
+                render: (ticket) => (
+                  <div className="flex items-center">
+                    <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <div className="text-sm text-gray-900">
                       {ticket.agent?.username || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-wrap gap-1">
-                        {ticket.numbers?.map((number, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                          >
-                            {number}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₱{ticket.amount?.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
-                        {ticket.status}
+                    </div>
+                  </div>
+                )
+              },
+              {
+                key: 'numbers',
+                label: 'Numbers',
+                render: (ticket) => (
+                  <div className="flex flex-wrap gap-1">
+                    {ticket.numbers?.map((number, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        {number}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ))}
+                  </div>
+                )
+              },
+              {
+                key: 'amount',
+                label: 'Amount',
+                render: (ticket) => (
+                  <div className="flex items-center">
+                    <CurrencyDollarIcon className="h-4 w-4 mr-1 text-gray-400" />
+                    <span className="text-sm font-semibold text-green-600">
+                      ₱{ticket.amount?.toLocaleString()}
+                    </span>
+                  </div>
+                )
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (ticket) => (
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                    {ticket.status}
+                  </span>
+                )
+              },
+              {
+                key: 'createdAt',
+                label: 'Created',
+                render: (ticket) => (
+                  <div className="flex items-center">
+                    <CalendarDaysIcon className="h-4 w-4 mr-1 text-gray-400" />
+                    <span className="text-sm text-gray-500">
                       {new Date(ticket.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {ticket.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleStatusChange(ticket.id, 'confirmed')}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Confirm
-                          </button>
-                          <button
-                            onClick={() => handleStatusChange(ticket.id, 'cancelled')}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </span>
+                  </div>
+                )
+              },
+              {
+                key: 'actions',
+                label: 'Actions',
+                render: (ticket) => (
+                  ticket.status === 'pending' && (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <ModernButton
+                        onClick={() => handleStatusChange(ticket.id, 'confirmed')}
+                        variant="success"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <CheckCircleIcon className="h-4 w-4 mr-1" />
+                        Confirm
+                      </ModernButton>
+                      <ModernButton
+                        onClick={() => handleStatusChange(ticket.id, 'cancelled')}
+                        variant="danger"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <XCircleIcon className="h-4 w-4 mr-1" />
+                        Cancel
+                      </ModernButton>
+                    </div>
+                  )
+                )
+              }
+            ]}
+            data={tickets}
+            emptyMessage={
+              <div className="text-center py-12">
+                <TicketIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No tickets found</h3>
+                <p className="text-sm text-gray-500">
+                  {filter === 'all' 
+                    ? 'There are no tickets in the system yet.' 
+                    : `There are no ${filter} tickets.`}
+                </p>
+              </div>
+            }
+          />
+        </ModernCard>
       </div>
     </div>
   );

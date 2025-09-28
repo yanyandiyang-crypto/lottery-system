@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
 import { QrScanner } from 'react-qr-scanner';
+import {
+  MagnifyingGlassIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  CameraIcon,
+  XMarkIcon,
+  TrophyIcon,
+  TicketIcon,
+  InformationCircleIcon,
+  DocumentTextIcon,
+  CameraIcon as QrIcon
+} from '@heroicons/react/24/outline';
 
 const TicketSearch = () => {
   const [searchMode, setSearchMode] = useState('number'); // 'number' or 'qr'
@@ -101,290 +113,283 @@ const TicketSearch = () => {
   };
 
   return (
-    <div className="ticket-search" style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <h2 style={{ color: '#2563eb', marginBottom: '10px' }}>🔍 Ticket Search & Verification</h2>
-        <p style={{ color: '#6b7280' }}>Search for tickets by number or scan QR code to verify details</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-4 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mb-4">
+            <MagnifyingGlassIcon className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+            Ticket Search & Verification
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
+            Search for tickets by number or scan QR code to verify details and status
+          </p>
+        </div>
       
-      {/* Search Mode Selection */}
-      <div style={{ marginBottom: '25px', textAlign: 'center' }}>
-        <button
-          onClick={() => {
-            setSearchMode('number');
-            setShowCamera(false);
-            setError('');
-            setSearchResult(null);
-          }}
-          style={{
-            padding: '12px 24px',
-            marginRight: '15px',
-            backgroundColor: searchMode === 'number' ? '#2563eb' : '#f3f4f6',
-            color: searchMode === 'number' ? 'white' : '#374151',
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s'
-          }}
-        >
-          🔢 Search by Number
-        </button>
-        <button
-          onClick={() => {
-            setSearchMode('qr');
-            setShowCamera(true);
-            setError('');
-            setSearchResult(null);
-          }}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: searchMode === 'qr' ? '#2563eb' : '#f3f4f6',
-            color: searchMode === 'qr' ? 'white' : '#374151',
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s'
-          }}
-        >
-          📱 Scan QR Code
-        </button>
-      </div>
-
-      {/* Search by Ticket Number */}
-      {searchMode === 'number' && (
-        <div style={{ 
-          backgroundColor: '#f8fafc', 
-          padding: '25px', 
-          borderRadius: '12px', 
-          border: '2px solid #e2e8f0',
-          marginBottom: '25px' 
-        }}>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontWeight: '600',
-              color: '#374151'
-            }}>
-              Enter 17-digit Ticket Number:
-            </label>
-            <input
-              type="text"
-              value={formatTicketNumber(ticketNumber)}
-              onChange={handleTicketNumberChange}
-              placeholder="17588678923527981"
-              style={{
-                width: '100%',
-                padding: '15px',
-                fontSize: '18px',
-                border: '2px solid #d1d5db',
-                borderRadius: '8px',
-                fontFamily: 'monospace',
-                letterSpacing: '2px',
-                textAlign: 'center',
-                backgroundColor: 'white'
+        {/* Search Mode Selection */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <button
+              onClick={() => {
+                setSearchMode('number');
+                setShowCamera(false);
+                setError('');
+                setSearchResult(null);
               }}
-              maxLength={17}
-            />
+              className={`flex-1 flex items-center justify-center px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                searchMode === 'number'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-2 border-gray-200'
+              }`}
+            >
+              <DocumentTextIcon className="w-5 h-5 mr-2" />
+              Search by Number
+            </button>
+            <button
+              onClick={() => {
+                setSearchMode('qr');
+                setShowCamera(true);
+                setError('');
+                setSearchResult(null);
+              }}
+              className={`flex-1 flex items-center justify-center px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                searchMode === 'qr'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-2 border-gray-200'
+              }`}
+            >
+              <QrIcon className="w-5 h-5 mr-2" />
+              Scan QR Code
+            </button>
           </div>
-          <button
-            onClick={searchByTicketNumber}
-            disabled={loading || ticketNumber.length < 17}
-            style={{
-              width: '100%',
-              padding: '15px',
-              backgroundColor: loading || ticketNumber.length < 17 ? '#9ca3af' : '#10b981',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: loading || ticketNumber.length < 17 ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            {loading ? '🔍 Searching...' : '🔍 Search Ticket'}
-          </button>
-        </div>
-      )}
 
-      {/* QR Code Scanner */}
-      {searchMode === 'qr' && showCamera && (
-        <div style={{ marginBottom: '25px' }}>
-          <div style={{ 
-            border: '3px solid #2563eb', 
-            borderRadius: '15px', 
-            overflow: 'hidden',
-            backgroundColor: '#f1f5f9',
-            position: 'relative'
-          }}>
-            <div style={{
-              backgroundColor: '#2563eb',
-              color: 'white',
-              padding: '10px',
-              textAlign: 'center',
-              fontWeight: '600'
-            }}>
-              📱 Point camera at QR code
+          {/* Search by Ticket Number */}
+          {searchMode === 'number' && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200">
+              <label className="block text-sm font-semibold text-blue-800 mb-3">
+                Enter 17-digit Ticket Number:
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formatTicketNumber(ticketNumber)}
+                  onChange={handleTicketNumberChange}
+                  placeholder="17588678923527981"
+                  className="w-full px-4 py-4 text-lg font-mono tracking-wider text-center bg-white border-2 border-blue-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all duration-300"
+                  maxLength={17}
+                />
+                <DocumentTextIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
+              </div>
+              <button
+                onClick={searchByTicketNumber}
+                disabled={loading || ticketNumber.length < 17}
+                className={`w-full mt-4 px-6 py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 flex items-center justify-center ${
+                  loading || ticketNumber.length < 17
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg'
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
+                    Search Ticket
+                  </>
+                )}
+              </button>
             </div>
-            <QrScanner
-              onDecode={handleQRScan}
-              style={{ width: '100%' }}
-              constraints={{
-                facingMode: 'environment'
-              }}
-            />
+          )}
+
+          {/* QR Code Scanner */}
+          {searchMode === 'qr' && showCamera && (
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 rounded-xl mb-4 text-center font-semibold flex items-center justify-center">
+                <CameraIcon className="w-5 h-5 mr-2" />
+                Point camera at QR code
+              </div>
+              <div className="relative rounded-xl overflow-hidden shadow-lg">
+                <QrScanner
+                  onDecode={handleQRScan}
+                  style={{ width: '100%' }}
+                  constraints={{
+                    facingMode: 'environment'
+                  }}
+                />
+              </div>
+              <button
+                onClick={() => setShowCamera(false)}
+                className="w-full mt-4 px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all duration-300 flex items-center justify-center"
+              >
+                <XMarkIcon className="w-5 h-5 mr-2" />
+                Stop Camera
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-6 flex items-center">
+            <ExclamationTriangleIcon className="w-6 h-6 text-red-500 mr-3 flex-shrink-0" />
+            <div className="text-red-700 font-medium">{error}</div>
           </div>
-          <button
-            onClick={() => setShowCamera(false)}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#6b7280',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              marginTop: '15px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
-          >
-            ❌ Stop Camera
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* Error Display */}
-      {error && (
-        <div style={{
-          padding: '20px',
-          backgroundColor: '#fef2f2',
-          color: '#dc2626',
-          border: '2px solid #fecaca',
-          borderRadius: '10px',
-          marginBottom: '25px',
-          textAlign: 'center',
-          fontWeight: '600'
-        }}>
-          ⚠️ {error}
-        </div>
-      )}
-
-      {/* Search Result */}
-      {searchResult && (
-        <div style={{
-          border: '3px solid #10b981',
-          borderRadius: '15px',
-          padding: '25px',
-          backgroundColor: '#f0fdf4'
-        }}>
-          <h3 style={{ color: '#059669', marginBottom: '20px', textAlign: 'center' }}>
-            ✅ Ticket Details Found
-          </h3>
+        {/* Search Result */}
+        {searchResult && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg mb-4">
+                <CheckCircleIcon className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-green-700 mb-2">Ticket Details Found</h2>
+              <p className="text-green-600">Complete ticket information retrieved successfully</p>
+            </div>
           
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-            gap: '20px',
-            marginBottom: '20px'
-          }}>
-            <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-              <strong style={{ color: '#374151' }}>Ticket Number:</strong>
-              <div style={{ fontSize: '18px', fontFamily: 'monospace', color: '#059669', fontWeight: '600' }}>
-                {formatTicketNumber(searchResult.ticketNumber)}
+            {/* Ticket Information Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                <div className="flex items-center mb-2">
+                  <TicketIcon className="w-5 h-5 text-blue-600 mr-2" />
+                  <span className="text-sm font-medium text-blue-800">Ticket Number</span>
+                </div>
+                <div className="font-mono text-lg font-bold text-gray-900">
+                  {formatTicketNumber(searchResult.ticketNumber)}
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                <div className="flex items-center mb-2">
+                  <span className="text-sm font-medium text-green-800">Total Amount</span>
+                </div>
+                <div className="text-lg font-bold text-green-600">
+                  ₱{searchResult.totalAmount.toFixed(2)}
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200">
+                <div className="flex items-center mb-2">
+                  <span className="text-sm font-medium text-purple-800">Draw Date</span>
+                </div>
+                <div className="text-sm font-medium text-gray-900">
+                  {new Date(searchResult.drawDate).toLocaleDateString()}
+                </div>
+                <div className="text-xs text-gray-600">at {searchResult.drawTime}</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-200">
+                <div className="flex items-center mb-2">
+                  <span className="text-sm font-medium text-amber-800">Agent</span>
+                </div>
+                <div className="text-sm font-medium text-gray-900">
+                  {searchResult.agent.name}
+                </div>
               </div>
             </div>
-            
-            <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-              <strong style={{ color: '#374151' }}>Total Amount:</strong>
-              <div style={{ fontSize: '18px', color: '#059669', fontWeight: '600' }}>
-                ₱{searchResult.totalAmount.toFixed(2)}
+
+            {/* Bets Section */}
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <TicketIcon className="w-5 h-5 mr-2" />
+                Bet Details
+              </h3>
+              <div className="space-y-3">
+                {searchResult.bets.map((bet, index) => (
+                  <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center">
+                    <div>
+                      <div className="font-semibold text-gray-900">{bet.betCombination}</div>
+                      <div className="text-sm text-gray-600">({bet.betType})</div>
+                    </div>
+                    <div className="text-lg font-bold text-green-600">
+                      ₱{bet.betAmount.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            
-            <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-              <strong style={{ color: '#374151' }}>Draw Date:</strong>
-              <div style={{ fontSize: '16px', color: '#374151' }}>
-                {new Date(searchResult.drawDate).toLocaleDateString()} at {searchResult.drawTime}
-              </div>
-            </div>
-            
-            <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-              <strong style={{ color: '#374151' }}>Agent:</strong>
-              <div style={{ fontSize: '16px', color: '#374151' }}>
-                {searchResult.agent.name}
-              </div>
+
+            {/* Status Display */}
+            <div className={`p-6 rounded-xl text-center ${
+              searchResult.isWinning 
+                ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300' 
+                : 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300'
+            }`}>
+              {searchResult.isWinning ? (
+                <div>
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-full shadow-lg mb-4">
+                    <TrophyIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-2xl font-bold text-yellow-700 mb-2">
+                    WINNING TICKET!
+                  </div>
+                  <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
+                    searchResult.isClaimed 
+                      ? 'bg-gray-100 text-gray-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full mr-2 ${
+                      searchResult.isClaimed ? 'bg-gray-400' : 'bg-green-400 animate-pulse'
+                    }`}></div>
+                    {searchResult.isClaimed ? 'Already Claimed' : 'Ready to Claim'}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-300 rounded-full mb-4">
+                    <TicketIcon className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div className="text-lg font-medium text-gray-600">
+                    This ticket is not a winner
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        )}
 
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', border: '1px solid #d1fae5' }}>
-            <strong style={{ color: '#374151', marginBottom: '10px', display: 'block' }}>Bets:</strong>
-            <div style={{ display: 'grid', gap: '10px' }}>
-              {searchResult.bets.map((bet, index) => (
-                <div key={index} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '10px',
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '6px',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <span style={{ fontWeight: '600', color: '#1f2937' }}>
-                    {bet.betCombination} ({bet.betType})
-                  </span>
-                  <span style={{ fontWeight: '600', color: '#059669' }}>
-                    ₱{bet.betAmount.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
+        {/* Instructions */}
+        <div className="mt-8 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200">
+          <div className="flex items-center mb-4">
+            <InformationCircleIcon className="w-6 h-6 text-indigo-600 mr-2" />
+            <h3 className="text-lg font-semibold text-indigo-800">How to Use</h3>
           </div>
-
-          {/* Status Display */}
-          <div style={{ 
-            marginTop: '20px', 
-            padding: '15px', 
-            backgroundColor: searchResult.isWinning ? '#dbeafe' : '#f3f4f6',
-            border: `2px solid ${searchResult.isWinning ? '#3b82f6' : '#d1d5db'}`,
-            borderRadius: '10px',
-            textAlign: 'center'
-          }}>
-            {searchResult.isWinning ? (
-              <div>
-                <div style={{ fontSize: '18px', fontWeight: '600', color: '#1d4ed8', marginBottom: '5px' }}>
-                  🏆 WINNING TICKET!
-                </div>
-                <div style={{ color: '#1e40af' }}>
-                  Status: {searchResult.isClaimed ? 'Already Claimed' : 'Ready to Claim'}
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+                <span className="text-indigo-600 font-bold text-sm">1</span>
               </div>
-            ) : (
-              <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                📋 This ticket is not a winner
+              <h4 className="font-semibold text-gray-800 mb-1">Search by Number</h4>
+              <p className="text-sm text-gray-600">Enter 17-digit ticket number</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+                <span className="text-indigo-600 font-bold text-sm">2</span>
               </div>
-            )}
+              <h4 className="font-semibold text-gray-800 mb-1">Scan QR Code</h4>
+              <p className="text-sm text-gray-600">Use camera to scan QR code</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+                <span className="text-indigo-600 font-bold text-sm">3</span>
+              </div>
+              <h4 className="font-semibold text-gray-800 mb-1">View Details</h4>
+              <p className="text-sm text-gray-600">Complete ticket information</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+                <span className="text-indigo-600 font-bold text-sm">4</span>
+              </div>
+              <h4 className="font-semibold text-gray-800 mb-1">Check Status</h4>
+              <p className="text-sm text-gray-600">Winning status & eligibility</p>
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Instructions */}
-      <div style={{
-        marginTop: '40px',
-        padding: '20px',
-        backgroundColor: '#f8fafc',
-        borderRadius: '10px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h4 style={{ color: '#374151', marginBottom: '15px' }}>📋 How to Use:</h4>
-        <ul style={{ color: '#6b7280', lineHeight: '1.6', paddingLeft: '20px' }}>
-          <li><strong>Search by Number:</strong> Enter the 17-digit ticket number to view details</li>
-          <li><strong>Scan QR Code:</strong> Use your camera to scan the QR code on the ticket</li>
-          <li><strong>Verification:</strong> System will show complete ticket information and status</li>
-          <li><strong>Winning Status:</strong> Displays if ticket won and claiming eligibility</li>
-        </ul>
       </div>
     </div>
   );

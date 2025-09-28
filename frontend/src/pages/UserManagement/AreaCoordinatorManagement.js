@@ -10,8 +10,17 @@ import {
   TrashIcon,
   EyeIcon,
   EyeSlashIcon,
-  XMarkIcon
+  XMarkIcon,
+  CalendarDaysIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  MapPinIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
 
 const AreaCoordinatorManagement = () => {
   const { user } = useAuth();
@@ -188,26 +197,28 @@ const AreaCoordinatorManagement = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner message="Loading area coordinators..." />;
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Area Coordinator Management</h1>
-            <p className="text-gray-600">Manage area coordinators and assign coordinators to them</p>
-          </div>
-          <button
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Area Coordinator Management"
+          subtitle="Manage area coordinators and assign coordinators to them"
+          icon={MapPinIcon}
+        >
+          <ModernButton
             onClick={handleCreateAreaCoordinator}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            variant="primary"
+            size="lg"
+            className="w-full sm:w-auto"
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
+            <PlusIcon className="h-5 w-5 mr-2" />
             Create Area Coordinator
-          </button>
-        </div>
-      </div>
+          </ModernButton>
+        </PageHeader>
 
       {/* Area Coordinators Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -462,6 +473,7 @@ const AreaCoordinatorManagement = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

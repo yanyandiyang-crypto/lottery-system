@@ -10,6 +10,10 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import ModernCard from '../../components/UI/ModernCard';
+import ModernButton from '../../components/UI/ModernButton';
+import PageHeader from '../../components/UI/PageHeader';
+import ModernTable from '../../components/UI/ModernTable';
 
 const FunctionManagement = () => {
   const { user } = useAuth();
@@ -195,84 +199,88 @@ const FunctionManagement = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Function Management</h1>
-          <p className="text-gray-600 mt-2">Control which features are visible to different user roles</p>
-        </div>
-        <div className="flex space-x-3">
-          {functions.length === 0 && (
-            <button
-              onClick={initializeFunctions}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <PageHeader
+          title="Function Management"
+          subtitle="Control which features are visible to different user roles"
+          icon={CogIcon}
+        >
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {functions.length === 0 && (
+              <ModernButton
+                onClick={initializeFunctions}
+                variant="success"
+                size="md"
+              >
+                <CogIcon className="h-4 w-4 mr-2" />
+                Initialize Functions
+              </ModernButton>
+            )}
+            <ModernButton
+              onClick={() => setShowCreateModal(true)}
+              variant="primary"
+              size="md"
             >
-              <CogIcon className="h-5 w-5 mr-2" />
-              Initialize Functions
-            </button>
-          )}
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Create Function
-          </button>
-        </div>
-      </div>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Create Function
+            </ModernButton>
+          </div>
+        </PageHeader>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
 
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">System Functions</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Function
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Key
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role Permissions
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {functions.map((func) => (
-                <tr key={func.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
+        <ModernCard className="overflow-hidden">
+          <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">System Functions</h2>
+            <p className="text-sm text-gray-600 mt-1">Manage feature visibility and role permissions</p>
+          </div>
+          
+          {functions.length === 0 ? (
+            <div className="text-center py-12">
+              <CogIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Functions Found</h3>
+              <p className="text-gray-600 mb-4">Initialize the system functions to get started</p>
+              <ModernButton
+                onClick={initializeFunctions}
+                variant="primary"
+                size="md"
+              >
+                <CogIcon className="h-4 w-4 mr-2" />
+                Initialize Functions
+              </ModernButton>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <ModernTable
+                headers={[
+                  { key: 'function', label: 'Function' },
+                  { key: 'category', label: 'Category' },
+                  { key: 'key', label: 'Key' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'permissions', label: 'Role Permissions' },
+                  { key: 'actions', label: 'Actions' }
+                ]}
+                data={functions.map((func) => ({
+                  function: (
                     <div>
                       <div className="text-sm font-medium text-gray-900">{func.name}</div>
                       <div className="text-sm text-gray-500">{func.description}</div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  ),
+                  category: (
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                       {func.category}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <code className="bg-gray-100 px-2 py-1 rounded">{func.key}</code>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  ),
+                  key: (
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">{func.key}</code>
+                  ),
+                  status: (
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       func.isActive 
                         ? 'bg-green-100 text-green-800' 
@@ -280,9 +288,9 @@ const FunctionManagement = () => {
                     }`}>
                       {func.isActive ? 'Active' : 'Inactive'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex space-x-1">
+                  ),
+                  permissions: (
+                    <div className="flex flex-wrap gap-1">
                       {roles.map(role => {
                         const permission = func.rolePermissions.find(p => p.role === role.key);
                         const isEnabled = permission?.isEnabled || false;
@@ -301,116 +309,129 @@ const FunctionManagement = () => {
                         );
                       })}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
+                  ),
+                  actions: (
+                    <div className="flex space-x-1">
+                      <ModernButton
                         onClick={() => openPermissionsModal(func)}
-                        className="text-purple-600 hover:text-purple-900"
+                        variant="secondary"
+                        size="sm"
                         title="Manage Permissions"
                       >
-                        <CogIcon className="h-4 w-4" />
-                      </button>
-                      <button
+                        <CogIcon className="h-3 w-3" />
+                      </ModernButton>
+                      <ModernButton
                         onClick={() => openEditModal(func)}
-                        className="text-blue-600 hover:text-blue-900"
+                        variant="primary"
+                        size="sm"
                         title="Edit"
                       >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
+                        <PencilIcon className="h-3 w-3" />
+                      </ModernButton>
+                      <ModernButton
                         onClick={() => handleDeleteFunction(func.id)}
-                        className="text-red-600 hover:text-red-900"
+                        variant="danger"
+                        size="sm"
                         title="Delete"
                       >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
+                        <TrashIcon className="h-3 w-3" />
+                      </ModernButton>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Create Function Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Function</h3>
-              <form onSubmit={handleCreateFunction}>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Key *</label>
-                  <input
-                    type="text"
-                    value={formData.key}
-                    onChange={(e) => setFormData({...formData, key: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., users, balance_management"
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Category</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows="3"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateModal(false);
-                      resetForm();
-                    }}
-                    className="px-4 py-2 text-gray-500 border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Create Function
-                  </button>
-                </div>
-              </form>
+                  )
+                }))}
+                emptyMessage="No functions found"
+              />
             </div>
+          )}
+        </ModernCard>
+
+        {/* Modern Create Function Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <ModernCard className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                <h3 className="text-xl font-semibold text-gray-900">Create New Function</h3>
+                <p className="text-sm text-gray-600 mt-1">Add a new system function</p>
+              </div>
+              <div className="p-6">
+                <form onSubmit={handleCreateFunction} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter function name"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Key *</label>
+                    <input
+                      type="text"
+                      value={formData.key}
+                      onChange={(e) => setFormData({...formData, key: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., users, balance_management"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+                      rows="3"
+                      placeholder="Enter function description"
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 sm:justify-end pt-4">
+                    <ModernButton
+                      type="button"
+                      onClick={() => {
+                        setShowCreateModal(false);
+                        resetForm();
+                      }}
+                      variant="secondary"
+                      size="md"
+                      className="order-2 sm:order-1"
+                    >
+                      Cancel
+                    </ModernButton>
+                    <ModernButton
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      className="order-1 sm:order-2"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Create Function
+                    </ModernButton>
+                  </div>
+                </form>
+              </div>
+            </ModernCard>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Edit Function Modal */}
       {showEditModal && selectedFunction && (
@@ -552,6 +573,7 @@ const FunctionManagement = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

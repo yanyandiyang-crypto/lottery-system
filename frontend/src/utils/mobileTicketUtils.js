@@ -87,276 +87,109 @@ export class MobileTicketUtils {
     }
   }
   
+  // OLD HTML GENERATION FUNCTION REMOVED
+  // Now using pre-generated HTML from backend + template system
+
   /**
-   * Generate mobile-optimized ticket HTML for 58mm thermal printers
+   * Get ticket image using DIRECT template generation (bypass pre-generated HTML)
    */
-  static generateMobileTicketHTML(ticket, user) {
-    const formatDrawTimeForTicket = (drawTime) => {
-      if (!drawTime) return 'No Time';
-      const timeMap = {
-        '14:00': '2:00 PM',
-        '17:00': '5:00 PM', 
-        '21:00': '9:00 PM'
-      };
-      return timeMap[drawTime] || drawTime;
-    };
-
-    const formatCurrency = (amount) => {
-      return `₱${parseFloat(amount || 0).toFixed(2)}`;
-    };
-
-    const formatDate = (dateString) => {
-      if (!dateString) return 'No Date';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-CA') + ' ' + date.toLocaleDateString('en-US', { weekday: 'short' });
-    };
-
-    const bets = ticket.bets || [];
-    const betListHtml = bets.map((bet, index) => {
-      const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
-      const sequence = String.fromCharCode(65 + index);
-      return `
-        <div class="bet-item">
-          <div class="bet-type">${betType}</div>
-          <div class="bet-combination">${bet.betCombination.split('').join('   ')}</div>
-          <div class="bet-sequence">${sequence} - ${formatCurrency(bet.betAmount)}</div>
+  static async getPreGeneratedImage(ticket) {
+    try {
+      console.log('🖼️ BYPASSING pre-generated HTML, using direct template generation...');
+      
+      // Use direct template generation for consistent layout
+      const TicketGenerator = (await import('./ticketGenerator')).default;
+      const TemplateAssigner = (await import('./templateAssigner')).default;
+      
+      let template = null;
+      try {
+        template = await TemplateAssigner.fetchSystemTemplate();
+        console.log('✅ Template loaded:', template?.templateType || 'default');
+      } catch (_) {
+        console.log('⚠️ Using default template');
+      }
+      
+      // Generate HTML directly using template system
+      const templateHTML = TicketGenerator.generateWithTemplate(ticket, {}, template, {});
+      console.log('✅ Template HTML generated, length:', templateHTML.length);
+      
+      // Wrap HTML exactly like the working preview
+      const wrappedHTML = `
+        <div style="width:220px;margin:0 auto;overflow:hidden;position:relative;border:1px solid #ddd;background:white;">
+          <div style="width:220px;transform-origin:top left;position:relative;">${templateHTML}</div>
         </div>
       `;
-    }).join('');
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Mobile Lottery Ticket</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          body {
-            font-family: 'Courier New', monospace;
-            background: white;
-            padding: 10px;
-          }
-          
-          .mobile-ticket {
-            width: 100%;
-            max-width: 58mm;
-            min-width: 200px;
-            background: white;
-            border: 2px solid #000;
-            padding: 8px;
-            font-size: 10px;
-            line-height: 1.2;
-            margin: 0 auto;
-          }
-          
-          .ticket-header {
-            text-align: center;
-            border-bottom: 1px solid #000;
-            padding-bottom: 4px;
-            margin-bottom: 4px;
-          }
-          
-          .logo {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 2px;
-          }
-          
-          .ticket-title {
-            font-weight: bold;
-            font-size: 11px;
-            margin-bottom: 2px;
-          }
-          
-          .ticket-number {
-            font-size: 9px;
-            font-weight: bold;
-          }
-          
-          .draw-info {
-            text-align: center;
-            margin: 4px 0;
-            padding: 2px 0;
-            border-bottom: 1px dashed #666;
-          }
-          
-          .draw-time {
-            font-weight: bold;
-            font-size: 11px;
-          }
-          
-          .draw-date {
-            font-size: 9px;
-            color: #666;
-          }
-          
-          .bet-info {
-            margin: 4px 0;
-          }
-          
-          .bet-item {
-            margin: 3px 0;
-            padding: 2px 0;
-            border-bottom: 1px dotted #ccc;
-          }
-          
-          .bet-type {
-            font-weight: bold;
-            font-size: 10px;
-          }
-          
-          .bet-combination {
-            font-size: 14px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-align: center;
-            margin: 2px 0;
-          }
-          
-          .bet-sequence {
-            font-size: 9px;
-            text-align: right;
-          }
-          
-          .total-section {
-            text-align: center;
-            margin: 6px 0;
-            padding: 4px 0;
-            border-top: 2px solid #000;
-            border-bottom: 2px solid #000;
-          }
-          
-          .total-label {
-            font-size: 9px;
-            font-weight: bold;
-          }
-          
-          .total-amount {
-            font-size: 14px;
-            font-weight: bold;
-          }
-          
-          .agent-info {
-            text-align: center;
-            margin: 4px 0;
-            padding: 2px 0;
-          }
-          
-          .agent-label {
-            font-size: 8px;
-            color: #666;
-          }
-          
-          .agent-name {
-            font-size: 10px;
-            font-weight: bold;
-          }
-          
-          .qr-section {
-            text-align: center;
-            margin: 6px 0;
-            padding: 4px 0;
-          }
-          
-          .qr-code {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto;
-          }
-          
-          .ticket-footer {
-            text-align: center;
-            border-top: 1px solid #000;
-            padding-top: 4px;
-            margin-top: 4px;
-          }
-          
-          .timestamp {
-            font-size: 8px;
-            color: #666;
-            margin-bottom: 2px;
-          }
-          
-          .good-luck {
-            font-size: 10px;
-            font-weight: bold;
-          }
-          
-          @media print {
-            body {
-              padding: 0;
-            }
-            
-            .mobile-ticket {
-              border: 1px solid #000;
-            }
-          }
-          
-          @media (max-width: 480px) {
-            .mobile-ticket {
-              max-width: 100%;
-              min-width: 180px;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="mobile-ticket">
-          <!-- Header -->
-          <div class="ticket-header">
-            <div class="logo">🎲 NEWBETTING</div>
-            <div class="ticket-title">3D LOTTO TICKET</div>
-            <div class="ticket-number">#${ticket.ticketNumber}</div>
-          </div>
-
-          <!-- Draw Information -->
-          <div class="draw-info">
-            <div class="draw-time">${formatDrawTimeForTicket(ticket.draw?.drawTime)}</div>
-            <div class="draw-date">${formatDate(ticket.draw?.drawDate)}</div>
-          </div>
-
-          <!-- Bet Information -->
-          <div class="bet-info">
-            ${betListHtml}
-          </div>
-
-          <!-- Total Amount -->
-          <div class="total-section">
-            <div class="total-label">TOTAL AMOUNT</div>
-            <div class="total-amount">${formatCurrency(ticket.totalAmount)}</div>
-          </div>
-
-          <!-- Agent Information -->
-          <div class="agent-info">
-            <div class="agent-label">AGENT</div>
-            <div class="agent-name">${user.fullName || user.username}</div>
-          </div>
-
-          <!-- QR Code -->
-          <div class="qr-section">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(ticket.ticketNumber || `Ticket: ${ticket.id}`)}&size=100x100" alt="QR Code" class="qr-code" />
-          </div>
-
-          <!-- Footer -->
-          <div class="ticket-footer">
-            <div class="timestamp">${new Date(ticket.createdAt).toLocaleString()}</div>
-            <div class="good-luck">GOOD LUCK! 🍀</div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+      console.log('✅ HTML wrapped for image conversion');
+      
+      // Convert wrapped HTML to image
+      return await this.convertHTMLToImage(wrappedHTML);
+      
+    } catch (error) {
+      console.error('❌ Direct template generation failed, using fallback:', error);
+      // Final fallback
+      return await this.createTicketImageBlob(ticket, {});
+    }
   }
 
   /**
-   * Share ticket via Web Share API with image or fallback methods
+   * Convert HTML string to image blob - EXACT SAME AS PREVIEW
+   */
+  static async convertHTMLToImage(htmlString) {
+    try {
+      console.log('🔍 Using EXACT same approach as working preview...');
+      
+      // Create container exactly like preview
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '-9999px';
+      tempContainer.style.backgroundColor = 'white';
+      tempContainer.style.padding = '0';
+      tempContainer.style.margin = '0';
+      
+      // Use the wrapped HTML (already contains proper styling)
+      tempContainer.innerHTML = htmlString;
+      
+      document.body.appendChild(tempContainer);
+      
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Use html2canvas with minimal settings
+      const canvas = await html2canvas(tempContainer, {
+        backgroundColor: 'white',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      });
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+      
+      // Convert canvas to blob with higher quality
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            console.log('✅ High-quality ticket image generated:', {
+              size: `${blob.size} bytes`,
+              dimensions: `${canvas.width}x${canvas.height}px`
+            });
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to convert canvas to blob'));
+          }
+        }, 'image/png', 0.95); // High quality PNG
+      });
+      
+    } catch (error) {
+      console.error('❌ Error converting HTML to image:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Share ticket using pre-generated image (fastest & most consistent)
    */
   static async shareTicket(ticket, user) {
     // Debug Web Share API support first
@@ -375,10 +208,10 @@ export class MobileTicketUtils {
       console.log('Attempting image share...');
       
       try {
-        // Generate ticket image using the assigned template
-        console.log('Starting ticket image generation...');
-        const imageBlob = await this.createTicketImageBlob(ticket, user);
-        console.log('Image blob generated successfully, size:', imageBlob.size, 'bytes');
+        // Use DIRECT template generation for consistent layout
+        console.log('🖼️ Using DIRECT template generation for image...');
+        const imageBlob = await this.getPreGeneratedImage(ticket);
+        console.log('✅ Template-generated image loaded, size:', imageBlob.size, 'bytes');
         const fileName = `lottery-ticket-${ticket.ticketNumber}.png`;
         const file = new File([imageBlob], fileName, { type: 'image/png' });
         console.log('File object created:', fileName);
@@ -560,23 +393,185 @@ export class MobileTicketUtils {
   }
 
   /**
-   * Print mobile ticket optimized for 58mm thermal printers
+   * Print mobile ticket for POS systems (thermal printer integration)
    */
-  static printMobileTicket(ticket, user) {
-    const ticketHTML = this.generateMobileTicketHTML(ticket, user);
-    
-    const printWindow = window.open('', '_blank', 'width=300,height=600');
-    printWindow.document.write(ticketHTML);
-    printWindow.document.close();
-    
-    // Wait for content to load then print
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-        setTimeout(() => printWindow.close(), 1000);
-      }, 500);
-    };
+  static async printMobileTicket(ticket, user) {
+    try {
+      console.log('🖨️ Mobile POS printing...');
+      
+      // Check if mobile POS printer is available
+      if (this.isMobilePOSEnvironment()) {
+        return await this.printViaMobilePOS(ticket, user);
+      }
+      
+      // Check if thermal printer API is available (Android/iOS apps)
+      if (window.ThermalPrinter || window.cordova?.plugins?.printer) {
+        return await this.printViaThermalPrinter(ticket, user);
+      }
+      
+      // Fallback to browser print (desktop/web)
+      console.log('📄 Falling back to browser print...');
+      return await this.printViaBrowser(ticket, user);
+      
+    } catch (error) {
+      console.error('❌ Error in mobile POS printing:', error);
+      // Final fallback to browser print
+      return await this.printViaBrowser(ticket, user);
+    }
+  }
+
+  /**
+   * Check if running in mobile POS environment
+   */
+  static isMobilePOSEnvironment() {
+    return !!(
+      window.Android ||           // Android WebView
+      window.webkit?.messageHandlers ||  // iOS WebView
+      window.ReactNativeWebView || // React Native
+      navigator.userAgent.includes('MobilePOS')
+    );
+  }
+
+  /**
+   * Print via mobile POS system (native app integration)
+   */
+  static async printViaMobilePOS(ticket, user) {
+    try {
+      console.log('🏪 Printing via Mobile POS system...');
+      
+      // Get pre-generated HTML for consistent layout
+      const preGeneratedHTML = await this.getPreGeneratedHTML(ticket);
+      
+      // Mobile POS printing methods
+      if (window.Android?.printTicket) {
+        window.Android.printTicket(preGeneratedHTML, ticket.ticketNumber);
+        return { success: true, method: 'android-pos' };
+      }
+      
+      if (window.webkit?.messageHandlers?.printTicket) {
+        window.webkit.messageHandlers.printTicket.postMessage({
+          html: preGeneratedHTML,
+          ticketNumber: ticket.ticketNumber
+        });
+        return { success: true, method: 'ios-pos' };
+      }
+      
+      throw new Error('No mobile POS print method available');
+      
+    } catch (error) {
+      console.error('❌ Mobile POS printing failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Print via thermal printer (Cordova/PhoneGap plugins)
+   */
+  static async printViaThermalPrinter(ticket, user) {
+    try {
+      console.log('🖨️ Printing via thermal printer...');
+      
+      const preGeneratedHTML = await this.getPreGeneratedHTML(ticket);
+      
+      if (window.ThermalPrinter) {
+        await window.ThermalPrinter.print(preGeneratedHTML);
+        return { success: true, method: 'thermal-printer' };
+      }
+      
+      if (window.cordova?.plugins?.printer) {
+        await new Promise((resolve, reject) => {
+          window.cordova.plugins.printer.print(preGeneratedHTML, {
+            name: `Ticket-${ticket.ticketNumber}`,
+            paperSize: { width: 58, height: 'auto' }
+          }, resolve, reject);
+        });
+        return { success: true, method: 'cordova-printer' };
+      }
+      
+      throw new Error('No thermal printer available');
+      
+    } catch (error) {
+      console.error('❌ Thermal printer failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Print via browser (fallback method)
+   */
+  static async printViaBrowser(ticket, user) {
+    try {
+      console.log('🌐 Printing via browser...');
+      
+      const preGeneratedHTML = await this.getPreGeneratedHTML(ticket);
+      
+      const printWindow = window.open('', '_blank', 'width=300,height=600');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Print Ticket ${ticket.ticketNumber}</title>
+          <style>
+            body { margin: 0; padding: 4px; font-family: Arial, sans-serif; }
+            @media print { 
+              body { margin: 0; padding: 0; } 
+              @page { margin: 0; size: 58mm auto; }
+            }
+          </style>
+        </head>
+        <body>
+          ${preGeneratedHTML}
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                setTimeout(() => window.close(), 1000);
+              }, 500);
+            };
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      
+      return { success: true, method: 'browser-print' };
+      
+    } catch (error) {
+      console.error('❌ Browser printing failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get pre-generated HTML from backend
+   */
+  static async getPreGeneratedHTML(ticket) {
+    try {
+      const api = (await import('./api')).default;
+      const response = await fetch(`${api.defaults.baseURL}/tickets/${ticket.id || ticket.ticketNumber}/html`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        return await response.text();
+      }
+      
+      throw new Error('Pre-generated HTML not available');
+    } catch (error) {
+      console.log('Falling back to template generation...');
+      // Fallback to template generation using TicketGenerator
+      const TicketGenerator = (await import('./ticketGenerator')).default;
+      const TemplateAssigner = (await import('./templateAssigner')).default;
+      
+      let template = null;
+      try {
+        template = await TemplateAssigner.fetchSystemTemplate();
+      } catch (_) {}
+      
+      return TicketGenerator.generateWithTemplate(ticket, {}, template, {});
+    }
   }
 
   /**
