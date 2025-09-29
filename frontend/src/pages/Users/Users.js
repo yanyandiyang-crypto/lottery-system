@@ -66,11 +66,36 @@ const Users = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      
       const response = await api.get('/users');
-      console.log('Users API response:', response.data);
+      console.log('Users API response for', user.role, ':', response.data);
+      console.log('Current user details:', { 
+        role: user.role, 
+        id: user.id, 
+        regionId: user.regionId,
+        coordinatorId: user.coordinatorId 
+      });
+      
       // Handle the nested data structure: response.data.data.items
       const usersData = response.data.data?.items || response.data.items || response.data.data || [];
-      console.log('Extracted users:', usersData);
+      console.log('Extracted users for', user.role, ':', usersData);
+      console.log('Number of users found:', usersData.length);
+      
+      if (usersData.length === 0 && user.role === 'area_coordinator') {
+        console.warn('Area coordinator found no users. Check if regionId is set and users exist in this region.');
+        console.log('Attempting to fetch all users for debugging...');
+        
+        // Temporary: Try to fetch all users to see what exists
+        try {
+          const debugResponse = await api.get('/users', { 
+            params: { debug: true } // This might bypass filtering if backend supports it
+          });
+          console.log('Debug - All users in system:', debugResponse.data);
+        } catch (debugErr) {
+          console.log('Debug fetch failed, trying admin endpoint...');
+        }
+      }
+      
       setUsers(usersData);
     } catch (err) {
       setError('Failed to fetch users');
@@ -81,12 +106,22 @@ const Users = () => {
     }
   };
 
-  const tabs = [
+  // Filter tabs based on user role
+  const allTabs = [
     { id: 'all', name: 'All Users', icon: UsersIcon },
     { id: 'area_coordinator', name: 'Area Coordinators', icon: UserGroupIcon },
     { id: 'coordinator', name: 'Coordinators', icon: UserIcon },
     { id: 'agent', name: 'Agents', icon: UserIcon }
   ];
+
+  const tabs = allTabs.filter(tab => {
+    // For coordinators, hide Area Coordinators and Coordinators tabs
+    if (user.role === 'coordinator') {
+      return tab.id === 'all' || tab.id === 'agent';
+    }
+    // For other roles, show all tabs
+    return true;
+  });
 
   const handleRoleChange = async (userId, newRole) => {
     try {

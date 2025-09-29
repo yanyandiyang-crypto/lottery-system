@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../utils/api';
 import {
   TicketIcon,
   CurrencyDollarIcon,
@@ -22,8 +21,6 @@ import {
   StarIcon,
   QrCodeIcon,
   GiftIcon,
-  WrenchScrewdriverIcon,
-  DevicePhoneMobileIcon,
   LockClosedIcon,
   BellAlertIcon,
   StopIcon,
@@ -57,21 +54,18 @@ const navigationGroups = {
     { name: 'Draw Results', href: '/draw-results', icon: StarIcon, emoji: '⭐', functionKey: 'draw_results' },
     { name: 'Agent Results', href: '/agent-results', icon: TrophyIcon, emoji: '🏆', roles: ['agent'] },
     { name: 'Winning Tickets', href: '/winning-tickets', icon: GiftIcon, emoji: '🎁', roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
-    { name: 'Agent Tickets', href: '/agent-tickets', icon: TicketIcon, emoji: '🎫', functionKey: 'agent_tickets' },
+    { name: 'Agent Tickets', href: '/agent-tickets', icon: TicketIcon, emoji: '🎫', roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
     { name: 'Bet History', href: '/bet-history', icon: ClockIcon, emoji: '🕒', roles: ['agent'] },
   ],
   
   verification: [
-    { name: 'Verify Ticket', href: '/verify', icon: QrCodeIcon, emoji: '📱', roles: ['agent', 'admin', 'superadmin'] },
     { name: 'Claim Prize', href: '/claim', icon: GiftIcon, emoji: '💰', roles: ['agent', 'admin', 'superadmin'] },
     { name: 'Claim Approvals', href: '/claim-approvals', icon: LockClosedIcon, emoji: '🔒', roles: ['superadmin', 'admin'] },
   ],
   
   system: [
-    { name: 'Function Management', href: '/function-management', icon: WrenchScrewdriverIcon, emoji: '🔧', roles: ['superadmin'] },
     { name: 'Prize Configuration', href: '/prize-configuration', icon: CurrencyDollarIcon, emoji: '💵', roles: ['superadmin'] },
     { name: 'Template Assignment', href: '/template-assignment', icon: SwatchIcon, emoji: '🎨', roles: ['superadmin'] },
-    { name: 'Mobile POS Templates', href: '/mobile-pos-templates', icon: DevicePhoneMobileIcon, emoji: '📱', roles: ['superadmin'] },
     { name: 'Security Audit', href: '/admin/audit', icon: ShieldCheckIcon, emoji: '🛡️', roles: ['superadmin', 'admin'] },
     { name: 'Notifications', href: '/notifications', icon: BellAlertIcon, emoji: '🔔', functionKey: 'notifications' },
     { name: 'Bet Limits', href: '/bet-limits', icon: StopIcon, emoji: '🚫', functionKey: 'bet_limits' },
@@ -170,16 +164,9 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
         return;
       }
 
-      try {
-        const response = await api.get(`/function-management/permissions/${user.role}`);
-        setAllowedFunctions(response.data.data || []);
-      } catch (error) {
-        console.error('Error fetching user permissions:', error);
-        // Fallback to empty array if error
-        setAllowedFunctions([]);
-      } finally {
-        setLoading(false);
-      }
+      // Using static navigation - no dynamic permission fetching needed
+      setAllowedFunctions([]);
+      setLoading(false);
     };
 
     fetchUserPermissions();

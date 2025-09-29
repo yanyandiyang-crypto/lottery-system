@@ -53,12 +53,17 @@ const PrizeConfiguration = () => {
   };
 
   const handleEdit = (config) => {
+    if (!config) {
+      console.error('Prize configuration data is undefined');
+      return;
+    }
+    
     setEditingConfig(config);
     setFormData({
-      betType: config.betType,
-      multiplier: config.multiplier,
-      baseAmount: config.baseAmount,
-      basePrize: config.basePrize,
+      betType: config.betType || '',
+      multiplier: config.multiplier || 0,
+      baseAmount: config.baseAmount || 0,
+      basePrize: config.basePrize || 0,
       description: config.description || ''
     });
   };

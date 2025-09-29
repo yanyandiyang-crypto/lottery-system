@@ -14,14 +14,12 @@ import {
   FunnelIcon,
   CheckCircleIcon,
   UserGroupIcon,
-  XMarkIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon
+  ChartBarIcon,
+  ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline';
 import ModernCard from '../../components/UI/ModernCard';
 import ModernButton from '../../components/UI/ModernButton';
 import PageHeader from '../../components/UI/PageHeader';
-import ModernTable from '../../components/UI/ModernTable';
 
 const WinningTickets = () => {
   const { user } = useAuth();
@@ -34,7 +32,7 @@ const WinningTickets = () => {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [activeTab, setActiveTab] = useState('tickets'); // 'tickets' or 'draws'
+  const [activeTab, setActiveTab] = useState('tickets'); // 'tickets', 'draws', 'analytics', 'agents'
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -47,17 +45,59 @@ const WinningTickets = () => {
     drawTime: 'all',
     search: ''
   });
+  
+  // Analytics data from WinningDashboard
+  const [reportData, setReportData] = useState(null);
+  const [agentSummary, setAgentSummary] = useState(null);
+  const [dailyData, setDailyData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  
+  // Prize configuration data
+  const [prizeConfig, setPrizeConfig] = useState({
+    standard: 450,      // default fallback
+    rambolito: 75,      // default fallback for unique numbers
+    rambolito_double: 150  // default fallback for double numbers (e.g., 223)
+  });
 
   useEffect(() => {
     // Prefetch hierarchy lists for non-agent roles
     if (['superadmin', 'admin', 'area_coordinator'].includes(user.role)) {
       fetchHierarchyData();
     }
+    // Fetch prize configuration
+    fetchPrizeConfiguration();
   }, [user.role]);
 
   useEffect(() => {
     fetchWinningTickets();
   }, [filters, pagination.page, selectedAgentId, selectedCoordinatorId, user.role]);
+
+  const fetchPrizeConfiguration = async () => {
+    try {
+      const response = await api.get('/prize-configuration');
+      const configurations = response.data.data || [];
+      
+      // Create a mapping of bet types to multipliers
+      const configMap = {};
+      configurations.forEach(config => {
+        if (config.betType && config.multiplier) {
+          configMap[config.betType.toLowerCase()] = config.multiplier;
+        }
+      });
+      
+      // Update prize config with actual values from database
+      setPrizeConfig({
+        standard: configMap.standard || configMap.straight || 450,                    // fallback to 450
+        rambolito: configMap.rambolito || configMap.rambol || 75,                     // fallback to 75
+        rambolito_double: configMap.rambolito_double || configMap.rambol_double || 150 // fallback to 150
+      });
+      
+      console.log('Prize configuration loaded:', configMap);
+    } catch (error) {
+      console.error('Error fetching prize configuration:', error);
+      // Keep default values if API fails
+    }
+  };
 
   const fetchHierarchyData = async () => {
     try {
@@ -74,23 +114,60 @@ const WinningTickets = () => {
     }
   };
 
+  // Analytics functions from WinningDashboard
+  const loadWinningReports = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const dateRange = {
+        startDate: filters.startDate,
+        endDate: filters.endDate
+      };
+
+      // Load main summary
+      const summaryResponse = await api.get('/winning-reports/summary?' + new URLSearchParams(dateRange));
+      if (summaryResponse.data.success) {
+        setReportData(summaryResponse.data.report);
+      }
+
+      // Load agent summary
+      const agentResponse = await api.get('/winning-reports/agent-summary?' + new URLSearchParams(dateRange));
+      if (agentResponse.data.success) {
+        setAgentSummary(agentResponse.data);
+      }
+
+      // Load daily data
+      const dailyResponse = await api.get('/winning-reports/daily-summary?days=7');
+      if (dailyResponse.data.success) {
+        setDailyData(dailyResponse.data);
+      }
+
+    } catch (err) {
+      console.error('Winning reports error:', err);
+      toast.error('Error loading winning reports');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   const fetchWinningTickets = async () => {
     try {
       setLoading(true);
       const queryFilters = {
         ...filters,
         page: pagination.page,
-        limit: pagination.limit,
-        status: 'won' // Only fetch winning tickets
+        limit: pagination.limit
+        // Remove status filter - we'll filter on frontend for winning tickets
       };
-
+      
       let response;
       
       if (['superadmin', 'admin'].includes(user.role)) {
-        // For superadmin and admin: get ALL winning tickets from ALL agents
-        // Add cache-busting parameter to ensure fresh data
+        // For superadmin and admin: get ALL tickets from ALL agents
         const cacheBust = Date.now();
         response = await api.get('/tickets', { params: { ...queryFilters, _t: cacheBust } });
+      } else if (user.role === 'agent') {
+        // For agents: use the main tickets API (backend will automatically filter by agent's own tickets)
+        response = await api.get('/tickets', { params: queryFilters });
       } else {
         // For other roles: use the existing per-agent logic
         let agentIdToQuery = user.id;
@@ -116,24 +193,58 @@ const WinningTickets = () => {
         }
       }
 
-      const ticketsData = response.data.data.tickets || [];
-      console.log('Fetched winning tickets:', ticketsData.length);
-      ticketsData.forEach(ticket => {
-        console.log('Ticket:', ticket.ticketNumber, 'Win Amount:', ticket.winAmount, 'Bets:', ticket.bets?.length);
-        if (ticket.bets) {
-          ticket.bets.forEach(bet => {
-            if (bet.isWinner) {
-              console.log('  Winning bet:', bet.betCombination, 'Amount:', bet.winAmount);
-            }
-          });
+      
+      // Handle different possible response structures - ensure we always get an array
+      let ticketsData = [];
+      if (response.data.data?.items && Array.isArray(response.data.data.items)) {
+        ticketsData = response.data.data.items;
+      } else if (response.data.data?.tickets && Array.isArray(response.data.data.tickets)) {
+        ticketsData = response.data.data.tickets;
+      } else if (Array.isArray(response.data.data)) {
+        ticketsData = response.data.data;
+      } else if (response.data.tickets && Array.isArray(response.data.tickets)) {
+        ticketsData = response.data.tickets;
+      } else {
+        ticketsData = []; // Fallback to empty array
+      }
+      
+      
+      // Filter to only show tickets that are actual winners
+      const actualWinningTickets = ticketsData.filter(ticket => {
+        // Must have draw results to determine if winning
+        if (!ticket.draw || !ticket.draw.winningNumber) {
+          return false;
         }
+        
+        // Check if ticket has winAmount already calculated
+        const hasWinAmount = ticket.winAmount && ticket.winAmount > 0;
+        
+        // Check if any bets are winning based on draw results
+        const winningBets = getWinningBets(ticket);
+        const hasWinningBets = winningBets.length > 0;
+        
+        // Include tickets with winning-related statuses that have actual winnings
+        const hasWinningStatus = ['validated', 'claimed', 'pending_approval'].includes(ticket.status) && (hasWinAmount || hasWinningBets);
+        
+        const isWinner = hasWinAmount || hasWinningBets || hasWinningStatus;
+        
+        return isWinner;
       });
       
-      setTickets(ticketsData);
+      
+      // Ensure we always set an array
+      let finalTickets = [];
+      
+      // Always show actual winning tickets (don't fall back to all tickets)
+      finalTickets = Array.isArray(actualWinningTickets) ? actualWinningTickets : [];
+      
+      
+      setTickets(finalTickets);
+      
       setPagination(prev => ({
         ...prev,
-        total: response.data.data.pagination?.totalCount || 0,
-        totalPages: response.data.data.pagination?.totalPages || 0
+        total: response.data.data?.pagination?.totalCount || response.data.data?.pagination?.total || 0,
+        totalPages: response.data.data?.pagination?.totalPages || response.data.data?.pagination?.pages || 0
       }));
     } catch (error) {
       console.error('Error fetching winning tickets:', error);
@@ -144,12 +255,7 @@ const WinningTickets = () => {
   };
 
   const handleViewTicket = (ticketId) => {
-    // Use the ticket data from the list instead of making a separate API call
-    // This ensures we have the correct winAmount and betting data
     const ticket = tickets.find(t => t.id === ticketId);
-    console.log('Viewing ticket from list:', ticket);
-    console.log('Ticket winAmount:', ticket?.winAmount);
-    console.log('Ticket bets:', ticket?.bets);
     setSelectedTicket(ticket);
     setShowTicketModal(true);
   };
@@ -161,13 +267,89 @@ const WinningTickets = () => {
     }).format(amount || 0);
   };
 
+  const calculateActualPrizeAmount = (ticket) => {
+    if (!ticket.bets || !ticket.draw?.winningNumber) {
+      return 0;
+    }
+    
+    let totalPrize = 0;
+    const winningBets = getWinningBets(ticket);
+    
+    winningBets.forEach((bet, index) => {
+      const betAmount = parseFloat(bet.betAmount) || 0;
+      let multiplier = 0;
+      let prizeForThisBet = 0;
+      
+      if (bet.betType === 'standard' || bet.betType === 'straight') {
+        // Use actual standard multiplier from configuration
+        multiplier = prizeConfig.standard;
+        prizeForThisBet = betAmount * multiplier;
+        totalPrize += prizeForThisBet;
+      } else if (bet.betType === 'rambolito' || bet.betType === 'rambol') {
+        // Use correct rambolito multiplier based on double digits
+        multiplier = getRambolitoMultiplier(bet.betCombination);
+        prizeForThisBet = betAmount * multiplier;
+        totalPrize += prizeForThisBet;
+      }
+      
+    });
+    
+    return totalPrize;
+  };
+
   const getWinningAmount = (ticket) => {
-    return ticket.winAmount || 0;
+    // Always calculate from bets for accurate display (ignore pre-calculated winAmount)
+    return calculateActualPrizeAmount(ticket);
+  };
+
+  // Helper function to check if a number has double digits (e.g., 223, 112, 334)
+  const hasDoubleDigits = (numberString) => {
+    if (!numberString || numberString.length !== 3) return false;
+    const digits = numberString.split('');
+    return digits[0] === digits[1] || digits[1] === digits[2] || digits[0] === digits[2];
+  };
+
+  // Function to get the correct rambolito multiplier based on double digits
+  const getRambolitoMultiplier = (betNumber) => {
+    return hasDoubleDigits(betNumber) ? prizeConfig.rambolito_double : prizeConfig.rambolito;
+  };
+
+  // Function to check if a bet is winning based on draw results
+  const checkIfBetIsWinning = (bet, drawWinningNumber) => {
+    if (!bet || !drawWinningNumber) return false;
+    
+    const betNumber = bet.betCombination;
+    const winningNumber = drawWinningNumber;
+    
+    if (bet.betType === 'standard' || bet.betType === 'straight') {
+      // Standard/Straight: exact match required
+      return betNumber === winningNumber;
+    } else if (bet.betType === 'rambolito' || bet.betType === 'rambol') {
+      // Rambolito: any order match (sort both numbers and compare)
+      const sortedBet = betNumber.split('').sort().join('');
+      const sortedWinning = winningNumber.split('').sort().join('');
+      return sortedBet === sortedWinning;
+    }
+    
+    return false;
   };
 
   const getWinningBets = (ticket) => {
-    if (!ticket.bets) return [];
-    return ticket.bets.filter(bet => bet.isWinner);
+    if (!ticket.bets || !ticket.draw?.winningNumber) {
+      return [];
+    }
+    
+    const winningBets = ticket.bets.filter(bet => {
+      // First check if bet.isWinner is already set
+      if (bet.isWinner === true) return true;
+      
+      // If not set, calculate based on draw results
+      const isWinning = checkIfBetIsWinning(bet, ticket.draw.winningNumber);
+      
+      return isWinning;
+    });
+    
+    return winningBets;
   };
 
   const calculateTotalWinnings = () => {
@@ -178,7 +360,21 @@ const WinningTickets = () => {
     return tickets.length;
   };
 
-  const calculateWinningsPerDraw = () => {
+
+  // Apply search filter to tickets
+  const filteredTickets = tickets.filter(ticket => {
+    if (!filters.search) return true;
+    const searchTerm = filters.search.toLowerCase();
+    return (
+      ticket.ticketNumber.toLowerCase().includes(searchTerm) ||
+      (ticket.bets && ticket.bets.some(bet => 
+        bet.betCombination.toLowerCase().includes(searchTerm)
+      ))
+    );
+  });
+
+  // Calculate statistics using filtered tickets
+  const filteredWinningsPerDraw = () => {
     const drawTotals = {};
     
     filteredTickets.forEach(ticket => {
@@ -205,17 +401,6 @@ const WinningTickets = () => {
     return Object.values(drawTotals).sort((a, b) => new Date(b.drawDate) - new Date(a.drawDate));
   };
 
-  const filteredTickets = tickets.filter(ticket => {
-    if (!filters.search) return true;
-    const searchTerm = filters.search.toLowerCase();
-    return (
-      ticket.ticketNumber.toLowerCase().includes(searchTerm) ||
-      (ticket.bets && ticket.bets.some(bet => 
-        bet.betCombination.toLowerCase().includes(searchTerm)
-      ))
-    );
-  });
-
   if (loading && pagination.page === 1) return <LoadingSpinner />;
 
   return (
@@ -229,25 +414,27 @@ const WinningTickets = () => {
           }
           icon={TrophyIcon}
         >
-          <ModernButton
-            onClick={() => setShowFilters(!showFilters)}
-            variant="secondary"
-            size="lg"
-            className="w-full sm:w-auto"
-          >
-            <FunnelIcon className="h-5 w-5 mr-2" />
-            <span className="hidden sm:inline">Toggle Filters</span>
-            <span className="sm:hidden">Filters</span>
-          </ModernButton>
+          <div className="flex gap-2">
+            <ModernButton
+              onClick={() => setShowFilters(!showFilters)}
+              variant="secondary"
+              size="lg"
+              className="w-full sm:w-auto"
+            >
+              <FunnelIcon className="h-5 w-5 mr-2" />
+              <span className="hidden sm:inline">Toggle Filters</span>
+              <span className="sm:hidden">Filters</span>
+            </ModernButton>
+          </div>
         </PageHeader>
 
         <ModernCard>
           {/* Tab Navigation */}
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+            <nav className="-mb-px flex space-x-4 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('tickets')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   activeTab === 'tickets'
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -258,15 +445,47 @@ const WinningTickets = () => {
               </button>
               <button
                 onClick={() => setActiveTab('draws')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   activeTab === 'draws'
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 <CalendarDaysIcon className="h-4 w-4 inline mr-2" />
-                Total Winning per Draw
+                Per Draw Summary
               </button>
+              {['superadmin', 'admin'].includes(user.role) && (
+                <>
+                  <button
+                    onClick={() => {
+                      setActiveTab('analytics');
+                      if (!reportData) loadWinningReports();
+                    }}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                      activeTab === 'analytics'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <ChartBarIcon className="h-4 w-4 inline mr-2" />
+                    Analytics Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('agents');
+                      if (!agentSummary) loadWinningReports();
+                    }}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                      activeTab === 'agents'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <UserGroupIcon className="h-4 w-4 inline mr-2" />
+                    Agent Performance
+                  </button>
+                </>
+              )}
             </nav>
           </div>
 
@@ -489,8 +708,20 @@ const WinningTickets = () => {
                       )}
                       <div>
                         <div className="text-xs text-gray-500 mb-1">Winning Numbers</div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {winningBets.map(bet => bet.betCombination).join(', ')}
+                        <div className="space-y-1">
+                          {winningBets.map((bet, index) => (
+                            <div key={index} className="text-sm">
+                              <div className="flex items-center">
+                                <span className="font-mono font-bold text-green-600">{bet.betCombination}</span>
+                                <span className="text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded ml-2">
+                                  ✅
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                          {winningBets.length === 0 && (
+                            <div className="text-sm text-gray-500">No winners</div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -591,14 +822,36 @@ const WinningTickets = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
-                          {winningBets.map((bet, index) => (
-                            <div key={index} className="text-sm">
-                              <span className="font-mono font-bold text-green-600">{bet.betCombination}</span>
-                              <span className="text-gray-500 ml-2">({bet.betType})</span>
-                            </div>
-                          ))}
+                          {winningBets.map((bet, index) => {
+                            const betAmount = parseFloat(bet.betAmount) || 0;
+                            let multiplier;
+                            if (bet.betType === 'standard' || bet.betType === 'straight') {
+                              multiplier = prizeConfig.standard;
+                            } else if (bet.betType === 'rambolito' || bet.betType === 'rambol') {
+                              multiplier = getRambolitoMultiplier(bet.betCombination);
+                            }
+                            const prize = betAmount * multiplier;
+                            
+                            return (
+                              <div key={index} className="text-sm">
+                                <div className="flex items-center">
+                                  <span className="font-mono font-bold text-green-600">{bet.betCombination}</span>
+                                  <span className="text-gray-500 ml-2">
+                                    ({bet.betType}
+                                    {(bet.betType === 'rambolito' || bet.betType === 'rambol') && hasDoubleDigits(bet.betCombination) && ' - Double'})
+                                  </span>
+                                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                    ✅ WINNER
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-600 mt-1">
+                                  ₱{betAmount} × {multiplier} = {formatCurrency(prize)}
+                                </div>
+                              </div>
+                            );
+                          })}
                           {winningBets.length === 0 && (
-                            <div className="text-sm text-gray-500">No winning numbers</div>
+                            <div className="text-sm text-gray-500">No winning combinations</div>
                           )}
                         </div>
                       </td>
@@ -701,12 +954,20 @@ const WinningTickets = () => {
             <h3 className="mt-2 text-sm font-medium text-gray-900">No winning tickets found</h3>
             <p className="mt-1 text-sm text-gray-500">
               {['superadmin', 'admin'].includes(user.role)
-                ? 'No winning tickets found for the selected date range. Try adjusting your filters to see more results.'
-                : filters.search || filters.startDate !== new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || filters.endDate !== new Date().toISOString().split('T')[0]
-                ? 'Try adjusting your filters to see more results.'
-                : 'You haven\'t won any tickets yet. Keep playing!'
+                ? 'No tickets with winning combinations found for the selected date range.'
+                : filters.search || filters.startDate || filters.endDate
+                ? 'Try adjusting your date range or search filters to find winning tickets.'
+                : 'No winning tickets found. Winning tickets must have bets that match draw results.'
               }
             </p>
+            <div className="mt-4 text-xs text-gray-400 space-y-1">
+              <p>🏆 <strong>Winning Criteria:</strong></p>
+              <p>• Ticket must have completed draw with winning number</p>
+              <p>• At least one bet must match the draw result</p>
+              <p>• Standard: Exact match (e.g., 123 = 123) - {prizeConfig.standard}x multiplier</p>
+              <p>• Rambolito: Any order match (e.g., 123 = 321) - {prizeConfig.rambolito}x multiplier</p>
+              <p>• Rambolito Double: Any order with double digits (e.g., 223 = 322) - {prizeConfig.rambolito_double}x multiplier</p>
+            </div>
           </div>
         )}
           </>
@@ -717,13 +978,13 @@ const WinningTickets = () => {
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
               <h2 className="text-base sm:text-lg font-medium text-gray-900">
-                Total Winning per Draw ({calculateWinningsPerDraw().length})
+                Total Winning per Draw ({filteredWinningsPerDraw().length})
               </h2>
             </div>
             
-            {calculateWinningsPerDraw().length > 0 ? (
+            {filteredWinningsPerDraw().length > 0 ? (
               <div className="divide-y divide-gray-200">
-                {calculateWinningsPerDraw().map((draw, index) => (
+                {filteredWinningsPerDraw().map((draw, index) => (
                   <div key={index} className="p-4 sm:p-6 hover:bg-gray-50">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                       <div className="mb-3 sm:mb-0">
@@ -764,6 +1025,154 @@ const WinningTickets = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   No winning tickets found for the selected date range. Try adjusting your filters to see more results.
                 </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Analytics Dashboard Tab */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            {analyticsLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading analytics...</p>
+              </div>
+            ) : reportData ? (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="flex items-center">
+                      <CurrencyDollarIcon className="h-8 w-8 text-blue-600 mr-3" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">Gross Sales</p>
+                        <p className="text-xl font-bold text-blue-900">{formatCurrency(reportData.summary.grossSales)}</p>
+                        <p className="text-xs text-blue-600">Total tickets: {reportData.summary.totalTickets}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <div className="flex items-center">
+                      <TrophyIcon className="h-8 w-8 text-yellow-600 mr-3" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-800">Expected Winnings</p>
+                        <p className="text-xl font-bold text-yellow-900">{formatCurrency(reportData.summary.expectedWinnings)}</p>
+                        <p className="text-xs text-yellow-600">Pending: {formatCurrency(reportData.summary.pendingClaims)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-red-50 p-4 rounded-lg">
+                    <div className="flex items-center">
+                      <ChartBarIcon className="h-8 w-8 text-red-600 mr-3" />
+                      <div>
+                        <p className="text-sm font-medium text-red-800">Claimed Winnings</p>
+                        <p className="text-xl font-bold text-red-900">{formatCurrency(reportData.summary.claimedWinnings)}</p>
+                        <p className="text-xs text-red-600">Claimed tickets: {reportData.summary.claimedTickets}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="flex items-center">
+                      <ArrowTrendingUpIcon className="h-8 w-8 text-green-600 mr-3" />
+                      <div>
+                        <p className="text-sm font-medium text-green-800">Net Sales</p>
+                        <p className="text-xl font-bold text-green-900">{formatCurrency(reportData.summary.netSales)}</p>
+                        <p className="text-xs text-green-600">Profit margin: {((reportData.metrics.profitMargin || 0)).toFixed(2)}%</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">📊 Key Metrics</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{((reportData.metrics.claimRate || 0)).toFixed(2)}%</div>
+                      <div className="text-sm text-gray-600">Claim Rate</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">{((reportData.metrics.profitMargin || 0)).toFixed(2)}%</div>
+                      <div className="text-sm text-gray-600">Profit Margin</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-600">{((reportData.metrics.winRate || 0)).toFixed(2)}%</div>
+                      <div className="text-sm text-gray-600">Win Rate</div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No analytics data</h3>
+                <p className="mt-1 text-sm text-gray-500">Analytics data will appear here when available.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Agent Performance Tab */}
+        {activeTab === 'agents' && (
+          <div className="space-y-6">
+            {analyticsLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading agent performance...</p>
+              </div>
+            ) : agentSummary ? (
+              <div className="bg-white rounded-lg overflow-hidden shadow">
+                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900">👥 Agent Performance Summary</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agent</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Sales</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Claimed Winnings</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Net Sales</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tickets</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Profit %</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {agentSummary.agentSummaries.map((agent, index) => (
+                        <tr key={agent.agentId} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="font-medium text-gray-900">{agent.agentName}</div>
+                            <div className="text-sm text-gray-500">ID: {agent.agentId}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                            {formatCurrency(agent.grossSales)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-red-600">
+                            {formatCurrency(agent.claimedWinnings)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
+                            {formatCurrency(agent.netSales)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                            {agent.totalTickets} / {agent.claimedTickets}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-center text-sm font-medium ${
+                            agent.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {((agent.profitMargin || 0)).toFixed(2)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No agent performance data</h3>
+                <p className="mt-1 text-sm text-gray-500">Agent performance data will appear here when available.</p>
               </div>
             )}
           </div>

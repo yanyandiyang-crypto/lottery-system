@@ -184,7 +184,14 @@ const BalanceManagement = () => {
                 { id: 'area_coordinator', name: 'Area Coordinators', shortName: 'Area Coord', icon: UserGroupIcon, count: users.filter(u => u.role === 'area_coordinator').length },
                 { id: 'coordinator', name: 'Coordinators', shortName: 'Coordinators', icon: UserIcon, count: users.filter(u => u.role === 'coordinator').length },
                 { id: 'agent', name: 'Agents', shortName: 'Agents', icon: UserIcon, count: users.filter(u => u.role === 'agent').length }
-              ].map((tab) => {
+              ].filter(tab => {
+                // For coordinators, hide Area Coordinators and Coordinators tabs
+                if (user.role === 'coordinator') {
+                  return tab.id === 'all' || tab.id === 'agent';
+                }
+                // For other roles, show all tabs
+                return true;
+              }).map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 

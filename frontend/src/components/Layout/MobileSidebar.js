@@ -4,7 +4,6 @@ import { Fragment } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../utils/api';
 import {
   TicketIcon,
   CurrencyDollarIcon,
@@ -25,7 +24,6 @@ import {
   StarIcon,
   QrCodeIcon,
   GiftIcon,
-  WrenchScrewdriverIcon,
   DevicePhoneMobileIcon,
   LockClosedIcon,
   BellAlertIcon,
@@ -65,13 +63,11 @@ const navigationGroups = {
   ],
   
   verification: [
-    { name: 'Verify Ticket', href: '/verify', icon: QrCodeIcon, emoji: '📱', roles: ['agent', 'admin', 'superadmin'] },
     { name: 'Claim Prize', href: '/claim', icon: GiftIcon, emoji: '💰', roles: ['agent', 'admin', 'superadmin'] },
-    { name: 'Claim Approvals', href: '/claim-approvals', icon: LockClosedIcon, emoji: '🔒', roles: ['superadmin', 'admin'] },
+    { name: 'Claim approvals', href: '/claim-approvals', icon: LockClosedIcon, emoji: '🔒', roles: ['superadmin', 'admin'] },
   ],
   
   system: [
-    { name: 'Function Management', href: '/function-management', icon: WrenchScrewdriverIcon, emoji: '🔧', roles: ['superadmin'] },
     { name: 'Prize Configuration', href: '/prize-configuration', icon: CurrencyDollarIcon, emoji: '💵', roles: ['superadmin'] },
     { name: 'Template Assignment', href: '/template-assignment', icon: SwatchIcon, emoji: '🎨', roles: ['superadmin'] },
     { name: 'Mobile POS Templates', href: '/mobile-pos-templates', icon: DevicePhoneMobileIcon, emoji: '📱', roles: ['superadmin'] },
@@ -171,16 +167,9 @@ const MobileSidebar = ({ isOpen, onClose }) => {
         return;
       }
 
-      try {
-        const response = await api.get(`/function-management/permissions/${user.role}`);
-        setAllowedFunctions(response.data.data || []);
-      } catch (error) {
-        console.error('Error fetching user permissions:', error);
-        // Fallback to empty array if error
-        setAllowedFunctions([]);
-      } finally {
-        setLoading(false);
-      }
+      // Using static navigation - no dynamic permission fetching needed
+      setAllowedFunctions([]);
+      setLoading(false);
     };
 
     fetchUserPermissions();

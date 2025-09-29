@@ -303,7 +303,6 @@ app.use('/api/v1/balance', authMiddleware, balanceRoutes);
 app.use('/api/v1/balance-management', authMiddleware, balanceManagementRoutes);
 app.use('/api/v1/bet-limits', authMiddleware, betLimitsRoutes);
 app.use('/api/v1/draw-results', authMiddleware, drawResultsRoutes);
-app.use('/api/v1/function-management', authMiddleware, require('./routes/function-management'));
 app.use('/api/v1/ticket-templates', authMiddleware, ticketTemplatesRoutes);
 app.use('/api/v1/prize-configuration', authMiddleware, prizeConfigurationRoutes);
 app.use('/api/v1/winning-reports', authMiddleware, winningReportsRoutes);

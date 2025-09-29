@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { userAPI } from '../../utils/api';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
@@ -23,7 +22,6 @@ import PageHeader from '../../components/UI/PageHeader';
 import ModernTable from '../../components/UI/ModernTable';
 
 const AreaCoordinatorManagement = () => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [areaCoordinators, setAreaCoordinators] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
@@ -82,17 +80,22 @@ const AreaCoordinatorManagement = () => {
   };
 
   const handleEditAreaCoordinator = (areaCoordinator) => {
+    if (!areaCoordinator) {
+      console.error('Area Coordinator data is undefined');
+      return;
+    }
+    
     setEditingAreaCoordinator(areaCoordinator);
     setFormData({
-      username: areaCoordinator.username,
+      username: areaCoordinator.username || '',
       password: '',
-      fullName: areaCoordinator.fullName,
+      fullName: areaCoordinator.fullName || '',
       email: areaCoordinator.email || '',
       phone: areaCoordinator.phone || '',
       regionName: areaCoordinator?.region?.name || '',
       // Derive assigned coordinators from the coordinators list by coordinatorId
       assignedCoordinators: coordinators.filter(c => c.coordinatorId === areaCoordinator.id).map(c => c.id),
-      status: areaCoordinator.status
+      status: areaCoordinator.status || 'active'
     });
     setShowCreateModal(true);
   };
@@ -220,128 +223,181 @@ const AreaCoordinatorManagement = () => {
           </ModernButton>
         </PageHeader>
 
-      {/* Area Coordinators Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">All Area Coordinators ({areaCoordinators.length})</h2>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Area Coordinator
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Assigned Coordinators
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {areaCoordinators.map((areaCoordinator) => (
-                <tr key={areaCoordinator.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <UserIcon className="h-5 w-5 text-blue-600" />
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{areaCoordinator.fullName}</div>
-                        <div className="text-sm text-gray-500">@{areaCoordinator.username}</div>
+        <ModernCard>
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <MapPinIcon className="h-6 w-6 mr-3 text-purple-600" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Area Coordinators</h2>
+                <p className="text-sm text-gray-600 mt-1">Manage area coordinators and their regional assignments</p>
+              </div>
+            </div>
+          </div>
+
+          <ModernTable
+            columns={[
+              {
+                key: 'areaCoordinator',
+                label: 'Area Coordinator',
+                render: (value, areaCoordinator) => (
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                        <UserIcon className="h-5 w-5 text-purple-600" />
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{getAssignedCoordinators(areaCoordinator)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{areaCoordinator.email || 'N/A'}</div>
-                    <div className="text-sm text-gray-500">{areaCoordinator.phone || 'N/A'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      areaCoordinator.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {areaCoordinator.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(areaCoordinator.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEditAreaCoordinator(areaCoordinator)}
-                      className="text-primary-600 hover:text-primary-900"
-                      title="Edit Area Coordinator"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
-                    {areaCoordinator.status === 'active' ? (
-                      <button
-                        onClick={() => handleDeactivateAreaCoordinator(areaCoordinator.id)}
-                        className="text-orange-600 hover:text-orange-900"
-                        title="Deactivate Area Coordinator"
-                      >
-                        <EyeSlashIcon className="h-4 w-4" />
-                      </button>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">{areaCoordinator?.fullName}</div>
+                      <div className="text-sm text-gray-500">@{areaCoordinator?.username}</div>
+                    </div>
+                  </div>
+                )
+              },
+              {
+                key: 'assignedCoordinators',
+                label: 'Assigned Coordinators',
+                render: (value, areaCoordinator) => (
+                  <div className="text-sm text-gray-900">
+                    {getAssignedCoordinators(areaCoordinator) === 'No coordinators assigned' ? (
+                      <span className="text-gray-400 italic">No coordinators assigned</span>
                     ) : (
-                      <button
-                        onClick={() => handleActivateAreaCoordinator(areaCoordinator.id)}
-                        className="text-green-600 hover:text-green-900"
-                        title="Activate Area Coordinator"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                      </button>
+                      getAssignedCoordinators(areaCoordinator)
                     )}
-                    <button
-                      onClick={() => handleDeleteAreaCoordinator(areaCoordinator.id)}
-                      className="text-red-600 hover:text-red-900"
-                      title="Delete Area Coordinator"
+                  </div>
+                )
+              },
+              {
+                key: 'contact',
+                label: 'Contact',
+                className: 'hidden lg:table-cell',
+                render: (value, areaCoordinator) => (
+                  <div>
+                    {areaCoordinator?.email && (
+                      <div className="flex items-center text-sm text-gray-900 mb-1">
+                        <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
+                        {areaCoordinator.email}
+                      </div>
+                    )}
+                    {areaCoordinator?.phone && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
+                        {areaCoordinator.phone}
+                      </div>
+                    )}
+                    {!areaCoordinator?.email && !areaCoordinator?.phone && (
+                      <span className="text-gray-400 italic text-sm">No contact info</span>
+                    )}
+                  </div>
+                )
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (value, areaCoordinator) => (
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    areaCoordinator?.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {areaCoordinator?.status}
+                  </span>
+                )
+              },
+              {
+                key: 'created',
+                label: 'Created',
+                className: 'hidden lg:table-cell',
+                render: (value, areaCoordinator) => (
+                  <div className="flex items-center">
+                    <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span className="text-sm text-gray-500">
+                      {areaCoordinator?.createdAt ? new Date(areaCoordinator.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                )
+              },
+              {
+                key: 'actions',
+                label: 'Actions',
+                render: (value, areaCoordinator) => (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <ModernButton
+                      onClick={() => handleEditAreaCoordinator(areaCoordinator)}
+                      variant="secondary"
+                      size="sm"
+                      className="w-full sm:w-auto"
                     >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                      <PencilIcon className="h-4 w-4 mr-1" />
+                      Edit
+                    </ModernButton>
+                    {areaCoordinator?.status === 'active' ? (
+                      <ModernButton
+                        onClick={() => handleDeactivateAreaCoordinator(areaCoordinator?.id)}
+                        variant="warning"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <EyeSlashIcon className="h-4 w-4 mr-1" />
+                        Deactivate
+                      </ModernButton>
+                    ) : (
+                      <ModernButton
+                        onClick={() => handleActivateAreaCoordinator(areaCoordinator?.id)}
+                        variant="success"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <EyeIcon className="h-4 w-4 mr-1" />
+                        Activate
+                      </ModernButton>
+                    )}
+                    <ModernButton
+                      onClick={() => handleDeleteAreaCoordinator(areaCoordinator?.id)}
+                      variant="danger"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                    >
+                      <TrashIcon className="h-4 w-4 mr-1" />
+                      Delete
+                    </ModernButton>
+                  </div>
+                )
+              }
+            ]}
+            data={areaCoordinators}
+            emptyMessage={
+              <div className="text-center py-12">
+                <MapPinIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No area coordinators found</h3>
+                <p className="text-sm text-gray-500">Get started by creating your first area coordinator.</p>
+              </div>
+            }
+          />
+        </ModernCard>
 
       {/* Create/Edit Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                {editingAreaCoordinator ? 'Edit Area Coordinator' : 'Create New Area Coordinator'}
-              </h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <XMarkIcon className="h-6 w-6" />
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <ModernCard className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <MapPinIcon className="h-6 w-6 mr-3 text-purple-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {editingAreaCoordinator ? 'Edit Area Coordinator' : 'Create New Area Coordinator'}
+                  </h3>
+                </div>
+                <ModernButton
+                  onClick={() => setShowCreateModal(false)}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </ModernButton>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Username</label>
                 <input
@@ -453,24 +509,25 @@ const AreaCoordinatorManagement = () => {
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
+              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <ModernButton
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  variant="secondary"
                 >
                   Cancel
-                </button>
-                <button
+                </ModernButton>
+                <ModernButton
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                  variant="primary"
+                  loading={saving}
                 >
-                  {saving ? 'Saving...' : (editingAreaCoordinator ? 'Update Area Coordinator' : 'Create Area Coordinator')}
-                </button>
+                  {editingAreaCoordinator ? 'Update Area Coordinator' : 'Create Area Coordinator'}
+                </ModernButton>
               </div>
             </form>
-          </div>
+          </ModernCard>
         </div>
       )}
       </div>

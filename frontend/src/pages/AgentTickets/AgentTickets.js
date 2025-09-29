@@ -15,7 +15,9 @@ import {
   TicketIcon,
   FunnelIcon,
   CalendarIcon,
-  UserIcon
+  UserIcon,
+  EyeIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import ModernCard from '../../components/UI/ModernCard';
 import ModernButton from '../../components/UI/ModernButton';
@@ -37,10 +39,17 @@ const AgentTickets = () => {
     totalItems: 0,
     itemsPerPage: 10
   });
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
   // Removed hierarchyData as it's not currently used in this component
 
   const canReprint = () => {
     return user.role === 'agent' || user.role === 'superadmin';
+  };
+
+  const handleViewDetails = (ticket) => {
+    setSelectedTicket(ticket);
+    setShowDetailsModal(true);
   };
 
   // Removed fetchHierarchyData and related useEffect as hierarchy data is not currently used
@@ -121,19 +130,29 @@ const AgentTickets = () => {
 
   const generateAndPrintTicket = async (ticket) => {
     try {
+      console.log('Starting reprint for ticket:', ticket.id);
+      
       // Get system-wide active template
       let template = null;
       try {
         template = await TemplateAssigner.fetchSystemTemplate();
+        console.log('Template fetched:', template?.name || 'default');
       } catch (error) {
         console.warn('Could not fetch system template, using default:', error);
       }
 
       // Use template-aware ticket generator
       const ticketHtml = TicketGenerator.generateWithTemplate(ticket, ticket.user || user, template);
+      console.log('Ticket HTML generated, length:', ticketHtml.length);
       
       // Create print window with template-aware HTML scaled to 58mm (≈384px)
-      const printWindow = window.open('', '_blank');
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      
+      if (!printWindow) {
+        toast.error('Pop-up blocked! Please allow pop-ups for this site to enable printing.');
+        return;
+      }
+
       printWindow.document.write(`<!DOCTYPE html>
 <html>
 <head>
@@ -160,31 +179,47 @@ const AgentTickets = () => {
       // Wait for images to load before printing
       const triggerPrintWhenReady = () => {
         try {
+          console.log('Preparing to print ticket...');
           const images = Array.from(printWindow.document.images || []);
+          console.log('Found images:', images.length);
+          
           if (images.length === 0) {
+            console.log('No images found, printing immediately');
             printWindow.print();
             return;
           }
+          
           let loadedCount = 0;
           const onImgDone = () => {
             loadedCount += 1;
+            console.log(`Image loaded: ${loadedCount}/${images.length}`);
             if (loadedCount >= images.length) {
+              console.log('All images loaded, printing now');
               printWindow.print();
             }
           };
-          images.forEach((img) => {
+          
+          images.forEach((img, index) => {
+            console.log(`Checking image ${index + 1}:`, img.src);
             if (img.complete) {
               onImgDone();
             } else {
               img.addEventListener('load', onImgDone, { once: true });
-              img.addEventListener('error', onImgDone, { once: true });
+              img.addEventListener('error', (e) => {
+                console.warn(`Image ${index + 1} failed to load:`, e);
+                onImgDone(); // Continue even if image fails
+              }, { once: true });
             }
           });
+          
+          // Fallback timeout
           setTimeout(() => {
-            try { printWindow.print(); } catch (_) { /* noop */ }
-          }, 1500);
-        } catch (_) {
-          try { printWindow.print(); } catch (__) { /* noop */ }
+            console.log('Fallback timeout reached, printing anyway');
+            try { printWindow.print(); } catch (e) { console.error('Print failed:', e); }
+          }, 2000);
+        } catch (error) {
+          console.error('Error in print preparation:', error);
+          try { printWindow.print(); } catch (e) { console.error('Fallback print failed:', e); }
         }
       };
       
@@ -469,16 +504,30 @@ const AgentTickets = () => {
                   label: 'Actions',
                   render: (value, row) => (
                     <div className="flex space-x-2">
-                      <ModernButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleReprint(row)}
-                        icon={PrinterIcon}
-                        title="Reprint Ticket"
-                        className="text-primary-600 hover:text-primary-700"
-                      >
-                        <span className="sr-only">Reprint</span>
-                      </ModernButton>
+                      {canReprint() && (
+                        <ModernButton
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleReprint(row)}
+                          icon={PrinterIcon}
+                          title="Reprint Ticket"
+                          className="text-primary-600 hover:text-primary-700"
+                        >
+                          <span className="sr-only">Reprint</span>
+                        </ModernButton>
+                      )}
+                      {!canReprint() && (
+                        <ModernButton
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewDetails(row)}
+                          icon={EyeIcon}
+                          title="View Ticket Details"
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <span className="sr-only">View Details</span>
+                        </ModernButton>
+                      )}
                     </div>
                   )
                 }
@@ -564,6 +613,112 @@ const AgentTickets = () => {
           </ModernCard>
         )}
       </div>
+
+      {/* Ticket Details Modal */}
+      {showDetailsModal && selectedTicket && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Ticket Details</h3>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Ticket Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Ticket Number</label>
+                  <p className="mt-1 text-sm text-gray-900 font-mono">{selectedTicket.ticketNumber}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Agent</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedTicket.user?.fullName || selectedTicket.user?.username}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Total Amount</label>
+                  <p className="mt-1 text-sm text-gray-900 font-semibold">₱{selectedTicket.totalAmount}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Draw Time</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {selectedTicket.drawTime ? formatDrawTime(selectedTicket.drawTime) : 
+                     selectedTicket.draw?.drawTime ? formatDrawTime(selectedTicket.draw.drawTime) :
+                     selectedTicket.draw?.drawDate ? new Date(selectedTicket.draw.drawDate).toLocaleString() :
+                     'Not specified'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <p className="mt-1 text-sm text-gray-900 capitalize">{selectedTicket.status}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Created</label>
+                  <p className="mt-1 text-sm text-gray-900">{new Date(selectedTicket.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Bets Information */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bet Details</label>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {selectedTicket.bets && selectedTicket.bets.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedTicket.bets.map((bet, index) => (
+                        <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                          <div>
+                            <span className="font-mono text-lg font-semibold">{bet.betCombination}</span>
+                            <span className="ml-2 text-sm text-gray-600">({bet.betType})</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-semibold">₱{bet.betAmount}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">No bet details available</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Draw Information */}
+              {selectedTicket.draw && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Draw Information</label>
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-sm text-gray-600">Draw Date:</span>
+                        <p className="font-semibold">{new Date(selectedTicket.draw.drawDate).toLocaleDateString()}</p>
+                      </div>
+                      {selectedTicket.draw.winningNumber && (
+                        <div>
+                          <span className="text-sm text-gray-600">Winning Number:</span>
+                          <p className="font-mono text-lg font-bold text-blue-600">{selectedTicket.draw.winningNumber}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <ModernButton
+                variant="secondary"
+                onClick={() => setShowDetailsModal(false)}
+              >
+                Close
+              </ModernButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

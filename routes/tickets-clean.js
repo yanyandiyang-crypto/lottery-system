@@ -247,13 +247,14 @@ router.get('/',
   validateDateRange,
   asyncHandler(async (req, res) => {
     const { page, limit, offset } = req.pagination;
-    const { startDate, endDate, status, drawId } = req.query;
-    const userId = req.user.id;
+    const { startDate, endDate, status, drawId, userId: queryUserId } = req.query;
+    const currentUserId = req.user.id;
     const userRole = req.user.role;
     
     console.log('GET /tickets called with:', {
-      userId,
+      currentUserId,
       userRole,
+      queryUserId,
       query: req.query,
       pagination: req.pagination
     });
@@ -261,14 +262,26 @@ router.get('/',
     // Build filters
     const filters = {};
     
-    // Role-based filtering
+    // Role-based filtering with query userId support
     if (userRole === 'agent') {
-      filters.userId = userId;
+      // Agents can only see their own tickets (ignore queryUserId for security)
+      filters.userId = currentUserId;
     } else if (userRole === 'coordinator') {
       // Coordinator sees their agents' tickets
-      filters.coordinatorId = userId;
+      if (queryUserId) {
+        // If specific userId requested, use it (for viewing specific agent's tickets)
+        filters.userId = parseInt(queryUserId);
+      } else {
+        // Otherwise show all tickets under this coordinator
+        filters.coordinatorId = currentUserId;
+      }
+    } else if (['admin', 'superadmin', 'area_coordinator'].includes(userRole)) {
+      // Admin/SuperAdmin/Area Coordinator see all tickets or specific user's tickets
+      if (queryUserId) {
+        filters.userId = parseInt(queryUserId);
+      }
+      // If no userId specified, show all tickets (no additional filter)
     }
-    // Admin/SuperAdmin see all tickets
 
     // Date range filter - only apply if dates are provided and not empty
     if ((startDate && startDate.trim()) || (endDate && endDate.trim())) {

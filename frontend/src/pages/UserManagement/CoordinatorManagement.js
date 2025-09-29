@@ -13,8 +13,7 @@ import {
   CalendarDaysIcon,
   EnvelopeIcon,
   PhoneIcon,
-  UserGroupIcon,
-  MapPinIcon
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import ModernCard from '../../components/UI/ModernCard';
 import ModernButton from '../../components/UI/ModernButton';
@@ -49,7 +48,6 @@ const CoordinatorManagement = () => {
   const fetchCoordinators = async () => {
     try {
       const response = await userAPI.getUsers({ role: 'coordinator' });
-      console.log('Fetched coordinators:', response.data.data);
       // Filter out null/undefined entries
       const filteredCoordinators = response.data.data.filter(coordinator => coordinator != null);
       setCoordinators(filteredCoordinators);
@@ -95,17 +93,22 @@ const CoordinatorManagement = () => {
   };
 
   const handleEditCoordinator = (coordinator) => {
+    if (!coordinator) {
+      console.error('Coordinator data is undefined');
+      return;
+    }
+    
     setEditingCoordinator(coordinator);
     setFormData({
-      username: coordinator.username,
+      username: coordinator.username || '',
       password: '',
-      fullName: coordinator.fullName,
+      fullName: coordinator.fullName || '',
       email: coordinator.email || '',
       phone: coordinator.phone || '',
       // Coordinators store their area coordinator in coordinatorId
       areaCoordinatorId: coordinator.coordinatorId || '',
       assignedAgents: coordinator.assignedAgents || [],
-      status: coordinator.status
+      status: coordinator.status || 'active'
     });
     setShowCreateModal(true);
   };
@@ -153,11 +156,9 @@ const CoordinatorManagement = () => {
       }
 
       if (editingCoordinator) {
-        console.log('Updating coordinator with data:', submitData);
         await userAPI.updateUser(editingCoordinator.id, submitData);
         toast.success('Coordinator updated successfully');
       } else {
-        console.log('Creating coordinator with data:', submitData);
         await userAPI.createUser(submitData);
         toast.success('Coordinator created successfully');
       }
@@ -204,8 +205,7 @@ const CoordinatorManagement = () => {
     }
 
     try {
-      const response = await userAPI.deleteUser(coordinatorId, { force: true });
-      console.log('Delete response:', response.data);
+      await userAPI.deleteUser(coordinatorId, { force: true });
       toast.success('Coordinator deleted successfully');
       
       // Small delay to ensure database update is complete
@@ -265,7 +265,7 @@ const CoordinatorManagement = () => {
               {
                 key: 'coordinator',
                 label: 'Coordinator',
-                render: (coordinator) => (
+                render: (value, coordinator) => (
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
@@ -282,7 +282,7 @@ const CoordinatorManagement = () => {
               {
                 key: 'areaCoordinator',
                 label: 'Area Coordinator',
-                render: (coordinator) => (
+                render: (value, coordinator) => (
                   <div className="text-sm text-gray-900">
                     {getAreaCoordinatorName(coordinator?.coordinatorId) === 'No Area Coordinator' ? (
                       <span className="text-gray-400 italic">Unassigned</span>
@@ -296,7 +296,7 @@ const CoordinatorManagement = () => {
                 key: 'contact',
                 label: 'Contact',
                 className: 'hidden lg:table-cell',
-                render: (coordinator) => (
+                render: (value, coordinator) => (
                   <div>
                     {coordinator?.email && (
                       <div className="flex items-center text-sm text-gray-900 mb-1">
@@ -319,7 +319,7 @@ const CoordinatorManagement = () => {
               {
                 key: 'status',
                 label: 'Status',
-                render: (coordinator) => (
+                render: (value, coordinator) => (
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     coordinator?.status === 'active' 
                       ? 'bg-green-100 text-green-800' 
@@ -333,7 +333,7 @@ const CoordinatorManagement = () => {
                 key: 'created',
                 label: 'Created',
                 className: 'hidden lg:table-cell',
-                render: (coordinator) => (
+                render: (value, coordinator) => (
                   <div className="flex items-center">
                     <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
                     <span className="text-sm text-gray-500">
@@ -345,7 +345,7 @@ const CoordinatorManagement = () => {
               {
                 key: 'actions',
                 label: 'Actions',
-                render: (coordinator) => (
+                render: (value, coordinator) => (
                   <div className="flex flex-col sm:flex-row gap-2">
                     <ModernButton
                       onClick={() => handleEditCoordinator(coordinator)}

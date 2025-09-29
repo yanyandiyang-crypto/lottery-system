@@ -1,6 +1,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('../middleware/auth');
+const XLSX = require('xlsx');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -390,7 +391,7 @@ router.get('/sales', async (req, res) => {
 // @route   GET /api/reports/export/sales
 // @desc    Export sales report to Excel with hierarchical format
 // @access  Private
-router.get('/export/sales', async (req, res) => {
+router.get('/export/sales', requireAuth, async (req, res) => {
   try {
     const { startDate, endDate, format = 'excel' } = req.query;
 
@@ -628,6 +629,11 @@ function createDailySalesSheet(hierarchicalData, user, startDate, endDate) {
     return XLSX.utils.aoa_to_sheet(sheetData);
   }
 
+  // Initialize totals
+  let totalGrossSales = 0;
+  let totalWinnings = 0;
+  let totalNetSales = 0;
+
   // Process each region (Area Coordinator) - SKIP the region row
   Object.values(hierarchicalData).forEach(region => {
     // Skip adding Area Coordinator row - don't show region totals
@@ -651,12 +657,26 @@ function createDailySalesSheet(hierarchicalData, user, startDate, endDate) {
           `₱${agent.winnings.toLocaleString()}`,
           `₱${agent.netSales.toLocaleString()}`
         ]);
+
+        // Add to totals
+        totalGrossSales += agent.grossSales || 0;
+        totalWinnings += agent.winnings || 0;
+        totalNetSales += agent.netSales || 0;
       });
 
       // Add empty row after each coordinator for spacing
       sheetData.push(['', '', '', '']);
     });
   });
+
+  // Add totals row at the bottom
+  sheetData.push(['', '', '', '']); // Extra spacing
+  sheetData.push([
+    'TOTAL',
+    `₱${totalGrossSales.toLocaleString()}`,
+    `₱${totalWinnings.toLocaleString()}`,
+    `₱${totalNetSales.toLocaleString()}`
+  ]);
 
   const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
   

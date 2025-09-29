@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
-import { BellIcon, PlusIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { BellIcon, PlusIcon, TrashIcon, CheckIcon, CalendarDaysIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import ModernCard from '../../components/UI/ModernCard';
 import ModernButton from '../../components/UI/ModernButton';
 import PageHeader from '../../components/UI/PageHeader';
+import { getCurrentDatePH } from '../../utils/dateUtils';
 
 const Notifications = () => {
   const { user } = useAuth();
@@ -17,6 +18,13 @@ const Notifications = () => {
     message: '',
     type: 'info',
     targetRoles: []
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: getCurrentDatePH(),
+    type: 'all',
+    status: 'all' // all, read, unread
   });
 
   const notificationTypes = [
@@ -100,7 +108,81 @@ const Notifications = () => {
     }
   };
 
-  const canCreateNotifications = ['superadmin', 'admin', 'area_coordinator'].includes(user.role);
+  const handleMarkAllAsRead = async () => {
+    try {
+      const unreadNotifications = notifications.filter(n => !n.isRead);
+      if (unreadNotifications.length === 0) {
+        setError('No unread notifications to mark as read');
+        return;
+      }
+      
+      // Mark all unread notifications as read
+      await Promise.all(
+        unreadNotifications.map(notification => 
+          api.put(`/notifications/${notification.id}/read`)
+        )
+      );
+      
+      fetchNotifications(); // Refresh the list
+      setError(null);
+    } catch (err) {
+      setError('Failed to mark all notifications as read');
+      console.error('Error marking all as read:', err);
+    }
+  };
+
+  const handleDeleteAllNotifications = async () => {
+    if (!window.confirm('Are you sure you want to delete ALL notifications? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      // Delete all notifications
+      await Promise.all(
+        notifications.map(notification => 
+          api.delete(`/notifications/${notification.id}`)
+        )
+      );
+      
+      fetchNotifications(); // Refresh the list
+      setError(null);
+    } catch (err) {
+      setError('Failed to delete all notifications');
+      console.error('Error deleting all notifications:', err);
+    }
+  };
+
+  const canCreateNotifications = ['superadmin', 'admin'].includes(user.role);
+
+  // Filter notifications based on date and type filters
+  const filteredNotifications = notifications.filter(notification => {
+    // Date filter
+    if (filters.startDate) {
+      const notificationDate = new Date(notification.createdAt).toISOString().split('T')[0];
+      if (notificationDate < filters.startDate) return false;
+    }
+    if (filters.endDate) {
+      const notificationDate = new Date(notification.createdAt).toISOString().split('T')[0];
+      if (notificationDate > filters.endDate) return false;
+    }
+    
+    // Type filter
+    if (filters.type !== 'all' && notification.type !== filters.type) {
+      return false;
+    }
+    
+    // Status filter (read/unread)
+    if (filters.status === 'read' && !notification.isRead) {
+      return false;
+    }
+    if (filters.status === 'unread' && notification.isRead) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const getTypeColor = (type) => {
     const notificationType = notificationTypes.find(nt => nt.id === type);
@@ -120,19 +202,52 @@ const Notifications = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <PageHeader
           title="Notifications"
-          subtitle="Manage system notifications and announcements"
+          subtitle={`Manage system notifications and announcements ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
           icon={BellIcon}
         >
-          {canCreateNotifications && (
+          <div className="flex flex-wrap gap-2">
             <ModernButton
-              onClick={() => setShowCreateModal(true)}
-              variant="primary"
+              onClick={() => setShowFilters(!showFilters)}
+              variant="secondary"
               size="md"
             >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Create Notification
+              <CalendarDaysIcon className="h-4 w-4 mr-2" />
+              Filters
             </ModernButton>
-          )}
+            
+            {unreadCount > 0 && (
+              <ModernButton
+                onClick={handleMarkAllAsRead}
+                variant="success"
+                size="md"
+              >
+                <CheckCircleIcon className="h-4 w-4 mr-2" />
+                Mark All Read ({unreadCount})
+              </ModernButton>
+            )}
+            
+            {canCreateNotifications && notifications.length > 0 && (
+              <ModernButton
+                onClick={handleDeleteAllNotifications}
+                variant="danger"
+                size="md"
+              >
+                <XCircleIcon className="h-4 w-4 mr-2" />
+                Delete All
+              </ModernButton>
+            )}
+            
+            {canCreateNotifications && (
+              <ModernButton
+                onClick={() => setShowCreateModal(true)}
+                variant="primary"
+                size="md"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Create Notification
+              </ModernButton>
+            )}
+          </div>
         </PageHeader>
 
         {error && (
@@ -143,8 +258,89 @@ const Notifications = () => {
           </ModernCard>
         )}
 
+        {/* Filters Panel */}
+        {showFilters && (
+          <ModernCard className="mb-6">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Notifications</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.startDate}
+                    onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.endDate}
+                    onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={filters.type}
+                    onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Types</option>
+                    {notificationTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="unread">Unread Only</option>
+                    <option value="read">Read Only</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <ModernButton
+                  onClick={() => setFilters({
+                    startDate: '',
+                    endDate: getCurrentDatePH(),
+                    type: 'all',
+                    status: 'all'
+                  })}
+                  variant="secondary"
+                  size="sm"
+                >
+                  Clear Filters
+                </ModernButton>
+                <div className="text-sm text-gray-600 flex items-center">
+                  Showing {filteredNotifications.length} of {notifications.length} notifications
+                </div>
+              </div>
+            </div>
+          </ModernCard>
+        )}
+
         <div className="space-y-4">
-          {notifications.map((notification) => (
+          {filteredNotifications.map((notification) => (
             <ModernCard
               key={notification.id}
               className={`transition-all duration-200 hover:shadow-lg ${
@@ -185,16 +381,18 @@ const Notifications = () => {
                         Mark as Read
                       </ModernButton>
                     )}
-                    {canCreateNotifications && (
-                      <ModernButton
-                        onClick={() => handleDeleteNotification(notification.id)}
-                        variant="danger"
-                        size="sm"
-                      >
-                        <TrashIcon className="h-4 w-4 mr-1" />
-                        Delete
-                      </ModernButton>
-                    )}
+                    <ModernButton
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this notification?')) {
+                          handleDeleteNotification(notification.id);
+                        }
+                      }}
+                      variant="danger"
+                      size="sm"
+                    >
+                      <TrashIcon className="h-4 w-4 mr-1" />
+                      Delete
+                    </ModernButton>
                   </div>
                 </div>
               </div>
@@ -202,12 +400,19 @@ const Notifications = () => {
           ))}
         </div>
 
-        {notifications.length === 0 && !loading && (
+        {filteredNotifications.length === 0 && !loading && (
           <ModernCard className="text-center py-12">
             <div className="flex flex-col items-center">
               <BellIcon className="h-12 w-12 text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg">No notifications found</p>
-              <p className="text-gray-400 text-sm mt-1">Notifications will appear here when created</p>
+              <p className="text-gray-500 text-lg">
+                {notifications.length === 0 ? 'No notifications found' : 'No notifications match your filters'}
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                {notifications.length === 0 
+                  ? 'Notifications will appear here when created'
+                  : 'Try adjusting your filter criteria'
+                }
+              </p>
             </div>
           </ModernCard>
         )}

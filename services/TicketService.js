@@ -175,12 +175,15 @@ class TicketService {
    * @returns {number} - Total winning amount
    */
   static calculateWinningAmount(ticket) {
-    if (!ticket.draw?.drawResult || !ticket.draw.drawResult.winningNumber) {
+    // Check for winning number in both possible locations
+    const winningNumber = ticket.draw?.drawResult?.winningNumber || ticket.draw?.winningNumber;
+    
+    if (!winningNumber) {
       console.log('No draw result or winning number for ticket:', ticket.ticketNumber);
       return 0;
     }
     
-    const winningNumbers = [ticket.draw.drawResult.winningNumber];
+    const winningNumbers = [winningNumber];
     let totalWinnings = 0;
     
     console.log('Calculating winnings for ticket:', ticket.ticketNumber, 'against winning numbers:', winningNumbers);
@@ -306,6 +309,7 @@ class TicketService {
     return {
       id: ticket.id,
       ticketNumber: ticket.ticketNumber,
+      userId: ticket.userId, // Add userId field for frontend compatibility
       totalAmount: ticket.totalAmount,
       winAmount,
       isWinning,

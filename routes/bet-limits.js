@@ -1,7 +1,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('../middleware/auth');
-const { requireAdmin, requireSuperAdmin } = require('../middleware/roleCheck');
+const { requireAdmin, requireSuperAdmin, requireCoordinator } = require('../middleware/roleCheck');
 const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
@@ -9,8 +9,8 @@ const prisma = new PrismaClient();
 
 // @route   GET /api/v1/bet-limits
 // @desc    Get current bet limits
-// @access  Admin/SuperAdmin only
-router.get('/', requireAuth, requireAdmin, async (req, res) => {
+// @access  Coordinator level and above
+router.get('/', requireAuth, requireCoordinator, async (req, res) => {
   try {
     const betLimits = await prisma.betLimit.findMany({
       where: { isActive: true },
@@ -45,7 +45,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
 
 // @route   POST /api/v1/bet-limits
 // @desc    Set bet limits
-// @access  Admin/SuperAdmin only
+// @access  Admin level and above (only admins can modify limits)
 router.post('/', requireAuth, requireAdmin, [
   body('betType').notEmpty().withMessage('Bet type is required'),
   body('maxAmount').optional().isFloat({ min: 1 }).withMessage('Max amount must be at least 1 peso'),
@@ -172,7 +172,7 @@ router.get('/check/:drawId/:betCombination/:betType', requireAuth, async (req, r
 
 // @route   POST /api/v1/bet-limits/per-number
 // @desc    Set or update per-number limit for a specific draw and number
-// @access  Admin/SuperAdmin only
+// @access  Admin level and above (only admins can modify limits)
 router.post('/per-number', requireAuth, requireAdmin, [
   body('drawId').isInt().withMessage('Draw ID is required'),
   body('betCombination').isString().withMessage('Bet combination is required'),
@@ -335,8 +335,8 @@ router.get('/sold-out/:drawId', requireAuth, async (req, res) => {
 
 // @route   GET /api/v1/bet-limits/current
 // @desc    Get current number totals for a draw (optionally filter by betType or number)
-// @access  Private (Admin/SuperAdmin)
-router.get('/current', requireAuth, requireAdmin, async (req, res) => {
+// @access  Coordinator level and above
+router.get('/current', requireAuth, requireCoordinator, async (req, res) => {
   try {
     const { drawId, betType, number } = req.query;
     if (!drawId) {

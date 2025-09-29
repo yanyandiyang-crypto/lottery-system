@@ -30,7 +30,6 @@ import SalesReports from './pages/Reports/SalesReports';
 import TicketReprint from './pages/Tickets/TicketReprint';
 import BetHistory from './pages/BetHistory/BetHistory';
 import SalesPerDraw from './pages/SalesPerDraw/SalesPerDraw';
-import FunctionManagement from './pages/FunctionManagement/FunctionManagement';
 import AgentSales from './pages/AgentSales/AgentSales';
 import AgentTickets from './pages/AgentTickets/AgentTickets';
 import AgentResults from './pages/AgentResults/AgentResults';
@@ -121,8 +120,6 @@ function AppRoutes() {
         {/* User Management - Management roles */}
         <Route path="/users" element={<ManagementRoute><Users /></ManagementRoute>} />
 
-        {/* Function Management - SuperAdmin only */}
-        <Route path="/function-management" element={<SuperAdminRoute><FunctionManagement /></SuperAdminRoute>} />
 
         {/* Sales per Draw - Management roles and Agent */}
         <Route path="/sales-per-draw" element={<ProtectedRoute allowedRoles={['superadmin', 'admin', 'area_coordinator', 'coordinator', 'agent']}><SalesPerDraw /></ProtectedRoute>} />

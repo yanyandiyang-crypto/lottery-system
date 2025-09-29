@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../utils/api';
+import { userAPI } from '../../utils/api';
+import toast from 'react-hot-toast';
 import {
   PlusIcon,
   PencilIcon,
@@ -37,21 +38,37 @@ const AdminManagement = () => {
     isActive: true
   });
 
-  // Only SuperAdmin can see other SuperAdmins
   const canViewSuperAdmins = user?.role === 'superadmin';
 
   const fetchAdmins = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin-users/admins');
-      // Filter out SuperAdmins unless current user is SuperAdmin and remove null/undefined entries
+      const response = await userAPI.getUsers({});
+      
+      // The backend returns data in response.data.data format
+      let adminData = response.data.data;
+      
+      // Ensure adminData is an array
+      if (!Array.isArray(adminData)) {
+        adminData = [];
+      }
+      
+      // Filter for admin and superadmin roles only, then filter out SuperAdmins unless current user is SuperAdmin
+      const adminRoleUsers = adminData.filter(user => 
+        user && (user.role === 'admin' || user.role === 'superadmin')
+      );
+      
       const filteredAdmins = (canViewSuperAdmins 
-        ? response.data.data 
-        : response.data.data.filter(admin => admin && admin.role !== 'superadmin'))
+        ? adminRoleUsers 
+        : adminRoleUsers.filter(admin => admin && admin.role !== 'superadmin'))
         .filter(admin => admin != null); // Remove null/undefined entries
+      
       setAdmins(filteredAdmins);
+      setError(null);
     } catch (err) {
-      setError('Failed to fetch administrators');
+      const errorMessage = 'Failed to fetch administrators';
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error('Error fetching admins:', err);
     } finally {
       setLoading(false);
@@ -64,14 +81,34 @@ const AdminManagement = () => {
 
   const handleCreateAdmin = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.username || !formData.email || !formData.password) {
+      toast.error('Username, email, and password are required');
+      return;
+    }
+    
     try {
-      await api.post('/admin-users/admin', formData);
+      // Convert isActive to status for backend compatibility
+      const submitData = {
+        ...formData,
+        status: formData.isActive ? 'active' : 'inactive'
+      };
+      delete submitData.isActive; // Remove isActive field
+      
+      await userAPI.createUser(submitData);
+      
+      toast.success('Administrator created successfully');
       setShowCreateModal(false);
       resetForm();
       fetchAdmins();
+      setError(null);
     } catch (err) {
-      setError('Failed to create administrator');
+      const errorMessage = err.response?.data?.message || 'Failed to create administrator';
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error('Error creating admin:', err);
+      console.error('Error response:', err.response?.data);
     }
   };
 
@@ -82,13 +119,24 @@ const AdminManagement = () => {
       if (!updateData.password) {
         delete updateData.password; // Don't update password if empty
       }
-      await api.put(`/admin-users/${selectedAdmin.id}`, updateData);
+      
+      // Convert isActive to status for backend compatibility
+      if (updateData.hasOwnProperty('isActive')) {
+        updateData.status = updateData.isActive ? 'active' : 'inactive';
+        delete updateData.isActive;
+      }
+      
+      await userAPI.updateUser(selectedAdmin.id, updateData);
+      toast.success('Administrator updated successfully');
       setShowEditModal(false);
       setSelectedAdmin(null);
       resetForm();
       fetchAdmins();
+      setError(null);
     } catch (err) {
-      setError('Failed to update administrator');
+      const errorMessage = err.response?.data?.message || 'Failed to update administrator';
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error('Error updating admin:', err);
     }
   };
@@ -96,11 +144,14 @@ const AdminManagement = () => {
   const handleDeleteAdmin = async (adminId) => {
     if (window.confirm('Are you sure you want to permanently delete this administrator? This action cannot be undone.')) {
       try {
-        await api.delete(`/admin-users/${adminId}?force=true`);
+        await userAPI.deleteUser(adminId, { force: true });
+        toast.success('Administrator deleted successfully');
         setError(null); // Clear any previous errors
         fetchAdmins();
       } catch (err) {
-        setError('Failed to delete administrator');
+        const errorMessage = err.response?.data?.message || 'Failed to delete administrator';
+        setError(errorMessage);
+        toast.error(errorMessage);
         console.error('Error deleting admin:', err);
       }
     }
@@ -108,23 +159,31 @@ const AdminManagement = () => {
 
   const handleToggleStatus = async (adminId, currentStatus) => {
     try {
-      const newStatus = currentStatus === 'active' ? false : true;
-      await api.put(`/admin-users/${adminId}/status`, { isActive: newStatus });
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      await userAPI.updateUser(adminId, { status: newStatus });
+      toast.success(`Administrator ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
       fetchAdmins();
     } catch (err) {
-      setError('Failed to update administrator status');
+      const errorMessage = err.response?.data?.message || 'Failed to update administrator status';
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error('Error updating admin status:', err);
     }
   };
 
   const openEditModal = (admin) => {
+    if (!admin) {
+      console.error('Admin data is undefined');
+      return;
+    }
+    
     setSelectedAdmin(admin);
     setFormData({
-      username: admin.username,
-      email: admin.email,
+      username: admin.username || '',
+      email: admin.email || '',
       password: '', // Don't pre-fill password
       fullName: admin.fullName || '',
-      role: admin.role,
+      role: admin.role || 'admin',
       isActive: admin.status === 'active'
     });
     setShowEditModal(true);
@@ -212,7 +271,7 @@ const AdminManagement = () => {
               {
                 key: 'user',
                 label: 'Administrator',
-                render: (admin) => (
+                render: (value, admin) => (
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -237,7 +296,7 @@ const AdminManagement = () => {
                 key: 'role',
                 label: 'Role',
                 className: 'hidden sm:table-cell',
-                render: (admin) => (
+                render: (value, admin) => (
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${admin && getRoleBadgeColor(admin.role)}`}>
                     {admin?.role}
                   </span>
@@ -247,7 +306,7 @@ const AdminManagement = () => {
                 key: 'email',
                 label: 'Email',
                 className: 'hidden lg:table-cell',
-                render: (admin) => (
+                render: (value, admin) => (
                   <div className="flex items-center">
                     <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
                     <span className="text-sm text-gray-900">{admin?.email}</span>
@@ -257,7 +316,7 @@ const AdminManagement = () => {
               {
                 key: 'status',
                 label: 'Status',
-                render: (admin) => (
+                render: (value, admin) => (
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     admin?.status === 'active' 
                       ? 'bg-green-100 text-green-800' 
@@ -271,7 +330,7 @@ const AdminManagement = () => {
                 key: 'created',
                 label: 'Created',
                 className: 'hidden lg:table-cell',
-                render: (admin) => (
+                render: (value, admin) => (
                   <div className="flex items-center">
                     <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
                     <span className="text-sm text-gray-500">
@@ -283,7 +342,7 @@ const AdminManagement = () => {
               {
                 key: 'actions',
                 label: 'Actions',
-                render: (admin) => (
+                render: (value, admin) => (
                   <div className="flex flex-col sm:flex-row gap-2">
                     <ModernButton
                       onClick={() => handleToggleStatus(admin?.id, admin?.status)}

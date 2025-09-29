@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { userAPI } from '../../utils/api';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
@@ -13,8 +12,7 @@ import {
   XMarkIcon,
   CalendarDaysIcon,
   EnvelopeIcon,
-  PhoneIcon,
-  XCircleIcon
+  PhoneIcon
 } from '@heroicons/react/24/outline';
 import ModernCard from '../../components/UI/ModernCard';
 import ModernButton from '../../components/UI/ModernButton';
@@ -22,7 +20,6 @@ import PageHeader from '../../components/UI/PageHeader';
 import ModernTable from '../../components/UI/ModernTable';
 
 const AgentManagement = () => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [agents, setAgents] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
@@ -51,6 +48,7 @@ const AgentManagement = () => {
       const filteredAgents = response.data.data.filter(agent => agent != null);
       setAgents(filteredAgents);
     } catch (error) {
+      console.error('Error fetching agents:', error);
       toast.error('Failed to fetch agents');
     } finally {
       setLoading(false);
@@ -81,15 +79,21 @@ const AgentManagement = () => {
   };
 
   const handleEditAgent = (agent) => {
+    if (!agent) {
+      console.error('Agent data is undefined');
+      toast.error('Unable to edit agent: Agent data is missing');
+      return;
+    }
+    
     setEditingAgent(agent);
     setFormData({
-      username: agent.username,
+      username: agent.username || '',
       password: '',
-      fullName: agent.fullName,
+      fullName: agent.fullName || '',
       email: agent.email || '',
       phone: agent.phone || '',
       coordinatorId: agent.coordinatorId || '',
-      status: agent.status
+      status: agent.status || 'active'
     });
     setShowCreateModal(true);
   };
@@ -218,7 +222,7 @@ const AgentManagement = () => {
               {
                 key: 'agent',
                 label: 'Agent',
-                render: (agent) => (
+                render: (value, agent) => (
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
@@ -235,7 +239,7 @@ const AgentManagement = () => {
               {
                 key: 'coordinator',
                 label: 'Coordinator',
-                render: (agent) => (
+                render: (value, agent) => (
                   <div className="text-sm text-gray-900">
                     {getCoordinatorName(agent?.coordinatorId) === 'No Coordinator' ? (
                       <span className="text-gray-400 italic">Unassigned</span>
@@ -249,7 +253,7 @@ const AgentManagement = () => {
                 key: 'contact',
                 label: 'Contact',
                 className: 'hidden lg:table-cell',
-                render: (agent) => (
+                render: (value, agent) => (
                   <div>
                     {agent?.email && (
                       <div className="flex items-center text-sm text-gray-900 mb-1">
@@ -272,7 +276,7 @@ const AgentManagement = () => {
               {
                 key: 'status',
                 label: 'Status',
-                render: (agent) => (
+                render: (value, agent) => (
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     agent?.status === 'active' 
                       ? 'bg-green-100 text-green-800' 
@@ -286,7 +290,7 @@ const AgentManagement = () => {
                 key: 'created',
                 label: 'Created',
                 className: 'hidden lg:table-cell',
-                render: (agent) => (
+                render: (value, agent) => (
                   <div className="flex items-center">
                     <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
                     <span className="text-sm text-gray-500">
@@ -298,7 +302,7 @@ const AgentManagement = () => {
               {
                 key: 'actions',
                 label: 'Actions',
-                render: (agent) => (
+                render: (value, agent) => (
                   <div className="flex flex-col sm:flex-row gap-2">
                     <ModernButton
                       onClick={() => handleEditAgent(agent)}

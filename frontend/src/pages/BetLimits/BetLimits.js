@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import api, { betLimitsAPI, drawsAPI } from '../../utils/api';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
@@ -12,7 +11,6 @@ import {
 } from '@heroicons/react/24/outline';
 
 const BetLimits = () => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [betLimits, setBetLimits] = useState([]);
   const [editingLimit, setEditingLimit] = useState(null);
@@ -73,15 +71,27 @@ const BetLimits = () => {
       params.set('drawId', currentDrawId);
       if (currentBetType) params.set('betType', currentBetType);
       if (currentNumber) params.set('number', currentNumber);
+      
+      console.log('Fetching current numbers with params:', params.toString());
       const res = await api.get(`/bet-limits/current?${params.toString()}`);
+      console.log('Current numbers API response:', res.data);
+      
       if (res.data?.success) {
-        setCurrentRows(res.data.data || []);
+        const data = res.data.data || [];
+        console.log('Current numbers data:', data);
+        setCurrentRows(data);
+        if (data.length === 0) {
+          toast('No bets found for this draw. Try a different draw ID or check if there are any tickets created.', {
+            icon: 'ℹ️',
+            duration: 4000,
+          });
+        }
       } else {
         toast.error(res.data?.message || 'Failed to load current numbers');
       }
     } catch (e) {
       console.error('Current numbers load error:', e);
-      toast.error('Failed to load current numbers');
+      toast.error(`Failed to load current numbers: ${e.response?.data?.message || e.message}`);
     } finally {
       setCurrentLoading(false);
     }
@@ -317,8 +327,11 @@ const BetLimits = () => {
 
       {/* Current Numbers (Per Draw) */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">Current Numbers (Per Draw)</h2>
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-medium text-gray-900">Current Numbers (Per Draw)</h2>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">Monitor existing bets and sales for specific bet numbers in a draw</p>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -367,8 +380,26 @@ const BetLimits = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {currentRows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-6 text-center text-sm text-gray-500">
-                    {currentLoading ? 'Loading current numbers...' : 'No data loaded. Enter Draw ID and click Load.'}
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="text-center">
+                      <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {currentLoading ? 'Loading current numbers...' : 'No Bet Data Found'}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        {currentLoading 
+                          ? 'Please wait while we fetch the bet data...'
+                          : currentDrawId 
+                            ? 'No bets found for this draw. Try a different draw ID or check if tickets have been created.'
+                            : 'Enter a Draw ID and click Load to view existing bets and monitor bet number sales.'
+                        }
+                      </p>
+                      {!currentLoading && !currentDrawId && (
+                        <p className="text-xs text-blue-600">
+                          💡 Tip: Use the active draw ID from the dashboard or draws page
+                        </p>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (

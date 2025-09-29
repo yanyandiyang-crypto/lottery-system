@@ -138,6 +138,23 @@ router.post('/',
       }
     }
 
+    // Auto-assign region for new area coordinators
+    if (userData.role === USER_ROLES.AREA_COORDINATOR && !userData.regionId) {
+      try {
+        // Get the next available region ID
+        const db = require('../config/database');
+        const maxRegionQuery = 'SELECT MAX(region_id) as max_region FROM users WHERE region_id IS NOT NULL';
+        const result = await db.query(maxRegionQuery);
+        const nextRegionId = (result.rows[0].max_region || 0) + 1;
+        
+        userData.regionId = nextRegionId;
+        console.log(`Auto-assigned region ${nextRegionId} to new area coordinator: ${userData.username}`);
+      } catch (error) {
+        console.error('Error auto-assigning region:', error);
+        // Continue without auto-assignment if there's an error
+      }
+    }
+
     const user = await UserService.createUser(userData, currentUser.id);
 
     return sendSuccess(res, { user }, 'User created successfully', 201);

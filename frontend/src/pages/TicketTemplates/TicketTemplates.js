@@ -583,10 +583,15 @@ const TicketTemplates = () => {
   };
 
   const openEditModal = (template) => {
+    if (!template) {
+      console.error('Template data is undefined');
+      return;
+    }
+    
     setSelectedTemplate(template);
     setFormData({
-      name: template.name,
-      design: template.design
+      name: template.name || '',
+      design: template.design || {}
     });
     setShowEditModal(true);
   };

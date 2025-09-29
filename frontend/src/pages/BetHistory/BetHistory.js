@@ -101,10 +101,13 @@ const BetHistory = () => {
       
       // Determine which agent's tickets to load based on role
       let agentIdToQuery = user.id;
-      if (user.role === 'coordinator' && selectedAgentId) {
+      
+      if (user.role === 'agent') {
+        // For agents, always use their own ID
+        agentIdToQuery = user.id;
+      } else if (user.role === 'coordinator' && selectedAgentId) {
         agentIdToQuery = parseInt(selectedAgentId);
-      }
-      if (user.role === 'area_coordinator') {
+      } else if (user.role === 'area_coordinator') {
         // If an agent is chosen, use it. Otherwise, pick first agent under selected coordinator if available
         if (selectedAgentId) {
           agentIdToQuery = parseInt(selectedAgentId);
@@ -121,8 +124,7 @@ const BetHistory = () => {
             // ignore
           }
         }
-      }
-      if (['superadmin', 'admin'].includes(user.role)) {
+      } else if (['superadmin', 'admin'].includes(user.role)) {
         if (selectedAgentId) {
           agentIdToQuery = parseInt(selectedAgentId);
         } else {
@@ -134,13 +136,44 @@ const BetHistory = () => {
         }
       }
 
-      const response = await api.get(`/tickets/agent/${agentIdToQuery}`, { params: queryFilters });
+      console.log('Fetching tickets for agent:', agentIdToQuery, 'with filters:', queryFilters);
+      
+      let response;
+      try {
+        // Try the agent-specific endpoint first
+        response = await api.get(`/tickets/agent/${agentIdToQuery}`, { params: queryFilters });
+      } catch (agentEndpointError) {
+        console.log('Agent endpoint failed, trying main tickets endpoint:', agentEndpointError);
+        // If agent endpoint fails, try the main tickets endpoint
+        response = await api.get('/tickets', { params: queryFilters });
+      }
+      
+      console.log('API Response:', response.data);
+      console.log('Tickets found:', response.data.data?.tickets?.length || response.data.data?.items?.length || 0);
 
-      setTickets(response.data.data.tickets || []);
+      // Handle different response formats
+      let ticketsData = [];
+      let paginationData = {};
+      
+      if (response.data.data?.tickets) {
+        // Agent endpoint format
+        ticketsData = response.data.data.tickets;
+        paginationData = response.data.data.pagination || {};
+      } else if (response.data.data?.items) {
+        // Main tickets endpoint format
+        ticketsData = response.data.data.items;
+        paginationData = response.data.data.pagination || {};
+      } else if (Array.isArray(response.data.data)) {
+        // Direct array format
+        ticketsData = response.data.data;
+      }
+      
+      console.log('Setting tickets:', ticketsData.length, 'items');
+      setTickets(ticketsData);
       setPagination(prev => ({
         ...prev,
-        total: response.data.data.pagination?.totalCount || 0,
-        totalPages: response.data.data.pagination?.totalPages || 0
+        total: paginationData.totalCount || paginationData.total || 0,
+        totalPages: paginationData.totalPages || paginationData.pages || 0
       }));
     } catch (error) {
       toast.error('Failed to fetch bet history');
@@ -149,13 +182,14 @@ const BetHistory = () => {
     }
   };
 
-  const handleViewTicket = async (ticketId) => {
-    try {
-      const response = await api.get(`/tickets/${ticketId}`);
-      setSelectedTicket(response.data.data);
+  const handleViewTicket = (ticketId) => {
+    // Use the ticket data from the list instead of making a separate API call
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (ticket) {
+      setSelectedTicket(ticket);
       setShowTicketModal(true);
-    } catch (error) {
-      toast.error('Failed to load ticket details');
+    } else {
+      toast.error('Ticket not found in current list');
     }
   };
 
@@ -171,6 +205,7 @@ const BetHistory = () => {
       'active': 'bg-blue-100 text-blue-800',
       'won': 'bg-green-100 text-green-800',
       'lost': 'bg-red-100 text-red-800',
+      'no_win': 'bg-red-100 text-red-800',
       'settled': 'bg-gray-100 text-gray-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
@@ -187,6 +222,117 @@ const BetHistory = () => {
       default:
         return <DocumentTextIcon className="h-4 w-4 text-gray-500" />;
     }
+  };
+
+  // Function to check if a bet is winning based on draw results
+  const checkIfBetIsWinning = (bet, drawWinningNumber) => {
+    if (!bet || !drawWinningNumber) return false;
+    
+    const betNumber = bet.betCombination;
+    const winningNumber = drawWinningNumber;
+    
+    if (bet.betType === 'standard' || bet.betType === 'straight') {
+      // Standard/Straight: exact match required
+      return betNumber === winningNumber;
+    } else if (bet.betType === 'rambolito' || bet.betType === 'rambol') {
+      // Rambolito: any order match (sort both numbers and compare)
+      const sortedBet = betNumber.split('').sort().join('');
+      const sortedWinning = winningNumber.split('').sort().join('');
+      return sortedBet === sortedWinning;
+    }
+    
+    return false;
+  };
+
+  // Function to get actual ticket status based on draw results
+  const getActualTicketStatus = (ticket) => {
+    // Debug logging to see what's in the draw data
+    console.log('Checking ticket status:', {
+      ticketId: ticket.id,
+      ticketStatus: ticket.status,
+      drawExists: !!ticket.draw,
+      drawStatus: ticket.draw?.status,
+      winningNumber: ticket.draw?.winningNumber,
+      result: ticket.draw?.result,
+      drawData: ticket.draw
+    });
+    
+    // If ticket already has a definitive status, use it
+    if (['won', 'lost', 'claimed', 'pending_approval'].includes(ticket.status)) {
+      // For claimed tickets, we should show them as won for display purposes
+      return ticket.status === 'claimed' ? 'won' : ticket.status;
+    }
+    
+    // Check for winning number in different possible fields
+    const winningNumber = ticket.draw?.winningNumber || ticket.draw?.result;
+    
+    // If draw is not completed yet or no winning number, ticket is still active
+    if (!ticket.draw || !winningNumber) {
+      console.log('No draw or winning number found for ticket', ticket.id);
+      return 'active';
+    }
+    
+    console.log('Found winning number:', winningNumber, 'for ticket', ticket.id);
+    
+    // Check if any bets are winning
+    if (ticket.bets && ticket.bets.length > 0) {
+      const hasWinningBet = ticket.bets.some(bet => {
+        const isWinning = checkIfBetIsWinning(bet, winningNumber);
+        console.log('Bet check:', {
+          betCombination: bet.betCombination,
+          betType: bet.betType,
+          winningNumber: winningNumber,
+          isWinning: isWinning
+        });
+        return isWinning;
+      });
+      
+      console.log('Ticket', ticket.id, 'has winning bet:', hasWinningBet);
+      return hasWinningBet ? 'won' : 'no_win';
+    }
+    
+    return 'lost';
+  };
+
+  // Function to calculate winnings for a ticket
+  const calculateTicketWinnings = (ticket) => {
+    // Always calculate based on draw results for accuracy
+    // Don't trust stored winAmount as it might be incorrect
+    const winningNumber = ticket.draw?.winningNumber || ticket.draw?.result;
+    
+    if (!ticket.bets || !winningNumber) {
+      return 0;
+    }
+    
+    let totalWinnings = 0;
+    
+    ticket.bets.forEach(bet => {
+      if (checkIfBetIsWinning(bet, winningNumber)) {
+        const betAmount = parseFloat(bet.betAmount) || 0;
+        let multiplier = 0;
+        
+        if (bet.betType === 'standard' || bet.betType === 'straight') {
+          multiplier = 450; // Standard multiplier
+        } else if (bet.betType === 'rambolito' || bet.betType === 'rambol') {
+          // Check for double digits for rambolito double
+          const hasDouble = bet.betCombination.split('').some((digit, index, arr) => 
+            arr.indexOf(digit) !== index
+          );
+          multiplier = hasDouble ? 150 : 75; // Rambolito double or regular
+        }
+        
+        totalWinnings += betAmount * multiplier;
+        console.log('Winning bet calculation:', {
+          betCombination: bet.betCombination,
+          betAmount: betAmount,
+          multiplier: multiplier,
+          winAmount: betAmount * multiplier
+        });
+      }
+    });
+    
+    console.log('Total winnings for ticket', ticket.id, ':', totalWinnings);
+    return totalWinnings;
   };
 
   // Using utility function for draw time formatting
@@ -218,11 +364,22 @@ const BetHistory = () => {
       };
     }
 
-    // For all tickets tab, show overall stats
+    // For all tickets tab, show overall stats using actual winning detection
     const totalBets = tickets.length;
     const totalAmount = tickets.reduce((sum, ticket) => sum + (ticket.totalAmount || 0), 0);
-    const totalWinnings = tickets.filter(t => t.status === 'won').reduce((sum, ticket) => sum + (ticket.winAmount || 0), 0);
-    const winningTickets = tickets.filter(t => t.status === 'won').length;
+    
+    // Calculate actual winnings and winning tickets based on draw results
+    let totalWinnings = 0;
+    let winningTickets = 0;
+    
+    tickets.forEach(ticket => {
+      const actualStatus = getActualTicketStatus(ticket);
+      if (actualStatus === 'won') {
+        winningTickets++;
+        totalWinnings += calculateTicketWinnings(ticket);
+      }
+    });
+    
     const winRate = totalBets > 0 ? (winningTickets / totalBets) * 100 : 0;
 
     return {
@@ -244,7 +401,10 @@ const BetHistory = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <PageHeader
           title="Bet History"
-          subtitle="View your betting history, track performance, and analyze winning patterns"
+          subtitle={user.role === 'agent' 
+            ? "View your betting history, track performance, and analyze winning patterns"
+            : "View agent betting history, track performance, and analyze winning patterns"
+          }
           breadcrumbs={[
             { label: 'Dashboard', href: '/dashboard' },
             { label: 'Betting', href: '/betting' },
@@ -292,7 +452,8 @@ const BetHistory = () => {
           />
         </div>
         
-        {/* Tab Navigation */}
+        {/* Tab Navigation - Hidden since there's a dedicated WinningTickets page */}
+        {/* 
         <ModernCard variant="elevated" className="mb-6">
           <div className="px-4 sm:px-6 py-4">
             <nav className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4" aria-label="Bet History Tabs">
@@ -323,6 +484,7 @@ const BetHistory = () => {
             </nav>
           </div>
         </ModernCard>
+        */}
 
 
         {/* Role-based scopes */}
@@ -440,18 +602,12 @@ const BetHistory = () => {
             <div className="flex items-center space-x-2 mb-6">
               <TicketIcon className="h-6 w-6 text-primary-600" />
               <h2 className="text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                {activeTab === 'winning' ? 'Winning Tickets' : 'Betting History'}
+                Betting History
               </h2>
               <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
                 {tickets.length} tickets
               </span>
             </div>
-            {activeTab === 'winning' && (
-              <p className="text-sm text-gray-600 mb-4 bg-success-50 border border-success-200 rounded-lg p-3">
-                <TrophyIcon className="h-4 w-4 inline mr-2 text-success-600" />
-                Showing only tickets that have won prizes
-              </p>
-            )}
         
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -530,20 +686,33 @@ const BetHistory = () => {
                     {formatCurrency(ticket.totalAmount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.derivedStatus || ticket.status)}`}>
-                      {(ticket.derivedStatus || ticket.status).toUpperCase()}
-                    </span>
+                    {(() => {
+                      const actualStatus = getActualTicketStatus(ticket);
+                      const displayStatus = actualStatus === 'no_win' ? 'NO WIN' : actualStatus.toUpperCase();
+                      return (
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(actualStatus)}`}>
+                          {displayStatus}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {(ticket.derivedStatus || ticket.status) === 'won' ? (
-                      <div className="text-sm font-medium text-green-600">
-                        {formatCurrency(ticket.winAmount || 0)}
-                      </div>
-                    ) : (ticket.derivedStatus || ticket.status) === 'lost' ? (
-                      <div className="text-sm text-red-600">-</div>
-                    ) : (
-                      <div className="text-sm text-gray-500">Pending</div>
-                    )}
+                    {(() => {
+                      const actualStatus = getActualTicketStatus(ticket);
+                      const calculatedWinnings = calculateTicketWinnings(ticket);
+                      
+                      if (actualStatus === 'won') {
+                        return (
+                          <div className="text-sm font-medium text-green-600">
+                            {formatCurrency(calculatedWinnings)}
+                          </div>
+                        );
+                      } else if (actualStatus === 'no_win' || actualStatus === 'lost') {
+                        return <div className="text-sm text-red-600">-</div>;
+                      } else {
+                        return <div className="text-sm text-gray-500">Pending</div>;
+                      }
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <ModernButton
