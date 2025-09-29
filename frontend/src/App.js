@@ -6,6 +6,7 @@ import { DataModeProvider } from './contexts/DataModeContext';
 import Layout from './components/Layout/Layout';
 import MobileOptimized from './components/Mobile/MobileOptimized';
 import MobileNavigation from './components/Mobile/MobileNavigation';
+import NetworkStatus from './components/Mobile/NetworkStatus';
 import PWAInstaller from './components/PWA/PWAInstaller';
 import Login from './pages/Auth/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -121,6 +122,7 @@ function AppRoutes() {
 
   return (
     <MobileOptimized>
+      <NetworkStatus />
       <PWAInstaller />
       <Layout>
         <Routes>

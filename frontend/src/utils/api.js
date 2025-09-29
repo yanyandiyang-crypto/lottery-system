@@ -1,26 +1,72 @@
 import axios from 'axios';
 
-// API Configuration
-const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const API_BASE_URL = process.env.REACT_APP_API_URL || (isLocalhost ? 'http://localhost:3001' : 'https://lottery-system-tna9.onrender.com');
+// API Configuration - Enhanced for mobile and production
+const isLocalhost = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' || 
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname.includes('192.168.')
+);
+
+// Better API URL detection for mobile devices
+const getApiBaseUrl = () => {
+  // Check for environment variable first
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Local development
+  if (isLocalhost) {
+    return 'http://localhost:3001';
+  }
+  
+  // Production - use current domain if deployed together, otherwise Render backend
+  if (typeof window !== 'undefined') {
+    const currentDomain = window.location.origin;
+    
+    // If deployed on Vercel/Netlify, use Render backend
+    if (currentDomain.includes('vercel.app') || currentDomain.includes('netlify.app')) {
+      return 'https://lottery-system-tna9.onrender.com';
+    }
+    
+    // If same domain deployment, use relative path
+    return currentDomain;
+  }
+  
+  // Fallback
+  return 'https://lottery-system-tna9.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const API_VERSION = process.env.REACT_APP_API_VERSION || 'v1';
 
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
-  timeout: 30000, // Increased timeout to 30 seconds
+  timeout: 45000, // Increased timeout for mobile networks
   headers: {
     'Content-Type': 'application/json',
     'X-API-Version': API_VERSION,
-    'X-Client-Version': process.env.REACT_APP_VERSION || '1.0.0'
+    'X-Client-Version': process.env.REACT_APP_VERSION || '1.0.0',
+    'X-Requested-With': 'XMLHttpRequest', // Help with CORS
+    'Cache-Control': 'no-cache' // Prevent mobile caching issues
   },
+  // Mobile-friendly configuration
+  withCredentials: false, // Avoid CORS issues
+  maxRedirects: 5,
   // Retry configuration
   retry: 3,
-  retryDelay: 1000,
+  retryDelay: 2000, // Longer delay for mobile
   // Additional axios options
   validateStatus: function (status) {
     return status >= 200 && status < 300; // default
   }
+});
+
+// Log API configuration for debugging
+console.log('🔧 API Configuration:', {
+  baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
+  isLocalhost,
+  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'
 });
 
 // Request interceptor
@@ -107,15 +153,35 @@ api.interceptors.response.use(
           console.error('API error:', data.message || 'Unknown error');
       }
     } else if (error.request) {
-      // Network error or timeout
+      // Network error or timeout - Enhanced for mobile
       if (error.code === 'ECONNABORTED') {
-        console.error('Request timeout:', error.message);
+        console.error('⏱️ Request timeout - Check your internet connection');
+        // Show user-friendly message for mobile users
+        if (typeof window !== 'undefined' && 'navigator' in window && navigator.onLine === false) {
+          console.error('📱 Device is offline - Please check your internet connection');
+        }
+      } else if (error.code === 'NETWORK_ERROR') {
+        console.error('🌐 Network error - Unable to connect to server');
+      } else if (error.code === 'ERR_NETWORK') {
+        console.error('📡 Connection failed - Server may be unreachable');
       } else {
-        console.error('Network error:', error.message);
+        console.error('🔌 Network error:', error.message);
+      }
+      
+      // Add mobile-specific network diagnostics
+      if (typeof window !== 'undefined') {
+        console.log('📊 Network Status:', {
+          online: navigator.onLine,
+          connection: navigator.connection ? {
+            effectiveType: navigator.connection.effectiveType,
+            downlink: navigator.connection.downlink,
+            rtt: navigator.connection.rtt
+          } : 'Not available'
+        });
       }
     } else {
       // Other error
-      console.error('Error:', error.message);
+      console.error('❌ Error:', error.message);
     }
 
     return Promise.reject(error);
