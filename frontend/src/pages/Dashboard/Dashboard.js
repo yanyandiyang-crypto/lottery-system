@@ -260,7 +260,7 @@ const Dashboard = () => {
       averageTicket,
       profitMargin
     };
-  }, [dashboardData, liveData, isLoading, error]);
+  }, [dashboardData, isLoading, error]);
 
   // Debug logging
   console.log('🔍 Dashboard Debug Info:', {
@@ -325,138 +325,190 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Draw Selection Cards */}
-          <div className="space-y-2 sm:space-y-3 lg:space-y-4 mb-6 sm:mb-8">
+          {/* Compact Draw Selection */}
+          <div className="space-y-4 mb-6">
             {drawsLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-gray-600">Loading draws...</span>
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-sky-200 border-t-sky-600 mx-auto mb-3"></div>
+                  <p className="text-gray-600 font-medium">Loading draws...</p>
+                </div>
               </div>
             ) : drawsError ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-red-600">
-                  <p>Error loading draws: {drawsError.message}</p>
-                  <p className="text-sm text-gray-500 mt-2">Check console for details</p>
+              <div className="text-center py-8">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-sm mx-auto">
+                  <div className="p-2 bg-red-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-semibold text-red-800 mb-2">Unable to Load Draws</h3>
+                  <p className="text-red-600 text-sm mb-3">{drawsError.message}</p>
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                  >
+                    Retry
+                  </button>
                 </div>
               </div>
             ) : (
-              drawTimes.map((draw) => (
-              <ModernCard
-                key={draw.id}
-                onClick={() => {
-                  if (draw.status === 'betting' || draw.status === 'cutoff') {
-                    window.location.href = `/betting?draw=${draw.id}&time=${encodeURIComponent(draw.time)}`;
-                  }
-                }}
-                className={`
-                  relative overflow-hidden transition-all duration-300 transform hover:scale-[1.02]
-                  ${(draw.status === 'betting' || draw.status === 'cutoff')
-                    ? 'cursor-pointer hover:shadow-2xl border-2 ' + 
-                      (draw.color === 'green' ? 'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50' :
-                       draw.color === 'orange' ? 'border-orange-300 bg-gradient-to-r from-orange-50 to-yellow-50' :
-                       'border-blue-300 bg-gradient-to-r from-blue-50 to-sky-50')
-                    : draw.status === 'upcoming' || draw.status === 'pending'
-                    ? 'opacity-70 cursor-default bg-gradient-to-r from-gray-50 to-slate-50'
-                    : draw.status === 'completed'
-                    ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200'
-                    : 'opacity-60 cursor-default bg-gradient-to-r from-gray-50 to-neutral-50'
-                  }
-                `}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
-                    <div className={`
-                      relative w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg
-                      ${draw.status === 'betting' ? 'bg-gradient-to-br from-green-400 to-green-600' :
-                        draw.status === 'cutoff' ? 'bg-gradient-to-br from-orange-400 to-red-500' :
-                        draw.status === 'completed' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
-                        draw.status === 'closed' ? 'bg-gradient-to-br from-red-400 to-red-600' :
-                        'bg-gradient-to-br from-gray-400 to-gray-600'}
-                    `}>
-                      {draw.label.substring(0, 2)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm sm:text-lg lg:text-xl font-bold text-gray-900 truncate">
-                        3D LOTTO
-                      </h3>
-                      <p className="text-xs sm:text-sm lg:text-base text-gray-600 truncate">
-                        {draw.time} • {draw.description}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                      {draw.prize}
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-500">
-                      {draw.subtitle}
-                    </p>
-                    {/* Modern Action Buttons */}
-                    <div className="mt-3">
-                      {draw.status === 'betting' && (
-                        <div className="inline-flex items-center px-3 py-2 rounded-lg bg-green-500 text-white text-sm font-medium shadow-md hover:bg-green-600 transition-colors">
-                          <PlayIcon className="w-4 h-4 mr-2" />
-                          Place Bet
+              <>
+                {/* Ultra Compact Draw Cards */}
+                <div className="space-y-2">
+                  {drawTimes.map((draw, index) => (
+                    <div
+                      key={draw.id}
+                      className={`group relative overflow-hidden rounded-xl transition-all duration-300 ${
+                        (draw.status === 'betting' || draw.status === 'cutoff')
+                          ? 'cursor-pointer hover:shadow-md' 
+                          : 'cursor-default'
+                      }`}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                      onClick={() => {
+                        if (draw.status === 'betting' || draw.status === 'cutoff') {
+                          window.location.href = `/betting?draw=${draw.id}&time=${encodeURIComponent(draw.time)}`;
+                        }
+                      }}
+                    >
+                      {/* Background Gradient */}
+                      <div className={`absolute inset-0 ${
+                        draw.status === 'betting' 
+                          ? 'bg-gradient-to-r from-emerald-400 to-green-500' 
+                          : draw.status === 'cutoff'
+                          ? 'bg-gradient-to-r from-orange-400 to-red-500 animate-pulse'
+                          : draw.status === 'completed'
+                          ? 'bg-gradient-to-r from-blue-400 to-indigo-500'
+                          : draw.status === 'closed'
+                          ? 'bg-gradient-to-r from-gray-400 to-gray-500'
+                          : 'bg-gradient-to-r from-slate-300 to-gray-400'
+                      } opacity-90`} />
+                      
+                      {/* Shimmer Effect */}
+                      {(draw.status === 'betting' || draw.status === 'cutoff') && (
+                        <div className="absolute inset-0 opacity-20">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent transform -skew-x-12 animate-shimmer" />
                         </div>
                       )}
                       
-                      {draw.status === 'cutoff' && (
-                        <div className="inline-flex items-center px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-medium shadow-md animate-pulse">
-                          <ClockIcon className="w-4 h-4 mr-2" />
-                          Last Call!
-                        </div>
-                      )}
+                      {/* Content */}
+                      <div className="relative p-3 text-white">
+                        <div className="flex items-center justify-between">
+                          {/* Left Side - Draw Info */}
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold shadow-md backdrop-blur-sm ${
+                              draw.status === 'betting' 
+                                ? 'bg-white/25 border border-white/40' 
+                                : 'bg-white/15 border border-white/25'
+                            }`}>
+                              {draw.label}
+                            </div>
+                            <div>
+                              <h3 className="text-base font-bold">3D LOTTO</h3>
+                              <p className="text-white/90 text-xs">{draw.time} • {draw.description}</p>
+                            </div>
+                          </div>
+                          
+                          {/* Center - Prize */}
+                          <div className="text-center">
+                            <div className="text-xl font-bold">{draw.prize}</div>
+                            <p className="text-white/80 text-xs">Prize</p>
+                          </div>
+                          
+                          {/* Right Side - Action */}
+                          <div className="flex items-center">
+                            {draw.status === 'betting' && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-medium hover:bg-white/30 transition-all duration-300">
+                                <PlayIcon className="w-3 h-3 mr-1" />
+                                Bet
+                              </div>
+                            )}
+                            
+                            {draw.status === 'cutoff' && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-400/90 text-yellow-900 text-xs font-medium animate-pulse">
+                                <ClockIcon className="w-3 h-3 mr-1" />
+                                Last Call!
+                              </div>
+                            )}
 
-                      {draw.status === 'upcoming' && (
-                        <div className="inline-flex items-center px-3 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm font-medium">
-                          <ClockIcon className="w-4 h-4 mr-2" />
-                          Coming Soon
-                        </div>
-                      )}
+                            {draw.status === 'upcoming' && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/15 backdrop-blur-sm border border-white/25 text-white/70 text-xs font-medium">
+                                <ClockIcon className="w-3 h-3 mr-1" />
+                                Soon
+                              </div>
+                            )}
 
-                      {draw.status === 'closed' && (
-                        <div className="inline-flex items-center px-3 py-2 rounded-lg bg-red-100 text-red-700 text-sm font-medium">
-                          <CheckCircleIcon className="w-4 h-4 mr-2" />
-                          Closed
-                        </div>
-                      )}
+                            {draw.status === 'closed' && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/15 backdrop-blur-sm border border-white/25 text-white/70 text-xs font-medium">
+                                <CheckCircleIcon className="w-3 h-3 mr-1" />
+                                Closed
+                              </div>
+                            )}
 
-                      {draw.status === 'completed' && (
-                        <div className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-100 text-blue-700 text-sm font-medium">
-                          <CheckCircleIcon className="w-4 h-4 mr-2" />
-                          Completed
-                        </div>
-                      )}
+                            {draw.status === 'completed' && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-medium">
+                                <CheckCircleIcon className="w-3 h-3 mr-1" />
+                                Done
+                              </div>
+                            )}
 
-                      {(draw.status === 'pending' || draw.status === 'unavailable') && (
-                        <div className="inline-flex items-center px-3 py-2 rounded-lg bg-gray-100 text-gray-500 text-sm font-medium">
-                          <ClockIcon className="w-4 h-4 mr-2" />
-                          {draw.status === 'pending' ? 'Pending' : 'Unavailable'}
+                            {(draw.status === 'pending' || draw.status === 'unavailable') && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 text-white/50 text-xs font-medium">
+                                <ClockIcon className="w-3 h-3 mr-1" />
+                                {draw.status === 'pending' ? 'Wait' : 'N/A'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Status Indicator */}
+                      {(draw.status === 'betting' || draw.status === 'cutoff') && (
+                        <div className="absolute top-2 right-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            draw.status === 'betting' ? 'bg-green-300 animate-pulse' : 'bg-orange-300 animate-ping'
+                          }`}></div>
                         </div>
                       )}
                     </div>
-                  </div>
+                  ))}
                 </div>
                 
-                {/* Status Indicator Bar */}
-                <div className={`absolute top-0 left-0 right-0 h-1 ${
-                  draw.status === 'betting' ? 'bg-gradient-to-r from-green-400 to-green-600' :
-                  draw.status === 'cutoff' ? 'bg-gradient-to-r from-orange-400 to-red-500 animate-pulse' :
-                  draw.status === 'completed' ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
-                  draw.status === 'closed' ? 'bg-gradient-to-r from-red-400 to-red-600' :
-                  'bg-gradient-to-r from-gray-300 to-gray-400'
-                }`} />
-
-                {/* Live Status Indicator */}
-                {(draw.status === 'betting' || draw.status === 'cutoff') && (
-                  <div className="absolute top-3 right-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      draw.status === 'betting' ? 'bg-green-400 animate-pulse' : 'bg-orange-400 animate-ping'
-                    }`}></div>
+                {/* Compact Stats */}
+                <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200 p-4 shadow-md">
+                  <div className="flex items-center justify-around text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-1">
+                        <PlayIcon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="text-lg font-bold text-gray-900">
+                        {drawTimes.filter(d => d.status === 'betting').length}
+                      </div>
+                      <div className="text-xs text-gray-600">Open</div>
+                    </div>
+                    
+                    <div className="w-px h-8 bg-gray-200"></div>
+                    
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-1">
+                        <TrophyIcon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="text-lg font-bold text-gray-900">₱4,500</div>
+                      <div className="text-xs text-gray-600">Prize</div>
+                    </div>
+                    
+                    <div className="w-px h-8 bg-gray-200"></div>
+                    
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center mb-1">
+                        <ClockIcon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="text-lg font-bold text-gray-900">3</div>
+                      <div className="text-xs text-gray-600">Daily</div>
+                    </div>
                   </div>
-                )}
-              </ModernCard>
-              ))
+                </div>
+              </>
             )}
           </div>
 

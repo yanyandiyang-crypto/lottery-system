@@ -4,9 +4,10 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { DataModeProvider } from './contexts/DataModeContext';
 import Layout from './components/Layout/Layout';
-import MobileOptimized from './components/Mobile/MobileOptimized';
-import MobileNavigation from './components/Mobile/MobileNavigation';
-import NetworkStatus from './components/Mobile/NetworkStatus';
+// Mobile components removed - no longer needed
+// import MobileOptimized from './components/Mobile/MobileOptimized';
+// import MobileNavigation from './components/Mobile/MobileNavigation';
+// import NetworkStatus from './components/Mobile/NetworkStatus';
 import PWAInstaller from './components/PWA/PWAInstaller';
 import Login from './pages/Auth/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -107,22 +108,20 @@ function AppRoutes() {
 
   if (!user) {
     return (
-      <MobileOptimized>
+      <>
         <PWAInstaller />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      </MobileOptimized>
+      </>
     );
   }
 
-  // Check if user should use mobile navigation (agents and coordinators)
-  const useMobileNav = ['agent', 'coordinator', 'area_coordinator'].includes(user?.role);
+  // Mobile navigation removed - no longer needed
 
   return (
-    <MobileOptimized>
-      <NetworkStatus />
+    <>
       <PWAInstaller />
       <Layout>
         <Routes>
@@ -228,10 +227,7 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
       </Layout>
-      
-      {/* Mobile Navigation for field users */}
-      {useMobileNav && <MobileNavigation />}
-    </MobileOptimized>
+    </>
   );
 }
 
