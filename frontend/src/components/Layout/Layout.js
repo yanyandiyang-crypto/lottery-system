@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MobileSidebar from './MobileSidebar';
 
 const Layout = ({ children }) => {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(true); // Default to collapsed
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
+  
+  // Check if user should have mobile navigation spacing
+  const useMobileNav = ['agent', 'coordinator', 'area_coordinator'].includes(user?.role);
 
   // Detect screen size changes for better responsive behavior
   useEffect(() => {
@@ -64,6 +69,7 @@ const Layout = ({ children }) => {
                 : 'px-4 py-4 lg:px-6 lg:py-6 xl:px-8 xl:py-8'
             ) : ''}
             safe-area-inset-bottom safe-area-inset-left safe-area-inset-right
+            ${isMobile && useMobileNav ? 'mobile-nav-spacing' : ''}
           `}>
             <div className="h-full w-full mx-auto">
               {/* Content wrapper with dynamic max-width based on sidebar state */}

@@ -1,7 +1,7 @@
 {
-  "short_name": "Lottery System",
-  "name": "3-Digit Lottery System",
-  "description": "Complete lottery betting and claiming system with QR scanner",
+  "short_name": "NewBetting",
+  "name": "NewBetting - 3D Lottery System",
+  "description": "Professional lottery betting platform with QR scanner, ticket generation, and real-time draw results",
   "icons": [
     {
       "src": "favicon.ico",
@@ -25,18 +25,42 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#0ea5e9",
-  "background_color": "#ffffff",
+  "background_color": "#f8fafc",
   "scope": "/",
-  "categories": ["business", "finance", "games"],
+  "categories": ["business", "finance", "productivity"],
   "lang": "en-US",
   "dir": "ltr",
   "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Place Bet",
+      "short_name": "Bet",
+      "description": "Quick access to betting interface",
+      "url": "/betting",
+      "icons": [{ "src": "logos/3d-lotto.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Scan Ticket",
+      "short_name": "Scan",
+      "description": "Verify winning tickets with QR scanner",
+      "url": "/verify",
+      "icons": [{ "src": "logos/3d-lotto.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View sales and performance",
+      "url": "/dashboard",
+      "icons": [{ "src": "logos/3d-lotto.png", "sizes": "192x192" }]
+    }
+  ],
   "permissions": [
     "camera"
   ],
   "features": [
     "camera",
-    "geolocation"
+    "geolocation",
+    "notifications"
   ]
 }
 

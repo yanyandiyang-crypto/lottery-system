@@ -181,6 +181,8 @@ code {
   /* Mobile-specific improvements */
   body {
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   
   .table {
@@ -201,6 +203,30 @@ code {
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
     min-height: 44px; /* Touch-friendly */
+  }
+
+  /* PWA mobile optimizations */
+  .pwa-standalone {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Mobile navigation spacing */
+  .mobile-nav-spacing {
+    padding-bottom: 80px; /* Space for bottom navigation */
+  }
+
+  /* Prevent zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+
+  /* Improve touch targets */
+  button, a, input, select {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
 
