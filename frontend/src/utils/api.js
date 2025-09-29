@@ -25,7 +25,7 @@ const getApiBaseUrl = () => {
     
     // If deployed on Vercel/Netlify, use Render backend
     if (currentDomain.includes('vercel.app') || currentDomain.includes('netlify.app')) {
-      return 'https://lottery-system-tna9.onrender.com';
+      return 'https://lottery-backend-l1k7.onrender.com';
     }
     
     // If same domain deployment, use relative path
@@ -33,7 +33,7 @@ const getApiBaseUrl = () => {
   }
   
   // Fallback
-  return 'https://lottery-system-tna9.onrender.com';
+  return 'https://lottery-backend-l1k7.onrender.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();

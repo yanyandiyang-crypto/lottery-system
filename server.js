@@ -163,7 +163,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-API-Version', 'API-Version', 'x-client-version']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-API-Version', 'API-Version', 'x-client-version', 'cache-control']
 }));
 
 // Global security middleware
@@ -185,7 +185,7 @@ app.options('*', (req, res) => {
   if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version, cache-control');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.status(200).end();
   } else {
@@ -197,7 +197,7 @@ app.options('*', (req, res) => {
   console.log('CORS: Handling preflight request for:', req.headers.origin);
   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version, cache-control');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.sendStatus(200);
 });
