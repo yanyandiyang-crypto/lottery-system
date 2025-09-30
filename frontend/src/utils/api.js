@@ -42,7 +42,7 @@ const API_VERSION = process.env.REACT_APP_API_VERSION || 'v1';
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
-  timeout: 45000, // Increased timeout for mobile networks
+  timeout: 60000, // Increased timeout for Render cold starts
   headers: {
     'Content-Type': 'application/json',
     'X-API-Version': API_VERSION,
@@ -53,14 +53,43 @@ const api = axios.create({
   // Mobile-friendly configuration
   withCredentials: false, // Avoid CORS issues
   maxRedirects: 5,
-  // Retry configuration
-  retry: 3,
-  retryDelay: 2000, // Longer delay for mobile
   // Additional axios options
   validateStatus: function (status) {
     return status >= 200 && status < 300; // default
   }
 });
+
+// Retry logic for failed requests
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    
+    // Retry on network errors or 502/503 (server sleeping)
+    if (!config || !config.retry) {
+      config.retry = 0;
+    }
+    
+    const shouldRetry = 
+      (error.code === 'ECONNABORTED' || 
+       error.code === 'ERR_NETWORK' ||
+       error.response?.status === 502 ||
+       error.response?.status === 503) &&
+      config.retry < 3;
+    
+    if (shouldRetry) {
+      config.retry += 1;
+      console.log(`🔄 Retrying request (${config.retry}/3)...`);
+      
+      // Wait before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, config.retry * 2000));
+      
+      return api(config);
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // Log API configuration for debugging
 console.log('🔧 API Configuration:', {

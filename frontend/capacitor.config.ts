@@ -3,7 +3,7 @@ import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'com.pistingyawa.lottery',
-  appName: 'Pisting Yawa Lottery',
+  appName: '3D Lottery',
   webDir: 'build',
   server: {
     androidScheme: 'https',
@@ -11,7 +11,17 @@ const config: CapacitorConfig = {
     allowNavigation: [
       'lottery-backend-l1k7.onrender.com',
       'lottery-system-gamma.vercel.app'
-    ]
+    ],
+    // Performance optimizations
+    hostname: 'localhost',
+    iosScheme: 'capacitor'
+  },
+  // Android-specific optimizations
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: false,  // Disable for production
+    backgroundColor: '#0ea5e9'
   },
   plugins: {
     SplashScreen: {
