@@ -37,10 +37,10 @@ const OperatorDashboard = () => {
     fetchSalesData();
     fetchLiveData();
     
-    // Set up real-time updates every 30 seconds
+    // Set up real-time updates every 60 seconds (reduced from 30s)
     const interval = setInterval(() => {
       fetchLiveData();
-    }, 30000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [selectedDate]);
@@ -79,7 +79,7 @@ const OperatorDashboard = () => {
       const liveResponse = await salesAPI.getLiveStats();
       setLiveData(liveResponse.data);
     } catch (error) {
-      console.error('Failed to fetch live data:', error);
+      // Silently handle live data fetch errors
     }
   };
 

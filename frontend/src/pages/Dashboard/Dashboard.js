@@ -40,44 +40,29 @@ const Dashboard = () => {
   const { data: dashboardData, isLoading, error, refetch } = useQuery(
     ['dashboard', dateRange.startDate, dateRange.endDate],
     async () => {
-      console.log('🔍 Fetching dashboard data...');
       const response = await api.get('/dashboard', { params: dateRange });
-      console.log('📊 Dashboard API Response:', response.data);
       return response.data.data; // unwrap { success, data }
     },
     {
-      refetchInterval: isTodayRange ? 30000 : false,
-      onError: (error) => {
-        console.error('❌ Dashboard API Error:', error);
-      }
+      refetchInterval: isTodayRange ? 60000 : false, // Reduced from 30s to 60s
+      staleTime: 30000, // Consider data fresh for 30s
+      cacheTime: 300000, // Keep in cache for 5 minutes
     }
   );
 
-  // Fetch live dashboard data for real-time updates
-  const { data: liveData } = useQuery(
-    'dashboard-live',
-    async () => {
-      const response = await api.get('/dashboard/live');
-      return response.data;
-    },
-    {
-      refetchInterval: isTodayRange && !isAgent ? 5000 : false, // live only for today and non-agent
-      enabled: !isAgent && isTodayRange, // Only for management roles on today range
-    }
-  );
+  // Live dashboard data polling disabled to reduce server load
+  // Main dashboard query with 60s interval is sufficient for real-time updates
 
   // Fetch active draws
   const { data: activeDraws, isLoading: drawsLoading, error: drawsError } = useQuery(
     'activeDraws',
     async () => {
-      console.log('🔍 Fetching draws from API...');
       const response = await api.get('/draws/current/active');
-      console.log('📊 API Response:', response.data);
-      // The API returns { success: true, data: [...] }, so we need response.data.data
       return response.data.data || [];
     },
     {
-      refetchInterval: 30000, // Refetch every 30 seconds
+      refetchInterval: 60000, // Reduced from 30s to 60s
+      staleTime: 30000, // Consider data fresh for 30s
     }
   );
 
@@ -92,10 +77,7 @@ const Dashboard = () => {
     const existingDraw = Array.isArray(activeDraws) ? 
       activeDraws.find(draw => draw.drawTime === drawTime) : null;
     
-    console.log(`🎯 Creating draw card for ${drawTime}:`, {
-      activeDrawsLength: activeDraws?.length || 0,
-      existingDraw: existingDraw ? { id: existingDraw.id, isAvailable: existingDraw.isAvailable } : null
-    });
+    // Draw card creation logic
     
     let status, color, description, icon;
     
@@ -181,25 +163,10 @@ const Dashboard = () => {
   const recentDraws = dashboardData?.recentDraws || [];
   const recentTickets = dashboardData?.recentTickets || [];
 
-  // Calculate accurate sales metrics with debugging
+  // Calculate accurate sales metrics
   const salesMetrics = useMemo(() => {
-    console.log('🔍 Dashboard Data Debug:', {
-      dashboardData,
-      hierarchicalPerformance: dashboardData?.hierarchicalPerformance,
-      summary: dashboardData?.hierarchicalPerformance?.summary,
-      rootLevelData: {
-        todaySales: dashboardData?.todaySales,
-        grossSales: dashboardData?.grossSales,
-        winningAmount: dashboardData?.winningAmount,
-        netSales: dashboardData?.netSales
-      },
-      isLoading,
-      error: error?.message
-    });
-
     // Check if we have dashboard data
     if (!dashboardData) {
-      console.log('⚠️ No dashboard data found');
       return {
         grossSales: 0,
         totalWinnings: 0,
@@ -220,37 +187,7 @@ const Dashboard = () => {
     const averageTicket = totalTickets > 0 ? grossSales / totalTickets : 0;
     const profitMargin = grossSales > 0 ? (netSales / grossSales) * 100 : 0;
 
-    // If all values are 0, show sample data for demonstration
-    // Comment out this block to show real 0 values instead of sample data
-    /*
-    if (grossSales === 0 && totalWinnings === 0 && totalTickets === 0) {
-      console.log('📊 Using sample data for demonstration (all API values are 0)');
-      const sampleGross = 150000;
-      const sampleWinnings = 45000;
-      const sampleNet = sampleGross - sampleWinnings;
-      const sampleTickets = 1500;
-      const sampleAvg = sampleTickets > 0 ? sampleGross / sampleTickets : 0;
-      const sampleMargin = sampleGross > 0 ? (sampleNet / sampleGross) * 100 : 0;
-      
-      return {
-        grossSales: sampleGross,
-        totalWinnings: sampleWinnings,
-        netSales: sampleNet,
-        totalTickets: sampleTickets,
-        averageTicket: sampleAvg,
-        profitMargin: sampleMargin
-      };
-    }
-    */
-
-    console.log('📊 Calculated Sales Metrics:', {
-      grossSales,
-      totalWinnings,
-      netSales,
-      totalTickets,
-      averageTicket,
-      profitMargin
-    });
+    // Return calculated metrics
 
     return {
       grossSales,
@@ -260,17 +197,9 @@ const Dashboard = () => {
       averageTicket,
       profitMargin
     };
-  }, [dashboardData, isLoading, error]);
+  }, [dashboardData]);
 
-  // Debug logging
-  console.log('🔍 Dashboard Debug Info:', {
-    isLoading,
-    error: error?.message,
-    dashboardData,
-    liveData,
-    user: user?.role,
-    isAgent
-  });
+  // Dashboard ready
 
   if (isLoading) {
     return (

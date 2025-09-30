@@ -41,8 +41,8 @@ const OperatorSales = () => {
   useEffect(() => {
     if (viewMode === 'today') {
       fetchTodaySales();
-      // Set up auto-refresh every 30 seconds for live data
-      const interval = setInterval(fetchTodaySales, 30000);
+      // Set up auto-refresh every 60 seconds (reduced from 30s)
+      const interval = setInterval(fetchTodaySales, 60000);
       return () => clearInterval(interval);
     } else {
       fetchHistoricalSales();
@@ -69,7 +69,6 @@ const OperatorSales = () => {
         historicalData: []
       });
     } catch (error) {
-      console.error('Error fetching today sales:', error);
       toast.error('Failed to fetch sales data');
     } finally {
       setLoading(false);
@@ -90,7 +89,6 @@ const OperatorSales = () => {
         historicalData: response.data.data.daily
       });
     } catch (error) {
-      console.error('Error fetching historical sales:', error);
       toast.error('Failed to fetch historical data');
     } finally {
       setLoading(false);

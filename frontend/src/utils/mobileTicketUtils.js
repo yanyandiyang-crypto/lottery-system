@@ -95,8 +95,6 @@ export class MobileTicketUtils {
    */
   static async getPreGeneratedImage(ticket) {
     try {
-      console.log('🖼️ BYPASSING pre-generated HTML, using direct template generation...');
-      
       // Use direct template generation for consistent layout
       const TicketGenerator = (await import('./ticketGenerator')).default;
       const TemplateAssigner = (await import('./templateAssigner')).default;
@@ -104,14 +102,12 @@ export class MobileTicketUtils {
       let template = null;
       try {
         template = await TemplateAssigner.fetchSystemTemplate();
-        console.log('✅ Template loaded:', template?.templateType || 'default');
       } catch (_) {
-        console.log('⚠️ Using default template');
+        // Use default template
       }
       
       // Generate HTML directly using template system
       const templateHTML = TicketGenerator.generateWithTemplate(ticket, {}, template, {});
-      console.log('✅ Template HTML generated, length:', templateHTML.length);
       
       // Wrap HTML exactly like the working preview
       const wrappedHTML = `
@@ -119,13 +115,11 @@ export class MobileTicketUtils {
           <div style="width:220px;transform-origin:top left;position:relative;">${templateHTML}</div>
         </div>
       `;
-      console.log('✅ HTML wrapped for image conversion');
       
       // Convert wrapped HTML to image
       return await this.convertHTMLToImage(wrappedHTML);
       
     } catch (error) {
-      console.error('❌ Direct template generation failed, using fallback:', error);
       // Final fallback
       return await this.createTicketImageBlob(ticket, {});
     }
@@ -136,8 +130,6 @@ export class MobileTicketUtils {
    */
   static async convertHTMLToImage(htmlString) {
     try {
-      console.log('🔍 Using EXACT same approach as working preview...');
-      
       // Create container exactly like preview
       const tempContainer = document.createElement('div');
       tempContainer.style.position = 'absolute';
@@ -171,10 +163,6 @@ export class MobileTicketUtils {
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (blob) {
-            console.log('✅ High-quality ticket image generated:', {
-              size: `${blob.size} bytes`,
-              dimensions: `${canvas.width}x${canvas.height}px`
-            });
             resolve(blob);
           } else {
             reject(new Error('Failed to convert canvas to blob'));
@@ -183,7 +171,6 @@ export class MobileTicketUtils {
       });
       
     } catch (error) {
-      console.error('❌ Error converting HTML to image:', error);
       throw error;
     }
   }
@@ -201,25 +188,16 @@ export class MobileTicketUtils {
       url: window.location.origin + `/ticket/${ticket.ticketNumber}`
     };
 
-    console.log('Attempting to share ticket as image:', shareData);
-
     try {
       // ALWAYS try image sharing first (both mobile and desktop)
-      console.log('Attempting image share...');
-      
       try {
         // Use DIRECT template generation for consistent layout
-        console.log('🖼️ Using DIRECT template generation for image...');
         const imageBlob = await this.getPreGeneratedImage(ticket);
-        console.log('✅ Template-generated image loaded, size:', imageBlob.size, 'bytes');
         const fileName = `lottery-ticket-${ticket.ticketNumber}.png`;
         const file = new File([imageBlob], fileName, { type: 'image/png' });
-        console.log('File object created:', fileName);
         
         // Try Web Share API with image first
         if (navigator.share) {
-          console.log('Sharing ticket image via Web Share API');
-          
           // Try image sharing without canShare check for better compatibility
           try {
             await navigator.share({
@@ -229,7 +207,6 @@ export class MobileTicketUtils {
             });
             return { success: true, method: 'web-share-image' };
           } catch (webShareError) {
-            console.log('Web Share API image sharing failed:', webShareError);
             
             // If Web Share API fails, try clipboard with image data URL
             try {
@@ -264,7 +241,6 @@ export class MobileTicketUtils {
                       resolve({ success: true, method: 'download', message: 'Ticket image downloaded!' });
                     }
                   } catch (clipboardError) {
-                    console.log('Clipboard image failed, downloading instead:', clipboardError);
                     // Fallback to download
                     const url = URL.createObjectURL(imageBlob);
                     const a = document.createElement('a');
@@ -294,7 +270,6 @@ export class MobileTicketUtils {
                 img.src = URL.createObjectURL(imageBlob);
               });
             } catch (fallbackError) {
-              console.log('Image fallback failed:', fallbackError);
               // Direct download as final image fallback
               const url = URL.createObjectURL(imageBlob);
               const a = document.createElement('a');
@@ -309,8 +284,6 @@ export class MobileTicketUtils {
           }
         } else {
           // No Web Share API, try clipboard or download
-          console.log('No Web Share API, trying clipboard or download...');
-          
           try {
             // Try to copy image to clipboard (modern browsers)
             if (navigator.clipboard && navigator.clipboard.write) {
@@ -321,7 +294,7 @@ export class MobileTicketUtils {
               return { success: true, method: 'clipboard-image', message: 'Ticket image copied to clipboard!' };
             }
           } catch (clipboardError) {
-            console.log('Clipboard image failed:', clipboardError);
+            // Silently handle clipboard errors
           }
           
           // Fallback to download

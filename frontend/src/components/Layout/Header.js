@@ -40,7 +40,7 @@ const Header = ({ onMenuClick }) => {
     } catch (error) {
       // Only log error if it's not an authentication issue
       if (error.response?.status !== 401 && error.response?.status !== 403) {
-        console.error('Error fetching notifications:', error);
+        // Silently handle notification errors to reduce console noise
       }
       // Set empty state on error
       setNotifications([]);
@@ -48,18 +48,18 @@ const Header = ({ onMenuClick }) => {
     }
   };
 
-  // Refresh balance every 5 seconds for more live updates
+  // Refresh balance every 30 seconds (reduced from 5s to minimize server load)
   useEffect(() => {
     if (canViewBalance) {
-      const interval = setInterval(fetchUserBalance, 5000);
+      const interval = setInterval(fetchUserBalance, 30000);
       return () => clearInterval(interval);
     }
   }, [canViewBalance]);
 
-  // Refresh notifications every 60 seconds
+  // Refresh notifications every 2 minutes (reduced from 60s)
   useEffect(() => {
     if (user?.id) {
-      const interval = setInterval(fetchNotifications, 60000);
+      const interval = setInterval(fetchNotifications, 120000);
       return () => clearInterval(interval);
     }
   }, [user?.id]);
@@ -94,7 +94,7 @@ const Header = ({ onMenuClick }) => {
       const response = await api.get('/balance/current');
       setUserBalance(response.data);
     } catch (err) {
-      console.error('Error fetching user balance:', err);
+      // Silently handle balance fetch errors
     } finally {
       setBalanceLoading(false);
     }
@@ -205,11 +205,10 @@ const Header = ({ onMenuClick }) => {
                                   );
                                   setNotificationCount(prev => Math.max(0, prev - 1));
                                 } catch (error) {
-                                  console.error('Error marking notification as read:', error);
+                                  // Silently handle notification read errors
                                   
                                   // If notification not found (404), refresh the notifications list
                                   if (error.response?.status === 404) {
-                                    console.log('Notification not found, refreshing notifications list...');
                                     fetchNotifications();
                                   }
                                 }
