@@ -16,6 +16,8 @@ const config: CapacitorConfig = {
     hostname: 'localhost',
     iosScheme: 'capacitor'
   },
+  // Prevent WebView disconnects
+  loggingBehavior: 'production',
   // Android-specific optimizations
   android: {
     allowMixedContent: true,

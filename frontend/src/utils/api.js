@@ -14,6 +14,13 @@ const getApiBaseUrl = () => {
     return process.env.REACT_APP_API_URL;
   }
   
+  // TESTING: Force localhost backend for Capacitor testing
+  // Comment this out when done testing
+  if (typeof window !== 'undefined' && window.location.origin === 'https://localhost') {
+    console.log('🧪 TESTING MODE: Using localhost backend');
+    return 'http://192.168.0.167:3001'; // Your local IP
+  }
+  
   // Local development
   if (isLocalhost) {
     return 'http://localhost:3001';

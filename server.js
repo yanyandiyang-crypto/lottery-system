@@ -150,7 +150,9 @@ app.use(cors({
       'https://localhost',  // Capacitor Android app
       'http://localhost',   // Capacitor iOS app
       'capacitor://localhost',  // Capacitor internal
-      'ionic://localhost'   // Ionic Capacitor
+      'ionic://localhost',   // Ionic Capacitor
+      'http://192.168.0.167:3000',  // Local network testing
+      'http://192.168.0.167:3001'   // Local network testing
     ];
     
     console.log('CORS: Checking origin:', origin);
@@ -187,7 +189,9 @@ app.options('*', (req, res) => {
     'https://localhost',  // Capacitor Android app
     'http://localhost',   // Capacitor iOS app
     'capacitor://localhost',  // Capacitor internal
-    'ionic://localhost'   // Ionic Capacitor
+    'ionic://localhost',   // Ionic Capacitor
+    'http://192.168.0.167:3000',  // Local network testing
+    'http://192.168.0.167:3001'   // Local network testing
   ];
   
   if (allowedOrigins.includes(origin)) {
@@ -473,7 +477,7 @@ process.on('SIGINT', async () => {
   });
 });
 
-// Start server
+// Start server with keep-alive settings
 server.listen(PORT, () => {
   logger.info(`🚀 NewBetting Lottery System running on port ${PORT}`, {
     port: PORT,
@@ -488,5 +492,9 @@ server.listen(PORT, () => {
   backupService.scheduleBackups();
   notificationService.initialize(io);
 });
+
+// Keep-alive settings for mobile connections
+server.keepAliveTimeout = 120000; // 2 minutes
+server.headersTimeout = 125000; // 2 minutes + 5 seconds
 
 module.exports = { app, server, io, prisma };
