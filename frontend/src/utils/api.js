@@ -59,32 +59,37 @@ const api = axios.create({
   }
 });
 
-// Retry logic for failed requests
+// Retry logic for failed requests (silent retries, no popups)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config;
     
-    // Retry on network errors or 502/503 (server sleeping)
+    // Initialize retry counter
     if (!config || !config.retry) {
       config.retry = 0;
     }
     
+    // Only retry on actual network failures, not slow responses
     const shouldRetry = 
-      (error.code === 'ECONNABORTED' || 
-       error.code === 'ERR_NETWORK' ||
+      (error.code === 'ERR_NETWORK' ||
        error.response?.status === 502 ||
        error.response?.status === 503) &&
-      config.retry < 3;
+      config.retry < 2; // Reduced to 2 retries
     
     if (shouldRetry) {
       config.retry += 1;
-      console.log(`🔄 Retrying request (${config.retry}/3)...`);
+      console.log(`🔄 Silent retry (${config.retry}/2)...`);
       
-      // Wait before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, config.retry * 2000));
+      // Shorter wait time
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       return api(config);
+    }
+    
+    // Don't show popup for successful retries or timeout errors
+    if (error.code === 'ECONNABORTED') {
+      console.warn('⏱️ Request timeout - continuing...');
     }
     
     return Promise.reject(error);

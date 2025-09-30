@@ -26,7 +26,8 @@ import {
   StopIcon,
   CommandLineIcon,
   UserIcon,
-  IdentificationIcon
+  IdentificationIcon,
+  PrinterIcon
 } from '@heroicons/react/24/outline';
 
 // Organized navigation groups with modern emojis and icons
@@ -56,6 +57,7 @@ const navigationGroups = {
     { name: 'Winning Tickets', href: '/winning-tickets', icon: GiftIcon, emoji: '🎁', roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
     { name: 'Agent Tickets', href: '/agent-tickets', icon: TicketIcon, emoji: '🎫', roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
     { name: 'Bet History', href: '/bet-history', icon: ClockIcon, emoji: '🕒', roles: ['agent'] },
+    { name: 'Printer Manager', href: '/printer', icon: PrinterIcon, emoji: '🖨️', roles: ['agent'] },
   ],
   
   verification: [
