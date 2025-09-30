@@ -451,7 +451,8 @@ export class MobileTicketUtils {
    */
   static isMobilePOSEnvironment() {
     return !!(
-      window.Android ||           // Android WebView
+      window.AndroidPOS ||        // Android WebView with POS support
+      window.AndroidApp ||        // Android WebView app interface
       window.webkit?.messageHandlers ||  // iOS WebView
       window.ReactNativeWebView || // React Native
       navigator.userAgent.includes('MobilePOS')
@@ -468,12 +469,29 @@ export class MobileTicketUtils {
       // Get pre-generated HTML for consistent layout
       const preGeneratedHTML = await this.getPreGeneratedHTML(ticket);
       
-      // Mobile POS printing methods
-      if (window.Android?.printTicket) {
-        window.Android.printTicket(preGeneratedHTML, ticket.ticketNumber);
+      // Convert HTML to plain text format for thermal printer
+      const plainTextReceipt = this.convertHTMLToPlainText(preGeneratedHTML, ticket, user);
+      
+      // Android POS printing (using AndroidPOS interface)
+      if (window.AndroidPOS) {
+        console.log('📱 Using AndroidPOS.printReceipt()');
+        
+        // Check if connected first
+        if (window.AndroidPOS.isConnected && !window.AndroidPOS.isConnected()) {
+          console.log('⚠️ Printer not connected, attempting to connect...');
+          if (window.AndroidPOS.connectPOS) {
+            window.AndroidPOS.connectPOS();
+          }
+          // Wait a bit for connection
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        // Use printReceipt for auto-cut functionality
+        window.AndroidPOS.printReceipt(plainTextReceipt);
         return { success: true, method: 'android-pos' };
       }
       
+      // iOS WebView printing
       if (window.webkit?.messageHandlers?.printTicket) {
         window.webkit.messageHandlers.printTicket.postMessage({
           html: preGeneratedHTML,
@@ -566,6 +584,61 @@ export class MobileTicketUtils {
       console.error('❌ Browser printing failed:', error);
       throw error;
     }
+  }
+
+  /**
+   * Convert HTML ticket to plain text format for thermal printer
+   */
+  static convertHTMLToPlainText(html, ticket, user) {
+    // Extract ticket data
+    const bets = ticket.bets || [];
+    const drawTime = ticket.draw?.drawTime || 'N/A';
+    const drawDate = ticket.draw?.drawDate || 'N/A';
+    const agentName = user?.fullName || ticket.agentName || 'Agent';
+    
+    // Build plain text receipt for 58mm thermal printer
+    let receipt = '';
+    
+    // Header
+    receipt += '================================\n';
+    receipt += '      LOTTERY TICKET\n';
+    receipt += '================================\n';
+    receipt += `#${ticket.ticketNumber}\n`;
+    receipt += '--------------------------------\n';
+    receipt += `Draw: ${drawTime}\n`;
+    receipt += `Date: ${drawDate}\n`;
+    receipt += '================================\n\n';
+    
+    // Bets
+    bets.forEach((bet, index) => {
+      const sequence = String.fromCharCode(65 + index); // A, B, C...
+      const betType = bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1);
+      
+      receipt += `${sequence}. ${betType}\n`;
+      receipt += `   ${bet.betCombination.split('').join(' ')}\n`;
+      receipt += `   ₱${parseFloat(bet.betAmount || 0).toFixed(2)}\n\n`;
+    });
+    
+    // Total
+    receipt += '================================\n';
+    receipt += '         TOTAL AMOUNT\n';
+    receipt += `         ₱${parseFloat(ticket.totalAmount || 0).toFixed(2)}\n`;
+    receipt += '================================\n\n';
+    
+    // Agent info
+    receipt += `Agent: ${agentName}\n`;
+    
+    // QR Code placeholder (thermal printers can't print QR from text)
+    receipt += '\n[QR CODE]\n';
+    receipt += `${ticket.ticketNumber}\n`;
+    
+    // Footer
+    receipt += '\n================================\n';
+    receipt += '       GOOD LUCK! 🍀\n';
+    receipt += '================================\n';
+    receipt += `${new Date(ticket.createdAt).toLocaleString()}\n`;
+    
+    return receipt;
   }
 
   /**

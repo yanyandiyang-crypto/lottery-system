@@ -173,7 +173,16 @@ ${signatureImage ? `<div class="signature-section" style="text-align: center; ma
   static async printTicket(ticket, user, options = {}) {
     const { autoClose = true, silent = false } = options;
     try {
-      console.log('🖨️ Using backend template for main print ticket');
+      console.log('🖨️ Printing ticket...');
+      
+      // Check if running in Android app with POS support
+      if (window.AndroidPOS) {
+        console.log('📱 Detected Android POS app, using native printing');
+        const MobileTicketUtils = (await import('./mobileTicketUtils')).default;
+        return await MobileTicketUtils.printMobileTicket(ticket, user);
+      }
+      
+      console.log('🌐 Using browser print with backend template');
       
       // Call backend endpoint for consistent template rendering
       const api = (await import('./api')).default;
