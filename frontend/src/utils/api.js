@@ -102,15 +102,12 @@ api.interceptors.request.use(
     // Add request timestamp
     config.metadata = { startTime: new Date() };
 
-    // Log request in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[API ${API_VERSION}] ${config.method?.toUpperCase()} ${config.url}`);
-    }
+    // Request logging disabled for performance
 
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    // Request errors handled silently
     return Promise.reject(error);
   }
 );
@@ -118,24 +115,7 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
-    // Log response time in development
-    if (process.env.NODE_ENV === 'development' && response.config.metadata) {
-      const duration = new Date() - response.config.metadata.startTime;
-      console.log(`[API ${API_VERSION}] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status} (${duration}ms)`);
-    }
-
-    // Check for API version warnings
-    const deprecationWarning = response.headers['x-api-deprecation-warning'];
-    const sunsetWarning = response.headers['x-api-sunset-warning'];
-
-    if (deprecationWarning) {
-      console.warn(`[API Warning] ${deprecationWarning}`);
-    }
-
-    if (sunsetWarning) {
-      console.warn(`[API Warning] ${sunsetWarning}`);
-    }
-
+    // Response logging and API warnings disabled for performance
     return response;
   },
   (error) => {
@@ -145,26 +125,18 @@ api.interceptors.response.use(
       
       switch (status) {
         case 400:
-          // Bad Request - Validation failed
-          console.error('Validation failed:', data.message || 'Invalid request data');
-          if (data.errors && Array.isArray(data.errors)) {
-            console.error('Validation errors:', data.errors);
-          }
+          // Bad Request - Validation failed (silently handled)
           break;
         case 401:
           // Unauthorized - clear token but don't auto-redirect
-          // Let the AuthContext handle the redirect logic
           localStorage.removeItem('token');
           delete axios.defaults.headers.common['Authorization'];
-          console.error('Authentication failed:', data.message);
           break;
         case 403:
-          // Forbidden - show permission error
-          console.error('Access denied:', data.message);
+          // Forbidden - silently handled
           break;
         case 429:
-          // Rate limited
-          console.error('Rate limited:', data.message);
+          // Rate limited - silently handled
           break;
         case 500:
           // Server error

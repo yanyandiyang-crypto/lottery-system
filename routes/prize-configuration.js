@@ -9,8 +9,8 @@ const prisma = new PrismaClient();
 
 // @route   GET /api/prize-configuration
 // @desc    Get all prize configurations
-// @access  Private (SuperAdmin only)
-router.get('/', requireAuth, requireSuperAdmin, async (req, res) => {
+// @access  Private (All authenticated users)
+router.get('/', requireAuth, async (req, res) => {
   try {
     // Some deployments may not have the prize_configurations table yet
     try {
@@ -85,8 +85,8 @@ router.get('/', requireAuth, requireSuperAdmin, async (req, res) => {
 
 // @route   GET /api/prize-configuration/:betType
 // @desc    Get prize configuration for specific bet type
-// @access  Private (SuperAdmin only)
-router.get('/:betType', requireAuth, requireSuperAdmin, async (req, res) => {
+// @access  Private (All authenticated users)
+router.get('/:betType', requireAuth, async (req, res) => {
   try {
     const { betType } = req.params;
 

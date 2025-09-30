@@ -72,7 +72,6 @@ const PWAInstaller = () => {
       window.addEventListener('load', async () => {
         try {
           const registration = await navigator.serviceWorker.register('/sw.js');
-          console.log('SW registered: ', registration);
           
           // Check for updates
           registration.addEventListener('updatefound', () => {

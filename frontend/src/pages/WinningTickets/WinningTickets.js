@@ -91,11 +91,8 @@ const WinningTickets = () => {
         rambolito: configMap.rambolito || configMap.rambol || 75,                     // fallback to 75
         rambolito_double: configMap.rambolito_double || configMap.rambol_double || 150 // fallback to 150
       });
-      
-      console.log('Prize configuration loaded:', configMap);
     } catch (error) {
-      console.error('Error fetching prize configuration:', error);
-      // Keep default values if API fails
+      // Keep default values if API fails (403 errors are expected for agents)
     }
   };
 
@@ -110,7 +107,7 @@ const WinningTickets = () => {
         setAgents(agentsRes.data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching hierarchy data:', error);
+      // Silently handle hierarchy fetch errors
     }
   };
 
@@ -142,7 +139,6 @@ const WinningTickets = () => {
       }
 
     } catch (err) {
-      console.error('Winning reports error:', err);
       toast.error('Error loading winning reports');
     } finally {
       setAnalyticsLoading(false);
@@ -247,7 +243,6 @@ const WinningTickets = () => {
         totalPages: response.data.data?.pagination?.totalPages || response.data.data?.pagination?.pages || 0
       }));
     } catch (error) {
-      console.error('Error fetching winning tickets:', error);
       toast.error('Failed to fetch winning tickets');
     } finally {
       setLoading(false);
@@ -583,7 +578,6 @@ const WinningTickets = () => {
                             const agentsRes = await api.get('/users', { params: { role: 'agent', coordinatorId: parseInt(coordinatorId) } });
                             setAgents(agentsRes.data.data || []);
                           } catch (error) {
-                            console.error('Error fetching agents:', error);
                             setAgents([]);
                           }
                         } else {

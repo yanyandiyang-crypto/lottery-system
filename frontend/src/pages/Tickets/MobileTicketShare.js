@@ -26,17 +26,15 @@ const MobileTicketShare = () => {
   const [user, setUser] = useState(null);
 
   // Fetch ticket data
-  const { data: ticketData, isLoading, error } = useQuery(
-    ['ticket', ticketNumber],
-    async () => {
+  const { data: ticketData, isLoading, error } = useQuery({
+    queryKey: ['ticket', ticketNumber],
+    queryFn: async () => {
       const response = await api.get(`/tickets/number/${ticketNumber}`);
       return response.data;
     },
-    {
-      enabled: !!ticketNumber,
-      retry: 2
-    }
-  );
+    enabled: !!ticketNumber,
+    retry: 2
+  });
 
   // Get current user info
   useEffect(() => {

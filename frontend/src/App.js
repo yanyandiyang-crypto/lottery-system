@@ -1,11 +1,9 @@
-import React, { useEffect, lazy, Suspense } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { DataModeProvider } from './contexts/DataModeContext';
 import Layout from './components/Layout/Layout';
-import CapacitorUtils from './utils/capacitorUtils';
-import PWAInstaller from './components/PWA/PWAInstaller';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 
 // Critical pages - load immediately
@@ -107,22 +105,17 @@ function AppRoutes() {
 
   if (!user) {
     return (
-      <>
-        <PWAInstaller />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     );
   }
 
   // Mobile navigation removed - no longer needed
 
   return (
-    <>
-      <PWAInstaller />
-      <Layout>
+    <Layout>
         <Suspense fallback={<LoadingSpinner fullScreen={true} />}>
           <Routes>
           {/* Dashboard */}
@@ -231,16 +224,10 @@ function AppRoutes() {
         </Routes>
         </Suspense>
       </Layout>
-    </>
   );
 }
 
 function App() {
-  useEffect(() => {
-    // Initialize Capacitor when app starts
-    CapacitorUtils.initializeApp();
-  }, []);
-
   return (
     <Router>
       <AuthProvider>

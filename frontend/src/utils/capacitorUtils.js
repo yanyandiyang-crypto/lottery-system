@@ -11,7 +11,7 @@ class CapacitorUtils {
 
   // Initialize app (no-op without Capacitor)
   static async initializeApp() {
-    console.log('Running in standard webview mode (no Capacitor)');
+    // Capacitor disabled
     return;
   }
 

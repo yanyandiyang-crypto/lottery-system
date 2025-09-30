@@ -97,14 +97,12 @@ const AgentTickets = () => {
     };
   };
 
-  const { data: ticketsData, isLoading, refetch } = useQuery(
-    ['tickets', pagination.currentPage, searchTerm, statusFilter, drawTimeFilter, dateRange.startDate, dateRange.endDate],
-    () => fetchTickets({ pageParam: pagination.currentPage }),
-    {
-      keepPreviousData: true,
-      staleTime: 30000
-    }
-  );
+  const { data: ticketsData, isLoading, refetch } = useQuery({
+    queryKey: ['tickets', pagination.currentPage, searchTerm, statusFilter, drawTimeFilter, dateRange.startDate, dateRange.endDate],
+    queryFn: () => fetchTickets({ pageParam: pagination.currentPage }),
+    placeholderData: (previousData) => previousData, // keepPreviousData renamed in v5
+    staleTime: 30000
+  });
 
   const handleSearch = (value) => {
     setSearchTerm(value);

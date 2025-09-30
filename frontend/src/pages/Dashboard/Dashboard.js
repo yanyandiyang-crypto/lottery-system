@@ -37,34 +37,30 @@ const Dashboard = () => {
 
   const isTodayRange = dateRange.startDate === dateRange.endDate && dateRange.startDate === getCurrentDatePH();
 
-  const { data: dashboardData, isLoading, error, refetch } = useQuery(
-    ['dashboard', dateRange.startDate, dateRange.endDate],
-    async () => {
+  const { data: dashboardData, isLoading, error, refetch } = useQuery({
+    queryKey: ['dashboard', dateRange.startDate, dateRange.endDate],
+    queryFn: async () => {
       const response = await api.get('/dashboard', { params: dateRange });
       return response.data.data; // unwrap { success, data }
     },
-    {
-      refetchInterval: isTodayRange ? 60000 : false, // Reduced from 30s to 60s
-      staleTime: 30000, // Consider data fresh for 30s
-      cacheTime: 300000, // Keep in cache for 5 minutes
-    }
-  );
+    refetchInterval: isTodayRange ? 60000 : false, // Reduced from 30s to 60s
+    staleTime: 30000, // Consider data fresh for 30s
+    gcTime: 300000, // Keep in cache for 5 minutes (renamed from cacheTime in v5)
+  });
 
   // Live dashboard data polling disabled to reduce server load
   // Main dashboard query with 60s interval is sufficient for real-time updates
 
   // Fetch active draws
-  const { data: activeDraws, isLoading: drawsLoading, error: drawsError } = useQuery(
-    'activeDraws',
-    async () => {
+  const { data: activeDraws, isLoading: drawsLoading, error: drawsError } = useQuery({
+    queryKey: ['activeDraws'],
+    queryFn: async () => {
       const response = await api.get('/draws/current/active');
       return response.data.data || [];
     },
-    {
-      refetchInterval: 60000, // Reduced from 30s to 60s
-      staleTime: 30000, // Consider data fresh for 30s
-    }
-  );
+    refetchInterval: 60000, // Reduced from 30s to 60s
+    staleTime: 30000, // Consider data fresh for 30s
+  });
 
   // Create all three draws with proper status
   const createDrawCard = (drawTime, hour, label) => {

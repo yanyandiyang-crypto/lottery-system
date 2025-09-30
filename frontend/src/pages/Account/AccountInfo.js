@@ -54,10 +54,10 @@ const AccountInfo = () => {
   const fetchAccountStats = async () => {
     try {
       // Fetch user-specific statistics based on role
-      const response = await api.get('/account/stats');
+      const response = await api.get('/auth/stats');
       setAccountStats(response.data.data);
     } catch (error) {
-      console.error('Failed to fetch account stats:', error);
+      // Silently handle account stats fetch error (404 expected if route not implemented)
     }
   };
 

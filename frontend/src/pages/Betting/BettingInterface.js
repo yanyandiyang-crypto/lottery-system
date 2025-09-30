@@ -125,8 +125,6 @@ const BettingInterface = () => {
   const drawParam = urlParams.get('draw');
   const timeParam = urlParams.get('time');
   
-  console.log('🔗 URL Parameters:', { drawParam, timeParam });
-  
   const [selectedDraw, setSelectedDraw] = useState(null);
   const [betDigits, setBetDigits] = useState(['?', '?', '?']);
   const [currentDigitIndex, setCurrentDigitIndex] = useState(0);
@@ -141,39 +139,31 @@ const BettingInterface = () => {
   const [timeRemaining, setTimeRemaining] = useState(null);
 
   // Fetch active draws
-  const { data: draws, isLoading: drawsLoading } = useQuery(
-    'activeDraws',
-    async () => {
+  const { data: draws, isLoading: drawsLoading } = useQuery({
+    queryKey: ['activeDraws'],
+    queryFn: async () => {
       const response = await api.get('/draws/current/active');
       // The API returns { success: true, data: [...] }, so we need response.data.data
       return response.data.data || [];
     },
-    {
-      refetchInterval: 30000, // Refetch every 30 seconds
-      onError: (error) => {
-        console.error('Error fetching draws:', error);
-        toast.error('Failed to load draw information');
-      }
+    refetchInterval: 30000, // Refetch every 30 seconds
+    onError: (error) => {
+      toast.error('Failed to load draw information');
     }
-  );
+  });
 
   // Fetch user balance
-  const { data: balance, refetch: refetchBalance, isLoading: balanceLoading } = useQuery(
-    ['balance', user?.id],
-    async () => {
+  const { data: balance, refetch: refetchBalance, isLoading: balanceLoading } = useQuery({
+    queryKey: ['balance', user?.id],
+    queryFn: async () => {
       if (!user?.id) return null;
       const response = await api.get(`/balance/${user.id}`);
       // The API returns { success: true, data: balance, currentBalance: balance.currentBalance }
       return response.data.data || response.data;
     },
-    {
-      enabled: !!user?.id,
-      refetchInterval: 10000, // Refetch every 10 seconds
-      onError: (error) => {
-        console.error('Error fetching balance:', error);
-      }
-    }
-  );
+    enabled: !!user?.id,
+    refetchInterval: 10000, // Refetch every 10 seconds
+  });
 
 
   // Set default draw when draws are loaded
@@ -183,7 +173,6 @@ const BettingInterface = () => {
       if (drawParam) {
         const drawById = draws.find(draw => draw.id.toString() === drawParam);
         if (drawById) {
-          console.log('🎯 Selected draw by ID:', drawById.drawTime, drawById.id);
           setSelectedDraw(drawById);
           return;
         }
@@ -196,7 +185,6 @@ const BettingInterface = () => {
           return drawTimeLabel === timeParam || formatDrawTime(draw.drawTime) === timeParam;
         });
         if (drawByTime) {
-          console.log('🎯 Selected draw by time:', drawByTime.drawTime, drawByTime.id);
           setSelectedDraw(drawByTime);
           return;
         }
@@ -205,10 +193,8 @@ const BettingInterface = () => {
       // Fallback: Find the first open draw
       const openDraw = draws.find(draw => draw.status === 'open');
       if (openDraw) {
-        console.log('🎯 Selected first open draw:', openDraw.drawTime, openDraw.id);
         setSelectedDraw(openDraw);
       } else {
-        console.log('🎯 Selected first available draw:', draws[0].drawTime, draws[0].id);
         setSelectedDraw(draws[0]);
       }
     }
@@ -369,8 +355,6 @@ const BettingInterface = () => {
       }
 
       // Create a single ticket with multiple bets using default template
-      // Debug: Check addedBets structure
-      console.log('addedBets before processing:', addedBets);
       
       // Calculate total amount
       const totalAmount = addedBets.reduce((sum, bet) => sum + parseFloat(bet.amount), 0);
@@ -378,7 +362,6 @@ const BettingInterface = () => {
       const processedBets = addedBets.map(bet => {
         // Ensure bet combination is exactly 3 digits (pad with zeros if needed)
         const paddedNumber = bet.number.toString().padStart(3, '0');
-        console.log(`Processing bet: ${bet.number} -> ${paddedNumber}`);
         
         return {
           betCombination: paddedNumber,
@@ -393,9 +376,6 @@ const BettingInterface = () => {
         totalAmount: totalAmount,
         bets: processedBets
       };
-      
-      // Debug: Check final ticket data
-      console.log('Final ticketData being sent:', ticketData);
 
       // Use create endpoint for ticket creation
       const response = await api.post('/tickets/create', ticketData);

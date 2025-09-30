@@ -20,7 +20,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[SW] Precaching critical assets');
         return cache.addAll(PRECACHE_URLS.map(url => new Request(url, { cache: 'reload' })));
       })
       .then(() => self.skipWaiting())
@@ -37,7 +36,6 @@ self.addEventListener('activate', (event) => {
             return cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE;
           })
           .map((cacheName) => {
-            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           })
       );
@@ -110,7 +108,6 @@ async function networkFirstStrategy(request) {
   } catch (error) {
     const cached = await cache.match(request);
     if (cached) {
-      console.log('[SW] Serving from cache:', request.url);
       return cached;
     }
     throw error;
@@ -125,7 +122,6 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncTickets() {
-  console.log('[SW] Syncing tickets in background');
   // Implement ticket sync logic here
 }
 
