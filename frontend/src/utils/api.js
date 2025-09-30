@@ -42,7 +42,7 @@ const API_VERSION = process.env.REACT_APP_API_VERSION || 'v1';
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
-  timeout: 60000, // Increased timeout for Render cold starts
+  timeout: 120000, // 2 minutes for slow mobile networks
   headers: {
     'Content-Type': 'application/json',
     'X-API-Version': API_VERSION,
@@ -59,37 +59,17 @@ const api = axios.create({
   }
 });
 
-// Retry logic for failed requests (silent retries, no popups)
+// Retry logic disabled - let requests fail naturally without popups
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const config = error.config;
-    
-    // Initialize retry counter
-    if (!config || !config.retry) {
-      config.retry = 0;
-    }
-    
-    // Only retry on actual network failures, not slow responses
-    const shouldRetry = 
-      (error.code === 'ERR_NETWORK' ||
-       error.response?.status === 502 ||
-       error.response?.status === 503) &&
-      config.retry < 2; // Reduced to 2 retries
-    
-    if (shouldRetry) {
-      config.retry += 1;
-      console.log(`🔄 Silent retry (${config.retry}/2)...`);
-      
-      // Shorter wait time
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return api(config);
-    }
-    
-    // Don't show popup for successful retries or timeout errors
+    // Just log errors, don't retry or show popups
     if (error.code === 'ECONNABORTED') {
-      console.warn('⏱️ Request timeout - continuing...');
+      console.warn('⏱️ Request timeout');
+    } else if (error.code === 'ERR_NETWORK') {
+      console.warn('🌐 Network error');
+    } else if (error.response?.status === 502 || error.response?.status === 503) {
+      console.warn('🔄 Server temporarily unavailable');
     }
     
     return Promise.reject(error);
