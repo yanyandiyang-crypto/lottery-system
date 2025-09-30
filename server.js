@@ -146,7 +146,11 @@ app.use(cors({
     const allowedOrigins = [
       'https://lottery-system-gamma.vercel.app',
       'http://localhost:3000',
-      'http://localhost:3002'
+      'http://localhost:3002',
+      'https://localhost',  // Capacitor Android app
+      'http://localhost',   // Capacitor iOS app
+      'capacitor://localhost',  // Capacitor internal
+      'ionic://localhost'   // Ionic Capacitor
     ];
     
     console.log('CORS: Checking origin:', origin);
@@ -179,7 +183,11 @@ app.options('*', (req, res) => {
   const allowedOrigins = [
     'https://lottery-system-gamma.vercel.app',
     'http://localhost:3000',
-    'http://localhost:3002'
+    'http://localhost:3002',
+    'https://localhost',  // Capacitor Android app
+    'http://localhost',   // Capacitor iOS app
+    'capacitor://localhost',  // Capacitor internal
+    'ionic://localhost'   // Ionic Capacitor
   ];
   
   if (allowedOrigins.includes(origin)) {
