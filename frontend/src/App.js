@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { DataModeProvider } from './contexts/DataModeContext';
 import Layout from './components/Layout/Layout';
+import CapacitorUtils from './utils/capacitorUtils';
 // Mobile components removed - no longer needed
 // import MobileOptimized from './components/Mobile/MobileOptimized';
 // import MobileNavigation from './components/Mobile/MobileNavigation';
@@ -48,6 +49,7 @@ import TemplateAssignment from './pages/TicketTemplates/TemplateAssignment';
 import TicketSearch from './components/TicketSearch';
 import TicketClaiming from './components/TicketClaiming';
 import ClaimApprovals from './pages/ClaimApprovals/ClaimApprovals';
+import PrinterManager from './components/Printer/PrinterManager';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -223,6 +225,9 @@ function AppRoutes() {
         {/* Security Audit Dashboard - Admins only */}
         <Route path="/admin/audit" element={<AdminRoute><AuditDashboard /></AdminRoute>} />
 
+        {/* Printer Manager - Agent only (for mobile POS) */}
+        <Route path="/printer" element={<AgentRoute><PrinterManager /></AgentRoute>} />
+
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
@@ -232,6 +237,11 @@ function AppRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+    // Initialize Capacitor when app starts
+    CapacitorUtils.initializeApp();
+  }, []);
+
   return (
     <Router>
       <AuthProvider>

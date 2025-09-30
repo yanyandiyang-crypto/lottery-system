@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Pisting Yawa Lottery</string>
+    <string name="title_activity_main">Pisting Yawa Lottery</string>
+    <string name="package_name">com.pistingyawa.lottery</string>
+    <string name="custom_url_scheme">com.pistingyawa.lottery</string>
+</resources>

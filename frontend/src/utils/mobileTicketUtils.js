@@ -399,6 +399,13 @@ export class MobileTicketUtils {
     try {
       console.log('🖨️ Mobile POS printing...');
       
+      // Check if running on Capacitor (Android/iOS native app)
+      const { Capacitor } = await import('@capacitor/core');
+      if (Capacitor.isNativePlatform()) {
+        console.log('📱 Capacitor detected - using thermal printer');
+        return await this.printViaCapacitorThermalPrinter(ticket, user);
+      }
+      
       // Check if mobile POS printer is available
       if (this.isMobilePOSEnvironment()) {
         return await this.printViaMobilePOS(ticket, user);
@@ -416,6 +423,59 @@ export class MobileTicketUtils {
     } catch (error) {
       console.error('❌ Error in mobile POS printing:', error);
       // Final fallback to browser print
+      return await this.printViaBrowser(ticket, user);
+    }
+  }
+
+  /**
+   * Print via Capacitor Thermal Printer (Android/iOS)
+   */
+  static async printViaCapacitorThermalPrinter(ticket, user) {
+    try {
+      console.log('🖨️ Printing via Capacitor thermal printer...');
+      
+      // Import thermal printer utility
+      const thermalPrinter = (await import('./thermalPrinterUtils')).default;
+      
+      // Check if printer is connected
+      if (!thermalPrinter.isConnected()) {
+        console.warn('⚠️ Thermal printer not connected');
+        // Show alert to user
+        if (window.confirm('Thermal printer not connected. Connect now?')) {
+          // Redirect to printer settings
+          window.location.href = '/printer';
+          return { success: false, error: 'Printer not connected' };
+        }
+        // Fallback to browser print
+        return await this.printViaBrowser(ticket, user);
+      }
+      
+      // Prepare ticket data for thermal printer
+      const ticketData = {
+        ticketNumber: ticket.ticketNumber,
+        drawTime: ticket.drawTime,
+        drawDate: ticket.drawDate,
+        bets: ticket.bets || [],
+        totalAmount: ticket.totalAmount,
+        agentName: user?.fullName || ticket.agentName || 'Agent',
+        agentCode: user?.username || ticket.agentCode || '',
+        qrCode: ticket.qrCode || `${ticket.ticketNumber}|${ticket.securityHash || ''}`,
+        createdAt: ticket.createdAt
+      };
+      
+      // Print to thermal printer
+      await thermalPrinter.printLotteryTicket(ticketData);
+      
+      console.log('✅ Ticket printed successfully via thermal printer');
+      return { success: true, method: 'capacitor-thermal-printer' };
+      
+    } catch (error) {
+      console.error('❌ Capacitor thermal printer failed:', error);
+      
+      // Show error to user
+      alert(`Printing failed: ${error.message}\nFalling back to browser print...`);
+      
+      // Fallback to browser print
       return await this.printViaBrowser(ticket, user);
     }
   }
