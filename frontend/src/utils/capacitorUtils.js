@@ -1,193 +1,166 @@
-import { Capacitor } from '@capacitor/core';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { SplashScreen } from '@capacitor/splash-screen';
-import { Keyboard } from '@capacitor/keyboard';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Share } from '@capacitor/share';
-import { Network } from '@capacitor/network';
-import { Geolocation } from '@capacitor/geolocation';
+/**
+ * Capacitor Utilities - Stub version for non-Capacitor webview apps
+ * All Capacitor dependencies removed - using browser APIs only
+ */
 
 class CapacitorUtils {
-  // Check if running on native platform
+  // Check if running on native platform (always false now)
   static isNative() {
-    return Capacitor.isNativePlatform();
+    return false;
   }
 
-  // Initialize app on native platforms
+  // Initialize app (no-op without Capacitor)
   static async initializeApp() {
-    if (!this.isNative()) return;
-
-    try {
-      // Hide splash screen after app loads
-      await SplashScreen.hide();
-      
-      // Set status bar style
-      await StatusBar.setStyle({ style: Style.Dark });
-      await StatusBar.setBackgroundColor({ color: '#0ea5e9' });
-      
-      console.log('Capacitor app initialized successfully');
-    } catch (error) {
-      console.error('Error initializing Capacitor app:', error);
-    }
+    console.log('Running in standard webview mode (no Capacitor)');
+    return;
   }
 
-  // Camera utilities for QR scanning and ticket photos
+  // Camera utilities - Use browser MediaDevices API
   static async takePicture() {
-    if (!this.isNative()) {
-      throw new Error('Camera only available on native platforms');
-    }
-
     try {
-      const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
       });
-
-      return image.dataUrl;
+      
+      // Create video element to capture frame
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      await video.play();
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      
+      stream.getTracks().forEach(track => track.stop());
+      
+      return canvas.toDataURL('image/jpeg', 0.9);
     } catch (error) {
       console.error('Error taking picture:', error);
       throw error;
     }
   }
 
-  // Share ticket images
+  // Share ticket images - Use Web Share API
   static async shareTicket(title, text, imageUrl = null) {
+    if (!navigator.share) {
+      throw new Error('Web Share API not supported');
+    }
+    
     try {
       const shareOptions = {
         title: title,
-        text: text,
-        dialogTitle: 'Share Lottery Ticket'
+        text: text
       };
 
       if (imageUrl) {
         shareOptions.url = imageUrl;
       }
 
-      await Share.share(shareOptions);
+      await navigator.share(shareOptions);
     } catch (error) {
       console.error('Error sharing ticket:', error);
       throw error;
     }
   }
 
-  // Network status monitoring
+  // Network status monitoring - Use Navigator API
   static async getNetworkStatus() {
-    try {
-      const status = await Network.getStatus();
-      return {
-        connected: status.connected,
-        connectionType: status.connectionType
-      };
-    } catch (error) {
-      console.error('Error getting network status:', error);
-      return { connected: true, connectionType: 'unknown' };
-    }
+    return {
+      connected: navigator.onLine,
+      connectionType: navigator.connection?.effectiveType || 'unknown'
+    };
   }
 
-  // Listen for network changes
+  // Listen for network changes - Use browser events
   static onNetworkChange(callback) {
-    if (!this.isNative()) return;
-
-    Network.addListener('networkStatusChange', callback);
+    window.addEventListener('online', () => {
+      callback({ connected: true, connectionType: 'unknown' });
+    });
+    window.addEventListener('offline', () => {
+      callback({ connected: false, connectionType: 'none' });
+    });
   }
 
-  // Keyboard utilities
+  // Keyboard utilities - Blur active element
   static async hideKeyboard() {
-    if (!this.isNative()) return;
-    
-    try {
-      await Keyboard.hide();
-    } catch (error) {
-      console.error('Error hiding keyboard:', error);
+    if (document.activeElement) {
+      document.activeElement.blur();
     }
   }
 
-  // Show keyboard
+  // Show keyboard - Focus on element (no-op)
   static async showKeyboard() {
-    if (!this.isNative()) return;
+    // Browser handles keyboard automatically
+    return;
+  }
+
+  // Listen for keyboard events - Use window resize
+  static onKeyboardChange(callback) {
+    let lastHeight = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      const currentHeight = window.innerHeight;
+      const heightDiff = lastHeight - currentHeight;
+      
+      if (heightDiff > 100) {
+        callback({ visible: true, height: heightDiff });
+      } else if (heightDiff < -100) {
+        callback({ visible: false, height: 0 });
+      }
+      
+      lastHeight = currentHeight;
+    });
+  }
+
+  // Enhanced share for ticket images - Web Share API
+  static async shareTicketImage(ticketData, imageBlob) {
+    if (!navigator.share) {
+      throw new Error('Web Share API not supported');
+    }
     
     try {
-      await Keyboard.show();
+      await navigator.share({
+        title: `Lottery Ticket #${ticketData.ticketNumber}`,
+        text: `My lottery ticket for draw ${ticketData.drawId}`,
+        files: [new File([imageBlob], 'ticket.png', { type: 'image/png' })]
+      });
     } catch (error) {
-      console.error('Error showing keyboard:', error);
-    }
-  }
-
-  // Listen for keyboard events
-  static onKeyboardChange(callback) {
-    if (!this.isNative()) return;
-
-    Keyboard.addListener('keyboardWillShow', (info) => {
-      callback({ visible: true, height: info.keyboardHeight });
-    });
-
-    Keyboard.addListener('keyboardWillHide', () => {
-      callback({ visible: false, height: 0 });
-    });
-  }
-
-  // Enhanced share for ticket images with native sharing
-  static async shareTicketImage(ticketData, imageBlob) {
-    if (!this.isNative()) {
-      // Fallback to web sharing
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Lottery Ticket #${ticketData.ticketNumber}`,
-            text: `My lottery ticket for draw ${ticketData.drawId}`,
-            files: [new File([imageBlob], 'ticket.png', { type: 'image/png' })]
-          });
-        } catch (error) {
-          console.error('Web share failed:', error);
-        }
-      }
-      return;
-    }
-
-    try {
-      // Convert blob to base64 for native sharing
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Data = reader.result;
-        await this.shareTicket(
-          `Lottery Ticket #${ticketData.ticketNumber}`,
-          `My lottery ticket for draw ${ticketData.drawId}`,
-          base64Data
-        );
-      };
-      reader.readAsDataURL(imageBlob);
-    } catch (error) {
-      console.error('Error sharing ticket image:', error);
+      console.error('Web share failed:', error);
       throw error;
     }
   }
 
-  // Get current location
+  // Get current location - Browser Geolocation API
   static async getCurrentLocation() {
-    if (!this.isNative()) {
-      // Fallback to browser geolocation
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Geolocation not supported'));
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(
-          (position) => resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            timestamp: position.timestamp
-          }),
-          (error) => reject(error)
-        );
-      });
-    }
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          altitude: position.coords.altitude,
+          altitudeAccuracy: position.coords.altitudeAccuracy,
+          heading: position.coords.heading,
+          speed: position.coords.speed,
+          timestamp: position.timestamp
+        }),
+        (error) => reject(error)
+      );
+    });
+  }
 
-    try {
-      const position = await Geolocation.getCurrentPosition();
-      return {
+  // Watch location changes - Browser Geolocation API
+  static async watchLocation(callback) {
+    if (!navigator.geolocation) {
+      throw new Error('Geolocation not supported');
+    }
+    return navigator.geolocation.watchPosition(
+      (position) => callback({
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
         accuracy: position.coords.accuracy,
@@ -196,84 +169,36 @@ class CapacitorUtils {
         heading: position.coords.heading,
         speed: position.coords.speed,
         timestamp: position.timestamp
-      };
-    } catch (error) {
-      console.error('Error getting location:', error);
-      throw error;
-    }
+      }),
+      (error) => console.error('Location watch error:', error)
+    );
   }
 
-  // Watch location changes
-  static async watchLocation(callback) {
-    if (!this.isNative()) {
-      // Fallback to browser geolocation
-      if (!navigator.geolocation) {
-        throw new Error('Geolocation not supported');
-      }
-      return navigator.geolocation.watchPosition(
-        (position) => callback({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          timestamp: position.timestamp
-        }),
-        (error) => console.error('Location watch error:', error)
-      );
-    }
-
-    try {
-      const watchId = await Geolocation.watchPosition({}, callback);
-      return watchId;
-    } catch (error) {
-      console.error('Error watching location:', error);
-      throw error;
-    }
-  }
-
-  // Clear location watch
+  // Clear location watch - Browser API
   static async clearLocationWatch(watchId) {
-    if (!this.isNative()) {
-      if (navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-      return;
-    }
-
-    try {
-      await Geolocation.clearWatch({ id: watchId });
-    } catch (error) {
-      console.error('Error clearing location watch:', error);
+    if (navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchId);
     }
   }
 
-  // Check location permissions
+  // Check location permissions - Permissions API
   static async checkLocationPermissions() {
-    if (!this.isNative()) {
+    if (!navigator.permissions) {
       return { location: 'granted' };
     }
-
+    
     try {
-      const permissions = await Geolocation.checkPermissions();
-      return permissions;
+      const result = await navigator.permissions.query({ name: 'geolocation' });
+      return { location: result.state };
     } catch (error) {
-      console.error('Error checking location permissions:', error);
-      return { location: 'denied' };
+      return { location: 'prompt' };
     }
   }
 
-  // Request location permissions
+  // Request location permissions - Triggered by getCurrentLocation
   static async requestLocationPermissions() {
-    if (!this.isNative()) {
-      return { location: 'granted' };
-    }
-
-    try {
-      const permissions = await Geolocation.requestPermissions();
-      return permissions;
-    } catch (error) {
-      console.error('Error requesting location permissions:', error);
-      throw error;
-    }
+    // Browser requests permission automatically when accessing geolocation
+    return { location: 'prompt' };
   }
 }
 

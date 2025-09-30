@@ -399,14 +399,7 @@ export class MobileTicketUtils {
     try {
       console.log('🖨️ Mobile POS printing...');
       
-      // Check if running on Capacitor (Android/iOS native app)
-      const { Capacitor } = await import('@capacitor/core');
-      if (Capacitor.isNativePlatform()) {
-        console.log('📱 Capacitor detected - using thermal printer');
-        return await this.printViaCapacitorThermalPrinter(ticket, user);
-      }
-      
-      // Check if mobile POS printer is available
+      // Check if mobile POS printer is available (Android WebView interface)
       if (this.isMobilePOSEnvironment()) {
         return await this.printViaMobilePOS(ticket, user);
       }

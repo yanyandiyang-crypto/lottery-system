@@ -406,22 +406,24 @@ const BettingInterface = () => {
         // Set the created ticket and show mobile ticket modal
         setCreatedTicket(ticket);
         setShowMobileTicket(true);
+        setAddedBets([]);
+        setBetDigits(['?', '?', '?']);
+        setCurrentDigitIndex(0);
+        setShowConfirmModal(false);
+        
+        // Auto-print ticket immediately after creation
+        setTimeout(() => {
+          generateAndPrintTicket(ticket, false);
+        }, 500);
+        
+        // Refresh balance after successful bet
+        queryClient.invalidateQueries(['userBalance', user.id]);
+        refetchBalance(); // Force immediate balance refresh
 
         toast.success(`Ticket with ${addedBets.length} bets created successfully! Remaining balance: ₱${response.data.remainingBalance.toFixed(2)}`);
       } else {
         toast.error(response.data.message || 'Failed to create ticket');
-        return;
       }
-      
-      // Reset form
-      setAddedBets([]);
-      setBetDigits(['?', '?', '?']);
-      setCurrentDigitIndex(0);
-      setShowConfirmModal(false);
-      
-      // Refresh balance
-      queryClient.invalidateQueries(['balance', user.id]);
-      refetchBalance(); // Force immediate balance refresh
       
     } catch (error) {
       console.error('Error creating tickets:', error);
@@ -443,14 +445,18 @@ const BettingInterface = () => {
     }
   };
 
-  const generateAndPrintTicket = async (ticket) => {
+  const generateAndPrintTicket = async (ticket, showToast = true) => {
     try {
-      // Use shared ticket generator
-      TicketGenerator.printTicket(ticket, user);
-      toast.success('Ticket sent to printer!');
+      // Use shared ticket generator with silent iframe printing
+      await TicketGenerator.printTicket(ticket, user, { autoClose: true, silent: false });
+      if (showToast) {
+        toast.success('🖨️ Printing ticket...');
+      }
     } catch (error) {
       console.error('Error printing ticket:', error);
-      toast.error('Failed to print ticket');
+      if (showToast) {
+        toast.error('Failed to print ticket');
+      }
     }
   };
 
@@ -895,52 +901,32 @@ const BettingInterface = () => {
                 
                 {/* Simplified Action Buttons */}
                 <div className="mt-4 flex flex-col space-y-2">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleShareTicket(createdTicket)}
-                      className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-                    >
-                      🖼️ Share Image
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const ticketUrl = `${window.location.origin}/ticket/${createdTicket.id}`;
-                          if (navigator.share) {
-                            await navigator.share({
-                              title: `Lottery Ticket ${createdTicket.ticketNumber}`,
-                              text: `Check out my lottery ticket!`,
-                              url: ticketUrl
-                            });
-                            toast.success('Link shared successfully!');
-                          } else {
-                            await navigator.clipboard.writeText(ticketUrl);
-                            toast.success('Link copied to clipboard!');
-                          }
-                        } catch (error) {
-                          console.error('Error sharing link:', error);
-                          toast.error('Failed to share link');
-                        }
-                      }}
-                      className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
-                    >
-                      🔗 Copy Link
-                    </button>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
+                    <p className="text-sm text-green-700 text-center">
+                      ✅ Ticket automatically sent to printer!
+                    </p>
                   </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => generateAndPrintTicket(createdTicket)}
-                      className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
-                    >
-                      🖨️ Print Ticket
-                    </button>
-                    <button
-                      onClick={() => setShowMobileTicket(false)}
-                      className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
-                    >
-                      ✕ Close
-                    </button>
-                  </div>
+                  
+                  <button
+                    onClick={() => handleShareTicket(createdTicket)}
+                    className="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    📤 Share Ticket Image
+                  </button>
+                  
+                  <button
+                    onClick={() => generateAndPrintTicket(createdTicket, true)}
+                    className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
+                  >
+                    🖨️ Print Again
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowMobileTicket(false)}
+                    className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
+                  >
+                    ✕ Close
+                  </button>
                 </div>
               </div>
             </div>

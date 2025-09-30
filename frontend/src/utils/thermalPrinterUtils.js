@@ -1,8 +1,6 @@
-import { Capacitor } from '@capacitor/core';
-
 /**
- * Thermal Printer Utilities for Mobile POS
- * Supports 58mm and 80mm Bluetooth thermal printers
+ * Thermal Printer Utilities - Stub version for non-Capacitor webview apps
+ * Capacitor thermal printer removed - use Android WebView JavaScript interface instead
  */
 
 class ThermalPrinterUtils {
@@ -10,28 +8,17 @@ class ThermalPrinterUtils {
     this.printer = null;
     this.connected = false;
     this.printerPlugin = null;
-    this.initializePlugin();
   }
 
-  // Initialize the printer plugin
+  // Initialize the printer plugin (no-op without Capacitor)
   async initializePlugin() {
-    if (!Capacitor.isNativePlatform()) {
-      console.log('Thermal printer only available on native platforms');
-      return;
-    }
-
-    try {
-      const { ThermalPrinter } = await import('capacitor-thermal-printer');
-      this.printerPlugin = ThermalPrinter;
-      console.log('Thermal printer plugin initialized');
-    } catch (error) {
-      console.error('Failed to load thermal printer plugin:', error);
-    }
+    console.log('Thermal printer requires Android WebView interface');
+    return;
   }
 
-  // Check if running on native platform
+  // Check if running on native platform (always false)
   isNative() {
-    return Capacitor.isNativePlatform();
+    return false;
   }
 
   // Scan for available Bluetooth printers

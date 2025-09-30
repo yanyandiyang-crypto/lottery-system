@@ -1,55 +1,52 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { DataModeProvider } from './contexts/DataModeContext';
 import Layout from './components/Layout/Layout';
 import CapacitorUtils from './utils/capacitorUtils';
-// Mobile components removed - no longer needed
-// import MobileOptimized from './components/Mobile/MobileOptimized';
-// import MobileNavigation from './components/Mobile/MobileNavigation';
-// import NetworkStatus from './components/Mobile/NetworkStatus';
 import PWAInstaller from './components/PWA/PWAInstaller';
-import Login from './pages/Auth/Login';
-import Dashboard from './pages/Dashboard/Dashboard';
-import Users from './pages/Users/Users';
-import Tickets from './pages/Tickets/Tickets';
-import Sales from './pages/Sales/Sales';
-import Reports from './pages/Reports/Reports';
-import Notifications from './pages/Notifications/Notifications';
-import BettingInterface from './pages/Betting/BettingInterface';
-import Account from './pages/Account/Account';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 
-// New feature pages
-import BalanceManagement from './pages/BalanceManagement/BalanceManagement';
-import OperatorDashboard from './pages/Operator/OperatorDashboard';
-import OperatorSales from './pages/Operator/OperatorSales';
-import BetLimits from './pages/BetLimits/BetLimits';
-import DrawResults from './pages/DrawResults/DrawResults';
-import AdminManagement from './pages/UserManagement/AdminManagement';
-import AgentManagement from './pages/UserManagement/AgentManagement';
-import CoordinatorManagement from './pages/UserManagement/CoordinatorManagement';
-import AreaCoordinatorManagement from './pages/UserManagement/AreaCoordinatorManagement';
-import AccountInfo from './pages/Account/AccountInfo';
-import SalesReports from './pages/Reports/SalesReports';
-import TicketReprint from './pages/Tickets/TicketReprint';
-import BetHistory from './pages/BetHistory/BetHistory';
-import SalesPerDraw from './pages/SalesPerDraw/SalesPerDraw';
-import AgentSales from './pages/AgentSales/AgentSales';
-import AgentTickets from './pages/AgentTickets/AgentTickets';
-import AgentResults from './pages/AgentResults/AgentResults';
-import WinningTickets from './pages/WinningTickets/WinningTickets';
-import PrizeConfiguration from './pages/PrizeConfiguration/PrizeConfiguration';
-import MobileTicketShare from './pages/Tickets/MobileTicketShare';
-// WebShareTest removed - test component no longer needed
-import AuditDashboard from './pages/Admin/AuditDashboard';
-import TransactionHistory from './pages/Account/TransactionHistory';
-import TemplateAssignment from './pages/TicketTemplates/TemplateAssignment';
-import TicketSearch from './components/TicketSearch';
-import TicketClaiming from './components/TicketClaiming';
-import ClaimApprovals from './pages/ClaimApprovals/ClaimApprovals';
-import PrinterManager from './components/Printer/PrinterManager';
+// Critical pages - load immediately
+import Login from './pages/Auth/Login';
+import Dashboard from './pages/Dashboard/Dashboard';
+
+// Lazy load all other pages for better performance
+const Users = lazy(() => import('./pages/Users/Users'));
+const Tickets = lazy(() => import('./pages/Tickets/Tickets'));
+const Sales = lazy(() => import('./pages/Sales/Sales'));
+const Reports = lazy(() => import('./pages/Reports/Reports'));
+const Notifications = lazy(() => import('./pages/Notifications/Notifications'));
+const BettingInterface = lazy(() => import('./pages/Betting/BettingInterface'));
+const Account = lazy(() => import('./pages/Account/Account'));
+const BalanceManagement = lazy(() => import('./pages/BalanceManagement/BalanceManagement'));
+const OperatorDashboard = lazy(() => import('./pages/Operator/OperatorDashboard'));
+const OperatorSales = lazy(() => import('./pages/Operator/OperatorSales'));
+const BetLimits = lazy(() => import('./pages/BetLimits/BetLimits'));
+const DrawResults = lazy(() => import('./pages/DrawResults/DrawResults'));
+const AdminManagement = lazy(() => import('./pages/UserManagement/AdminManagement'));
+const AgentManagement = lazy(() => import('./pages/UserManagement/AgentManagement'));
+const CoordinatorManagement = lazy(() => import('./pages/UserManagement/CoordinatorManagement'));
+const AreaCoordinatorManagement = lazy(() => import('./pages/UserManagement/AreaCoordinatorManagement'));
+const AccountInfo = lazy(() => import('./pages/Account/AccountInfo'));
+const SalesReports = lazy(() => import('./pages/Reports/SalesReports'));
+const TicketReprint = lazy(() => import('./pages/Tickets/TicketReprint'));
+const BetHistory = lazy(() => import('./pages/BetHistory/BetHistory'));
+const SalesPerDraw = lazy(() => import('./pages/SalesPerDraw/SalesPerDraw'));
+const AgentSales = lazy(() => import('./pages/AgentSales/AgentSales'));
+const AgentTickets = lazy(() => import('./pages/AgentTickets/AgentTickets'));
+const AgentResults = lazy(() => import('./pages/AgentResults/AgentResults'));
+const WinningTickets = lazy(() => import('./pages/WinningTickets/WinningTickets'));
+const PrizeConfiguration = lazy(() => import('./pages/PrizeConfiguration/PrizeConfiguration'));
+const MobileTicketShare = lazy(() => import('./pages/Tickets/MobileTicketShare'));
+const AuditDashboard = lazy(() => import('./pages/Admin/AuditDashboard'));
+const TransactionHistory = lazy(() => import('./pages/Account/TransactionHistory'));
+const TemplateAssignment = lazy(() => import('./pages/TicketTemplates/TemplateAssignment'));
+const TicketSearch = lazy(() => import('./components/TicketSearch'));
+const TicketClaiming = lazy(() => import('./components/TicketClaiming'));
+const ClaimApprovals = lazy(() => import('./pages/ClaimApprovals/ClaimApprovals'));
+const PrinterManager = lazy(() => import('./components/Printer/PrinterManager'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -126,10 +123,11 @@ function AppRoutes() {
     <>
       <PWAInstaller />
       <Layout>
-        <Routes>
-        {/* Dashboard */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Suspense fallback={<LoadingSpinner fullScreen={true} />}>
+          <Routes>
+          {/* Dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
 
         {/* User Management - Management roles */}
         <Route path="/users" element={<ManagementRoute><Users /></ManagementRoute>} />
@@ -230,7 +228,8 @@ function AppRoutes() {
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+        </Routes>
+        </Suspense>
       </Layout>
     </>
   );

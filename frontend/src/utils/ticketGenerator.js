@@ -170,7 +170,8 @@ ${signatureImage ? `<div class="signature-section" style="text-align: center; ma
 </div>`;
   }
 
-  static async printTicket(ticket, user) {
+  static async printTicket(ticket, user, options = {}) {
+    const { autoClose = true, silent = false } = options;
     try {
       console.log('🖨️ Using backend template for main print ticket');
       
@@ -304,28 +305,50 @@ ${ticketHtml}
 </body>
 </html>`;
 
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(fullHtml);
-        printWindow.document.close();
+        // Use hidden iframe for silent printing (no new tab)
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        iframe.style.visibility = 'hidden';
+        document.body.appendChild(iframe);
+        
+        const iframeDoc = iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(fullHtml);
+        iframeDoc.close();
         
         const triggerPrintWhenReady = () => {
           try {
             setTimeout(() => {
-              printWindow.focus();
-              printWindow.print();
-              setTimeout(() => {
-                try { printWindow.close(); } catch (_) { /* noop */ }
-              }, 1500);
-            }, 1500);
-          } catch (_) {
-            try { printWindow.print(); } catch (__) { /* noop */ }
+              iframe.contentWindow.focus();
+              iframe.contentWindow.print();
+              
+              // Clean up iframe after printing
+              if (autoClose) {
+                setTimeout(() => {
+                  try { document.body.removeChild(iframe); } catch (_) { /* noop */ }
+                }, 2000);
+              }
+            }, 500);
+          } catch (err) {
+            console.error('Print error:', err);
+            try { 
+              iframe.contentWindow.print(); 
+              if (autoClose) {
+                setTimeout(() => {
+                  try { document.body.removeChild(iframe); } catch (_) { /* noop */ }
+                }, 2000);
+              }
+            } catch (__) { /* noop */ }
           }
         };
         
-        if (printWindow.document.readyState === 'complete') {
+        if (iframeDoc.readyState === 'complete') {
           triggerPrintWhenReady();
         } else {
-          printWindow.addEventListener('load', triggerPrintWhenReady, { once: true });
+          iframe.contentWindow.addEventListener('load', triggerPrintWhenReady, { once: true });
         }
         
       } catch (fallbackError) {
@@ -359,23 +382,43 @@ ${this.generateTicketHTML(ticket, user)}
 </body>
 </html>`;
       
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(ticketHtml);
-      printWindow.document.close();
+      // Use hidden iframe for silent printing (no new tab)
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
       
-      // Wait for the new window and its images (e.g., signature) to load before printing
+      const iframeDoc = iframe.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(ticketHtml);
+      iframeDoc.close();
+      
+      // Wait for the iframe and its images (e.g., signature) to load before printing
       const triggerPrintWhenReady = () => {
         try {
-          const images = Array.from(printWindow.document.images || []);
+          const images = Array.from(iframeDoc.images || []);
           if (images.length === 0) {
-            printWindow.print();
+            iframe.contentWindow.print();
+            if (autoClose) {
+              setTimeout(() => {
+                try { document.body.removeChild(iframe); } catch (_) { /* noop */ }
+              }, 2000);
+            }
             return;
           }
           let loadedCount = 0;
           const onImgDone = () => {
             loadedCount += 1;
             if (loadedCount >= images.length) {
-              printWindow.print();
+              iframe.contentWindow.print();
+              if (autoClose) {
+                setTimeout(() => {
+                  try { document.body.removeChild(iframe); } catch (_) { /* noop */ }
+                }, 2000);
+              }
             }
           };
           images.forEach((img) => {
@@ -388,18 +431,32 @@ ${this.generateTicketHTML(ticket, user)}
           });
           // Fallback timeout in case some images never resolve
           setTimeout(() => {
-            try { printWindow.print(); } catch (_) { /* noop */ }
+            try { 
+              iframe.contentWindow.print();
+              if (autoClose) {
+                setTimeout(() => {
+                  try { document.body.removeChild(iframe); } catch (_) { /* noop */ }
+                }, 2000);
+              }
+            } catch (_) { /* noop */ }
           }, 1500);
         } catch (_) {
           // As a fallback, attempt to print immediately
-          try { printWindow.print(); } catch (__) { /* noop */ }
+          try { 
+            iframe.contentWindow.print();
+            if (autoClose) {
+              setTimeout(() => {
+                try { document.body.removeChild(iframe); } catch (_) { /* noop */ }
+              }, 2000);
+            }
+          } catch (__) { /* noop */ }
         }
       };
       
-      if (printWindow.document.readyState === 'complete') {
+      if (iframeDoc.readyState === 'complete') {
         triggerPrintWhenReady();
       } else {
-        printWindow.addEventListener('load', triggerPrintWhenReady, { once: true });
+        iframe.contentWindow.addEventListener('load', triggerPrintWhenReady, { once: true });
       }
       }
     }
