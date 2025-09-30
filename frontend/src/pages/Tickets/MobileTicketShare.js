@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import MobileTicketTemplate from '../../components/Tickets/MobileTicketTemplate';
 import MobileTicketUtils from '../../utils/mobileTicketUtils';
 import api from '../../utils/api';
