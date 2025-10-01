@@ -28,8 +28,9 @@ const formatDrawId = (drawId) => {
   return `S${String(drawId).padStart(6, '0')}`;
 };
 
-const getQuickChartQrUrl = (text, size = 270) => {
-  return `https://quickchart.io/qr?text=${encodeURIComponent(text)}&size=${size}&margin=0&ecc=H`;
+// Optimized QR code URL generation (smaller size for faster loading)
+const getQuickChartQrUrl = (text, size = 100) => {
+  return `https://quickchart.io/qr?text=${encodeURIComponent(text)}&size=${size}&margin=0&ecc=M`;
 };
 
 export function generateUmatikTicketHTML(ticket, user, assets = {}) {
@@ -78,7 +79,12 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
       </div>`;
   }).join('');
 
-  const digits = String(ticket?.ticketNumber || '').padStart(17, '0').split('').map(d => `<span style="font-size: 8px; font-weight: 700; letter-spacing: 1px;">${d}</span>`).join('');
+  // Format ticket number with spacing (groups of 6-6-5)
+  const ticketNum = String(ticket?.ticketNumber || '').padStart(17, '0');
+  const digits = ticketNum.split('').map((d, i) => {
+    const needsSpace = (i === 6 || i === 12); // Add space after 6th and 12th digit
+    return `<span style="font-size: 10px; font-weight: 700; letter-spacing: 3px; display: inline-block;">${d}</span>${needsSpace ? ' ' : ''}`;
+  }).join('');
 
   return `
 <div style="font-family: Arial, sans-serif; font-size: 8px; width: 220px; color: black; font-weight: 800; background: white; padding: 4px; box-sizing: border-box;">
@@ -112,11 +118,13 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
     </tr>
   </table>
   
-  <!-- Ticket Number - Table Layout -->
+  <!-- Ticket Number - Optimized for 58mm (220px width) -->
   <table style="width: 100%; border-collapse: collapse; margin: 4px 0; border-top: 1px dashed #666; border-bottom: 1px dashed #666;">
     <tr>
-      <td style="text-align: center; padding: 3px 0; font-size: 8px; font-weight: 700; letter-spacing: 1px;">
-        ${digits}
+      <td style="text-align: center; padding: 4px 2px;">
+        <div style="font-size: 7px; font-weight: 700; letter-spacing: 0.3px; line-height: 1.3; word-spacing: -1px;">
+          ${digits}
+        </div>
       </td>
     </tr>
   </table>
@@ -129,7 +137,7 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
   <!-- Bets Section -->
   ${betsHtml}
   
-  <!-- Footer Spacing -->
-  <div style="margin: 6px 0; height: 6px;"></div>
+  <!-- Footer Spacing with Extra Clearance for Cutting -->
+  <div style="margin: 6px 0; height: 30px;"></div>
 </div>`;
 }

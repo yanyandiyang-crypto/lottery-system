@@ -497,12 +497,14 @@ export class MobileTicketUtils {
         }
         
         // Check if AndroidPOS supports image printing
-        if (window.AndroidPOS.printImage) {
-          console.log('🖼️ Using image-based printing (base64)...');
+        if (typeof window.AndroidPOS.printImage === 'function') {
+          console.log('🖼️ printImage method available, using image-based printing...');
           
           try {
             // Generate ticket image as base64
+            console.log('📸 Generating ticket image...');
             const imageBlob = await this.getPreGeneratedImage(ticket);
+            console.log('✅ Image blob generated, size:', imageBlob.size, 'bytes');
             
             // Convert blob to base64
             const base64Image = await new Promise((resolve, reject) => {
@@ -518,36 +520,30 @@ export class MobileTicketUtils {
             console.log('📄 Base64 image generated, length:', base64Image.length);
             
             // Send base64 image to printer
+            console.log('🖨️ Calling AndroidPOS.printImage()...');
             window.AndroidPOS.printImage(base64Image);
             console.log('✅ Image print command sent successfully!');
             return { success: true, method: 'android-pos-image' };
             
           } catch (imageError) {
             console.error('❌ Image printing failed:', imageError);
+            console.error('Error details:', imageError.stack);
             console.log('⚠️ Falling back to text printing...');
           }
+        } else {
+          console.warn('⚠️ printImage method not available on AndroidPOS');
+          console.log('Available methods:', Object.keys(window.AndroidPOS));
         }
         
-        // Fallback to text printing if image printing not available or failed
-        console.log('📝 Using text-based printing...');
+        // Image printing not available - show error
+        console.error('❌ Image printing not available');
+        console.error('printImage method is required for proper template printing');
         
-        // Get pre-generated HTML for consistent layout
-        const preGeneratedHTML = await this.getPreGeneratedHTML(ticket);
-        
-        // Convert HTML to plain text format for thermal printer
-        const plainTextReceipt = this.convertHTMLToPlainText(preGeneratedHTML, ticket, user);
-        console.log('📄 Plain text receipt length:', plainTextReceipt.length);
-        
-        // Use printReceipt for auto-cut functionality
-        console.log('🖨️ Calling AndroidPOS.printReceipt()...');
-        try {
-          window.AndroidPOS.printReceipt(plainTextReceipt);
-          console.log('✅ Print command sent successfully!');
-          return { success: true, method: 'android-pos-text' };
-        } catch (printError) {
-          console.error('❌ AndroidPOS.printReceipt() failed:', printError);
-          throw printError;
-        }
+        throw new Error(
+          'Image printing not supported.\n\n' +
+          'Please update your Android app with the printImage method.\n\n' +
+          'See: ADD_PRINT_IMAGE_METHOD.md for instructions.'
+        );
       }
       
       // iOS WebView printing
@@ -767,8 +763,8 @@ export class MobileTicketUtils {
       
       document.body.appendChild(tempContainer);
       
-      // Wait a moment for fonts and styles to load
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait a moment for fonts and styles to load (reduced for speed)
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       // Use html2canvas to convert HTML to image
       let canvas;
@@ -776,11 +772,12 @@ export class MobileTicketUtils {
         console.log('Using html2canvas to generate ticket image...');
         canvas = await html2canvas(tempContainer, {
           backgroundColor: 'white',
-          scale: 2,
+          scale: 4, // Higher scale for bigger output (was 3)
           useCORS: true,
           allowTaint: true,
           width: 220, // 58mm width
-          logging: true, // Enable logging for debugging
+          height: tempContainer.scrollHeight, // Auto height based on content
+          logging: false, // Disable logging for speed
           onclone: (clonedDoc) => {
             // Ensure fonts are loaded in cloned document
             const clonedContainer = clonedDoc.querySelector('div');

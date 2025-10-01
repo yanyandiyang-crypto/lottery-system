@@ -190,8 +190,15 @@ ${signatureImage ? `<div class="signature-section" style="text-align: center; ma
           
           // Show user-friendly error message
           const errorMsg = androidError.message || 'Printing failed';
+          
           if (errorMsg.includes('not connected')) {
             alert('⚠️ Printer not connected!\n\nPlease:\n1. Turn on Bluetooth printer\n2. Pair in Bluetooth settings\n3. Try printing again');
+          } else if (errorMsg.includes('not supported') || errorMsg.includes('printImage')) {
+            alert(
+              '🖼️ Image Printing Required\n\n' +
+              'Your Android app needs to be updated with the printImage method for proper template printing.\n\n' +
+              'Please contact your developer to add this feature.'
+            );
           } else {
             alert('❌ Print failed: ' + errorMsg);
           }

@@ -62,6 +62,7 @@
         <button onclick="connectPOS()">🔌 Connect to Printer</button>
         <button onclick="testPrint()">🖨️ Test Print</button>
         <button onclick="printSampleTicket()">🎫 Print Sample Ticket</button>
+        <button onclick="testImagePrint()">🖼️ Test Image Print</button>
     </div>
 
     <div class="card">
@@ -224,6 +225,64 @@ ${new Date().toLocaleString()}
             try {
                 window.AndroidPOS.printReceipt(sampleTicket);
                 log('✅ Sample ticket sent to printer', 'success');
+            } catch (e) {
+                log(`❌ Print failed: ${e.message}`, 'error');
+            }
+        }
+
+        function testImagePrint() {
+            if (typeof window.AndroidPOS === 'undefined') {
+                log('❌ AndroidPOS not available', 'error');
+                alert('This only works in the Android app');
+                return;
+            }
+
+            log('Testing image printing...', 'info');
+            
+            // Check if printImage method exists
+            if (typeof window.AndroidPOS.printImage !== 'function') {
+                log('❌ printImage method not available', 'error');
+                log('Available methods: ' + Object.keys(window.AndroidPOS).join(', '), 'info');
+                alert('printImage method not found!\n\nPlease update your Android app with the new printImage method.');
+                return;
+            }
+
+            log('✅ printImage method found!', 'success');
+            
+            // Create a simple test image (red square with text)
+            const canvas = document.createElement('canvas');
+            canvas.width = 384; // 58mm thermal printer width
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            
+            // White background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 384, 200);
+            
+            // Black border
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(5, 5, 374, 190);
+            
+            // Text
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('TEST PRINT', 192, 60);
+            
+            ctx.font = '16px Arial';
+            ctx.fillText('Image Printing Test', 192, 100);
+            ctx.fillText(new Date().toLocaleTimeString(), 192, 130);
+            
+            // Convert to base64
+            const base64Image = canvas.toDataURL('image/png').split(',')[1];
+            
+            log('📄 Test image generated, length: ' + base64Image.length, 'info');
+            
+            try {
+                log('🖨️ Sending image to printer...', 'info');
+                window.AndroidPOS.printImage(base64Image);
+                log('✅ Image print command sent!', 'success');
             } catch (e) {
                 log(`❌ Print failed: ${e.message}`, 'error');
             }

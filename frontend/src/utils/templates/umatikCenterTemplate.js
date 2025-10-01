@@ -37,8 +37,9 @@ const formatDrawId = (drawId) => {
   return `S${String(drawId).padStart(6, '0')}`;
 };
 
-const getQuickChartQrUrl = (text, size = 270) => {
-  return `https://quickchart.io/qr?text=${encodeURIComponent(text)}&size=${size}&margin=0&ecc=H`;
+// Optimized QR code URL generation (smaller size for faster loading)
+const getQuickChartQrUrl = (text, size = 100) => {
+  return `https://quickchart.io/qr?text=${encodeURIComponent(text)}&size=${size}&margin=0&ecc=M`;
 };
 
 export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
@@ -74,7 +75,7 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
     const spacedCombo = combo.split('').join(' ');
     const amount = Number(bet?.betAmount || bet?.amount || 0);
     return `
-      <div style="border: 1px solid #333; margin-bottom: 2px; padding: 2px; width: 100%; box-sizing: border-box; background: #f9f9f9;">
+      <div style="margin-bottom: 1px; padding: 1px 0; width: 100%; box-sizing: border-box;">
         <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
           <tr>
             <td style="font-weight: 700; font-size: 8px; text-align: left; padding: 0;">${betTypeLabel}</td>
@@ -83,24 +84,24 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
           <tr>
             <td style="font-size: 8px; font-weight: 700; text-align: left; padding: 0;">${letter}</td>
             <td style="font-size: 8px; font-weight: 700; text-align: right; padding: 0;">${formatCurrency(amount)}</td>
-          </tr>
         </table>
       </div>`;
   }).join('');
 
-  // Format ticket number for display (17 digits without spacing)
+  // Format ticket number with spacing (groups of 6-6-5)
   const ticketNum = String(ticket?.ticketNumber || '').padStart(17, '0');
-  const digits = ticketNum.split('').map(d => 
-    `<span style="font-size: 8px; font-weight: 700; letter-spacing: 1px;">${d}</span>`
-  ).join('');
+  const digits = ticketNum.split('').map((d, i) => {
+    const needsSpace = (i === 6 || i === 12); // Add space after 6th and 12th digit
+    return `<span style="font-size: 10px; font-weight: 700; letter-spacing: 2px; display: inline-block;">${d}</span>${needsSpace ? ' ' : ''}`;
+  }).join('');
 
   return `
 <div style="font-family: Arial, sans-serif; font-size: 8px; width: 220px; color: black; font-weight: 800; background: white; padding: 4px; box-sizing: border-box;">
   <!-- Centered Logo - Table Layout -->
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
     <tr>
-      <td style="text-align: center; padding: 2px 0;">
-        ${centerLogo ? `<img src="${centerLogo}" alt="Logo" style="width: 60px; height: auto; display: block; margin: 0 auto;">` : ''}
+      <td style="text-align: center; padding: 2px 0 6px 0;">
+        ${centerLogo ? `<img src="${centerLogo}" alt="Logo" style="width: 80px; height: auto; display: block; margin: 0 auto;">` : ''}
       </td>
     </tr>
   </table>
@@ -109,34 +110,28 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
     <tr>
       <td style="width: 50%; vertical-align: top; padding: 0 1px 0 0;">
-        <!-- Info Section - Enhanced Layout -->
-        <div style="background: #f8f8f8; border: 1px solid #ddd; border-radius: 3px; padding: 3px;">
-          <div style="border-bottom: 1px dotted #999; padding-bottom: 2px; margin-bottom: 2px;">
+        <!-- Info Section - Compact Text Only -->
+        <div style="padding: 2px 0;">
+          <div style="padding-bottom: 2px; margin-bottom: 2px;">
             <p style="margin: 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">BET DATE:</p>
             <p style="margin: 0; text-align: left; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif; color: black;">${betDateFmt.full}</p>
           </div>
-          <div style="border-bottom: 1px dotted #999; padding-bottom: 2px; margin-bottom: 2px;">
+          <div style="padding-bottom: 2px; margin-bottom: 2px;">
             <p style="margin: 0; text-align: left; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">DRAW DATE:</p>
             <p style="margin: 0; text-align: left; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif; color: black;">${fullDrawDate}</p>
           </div>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 1px;">
-            <tr>
-              <td style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black; text-align: left; padding: 0;">DRAW ID:</td>
-              <td style="font-weight: 700; font-size: 8px; font-family: Arial, sans-serif; color: black; text-align: right; padding: 0;">${drawId}</td>
-            </tr>
-          </table>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 1px;">
-            <tr>
-              <td style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black; text-align: left; padding: 0;">AGENT:</td>
-              <td style="font-weight: 700; font-size: 8px; font-family: Arial, sans-serif; color: black; text-align: right; padding: 0;">${agentId}</td>
-            </tr>
-          </table>
-          <table style="width: 100%; border-collapse: collapse; background: #e8f4f8; border-radius: 2px; margin-top: 2px;">
-            <tr>
-              <td style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black; text-align: left; padding: 1px 2px;">TOTAL:</td>
-              <td style="font-weight: 700; font-size: 9px; font-family: Arial, sans-serif; color: black; text-align: right; padding: 1px 2px;">${formatCurrency(totalAmount)}</td>
-            </tr>
-          </table>
+          <div style="padding-bottom: 1px; margin-bottom: 1px;">
+            <span style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">DRAW ID: </span>
+            <span style="font-weight: 700; font-size: 8px; font-family: Arial, sans-serif; color: black;">${drawId}</span>
+          </div>
+          <div style="padding-bottom: 1px; margin-bottom: 1px;">
+            <span style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">AGENT: </span>
+            <span style="font-weight: 700; font-size: 8px; font-family: Arial, sans-serif; color: black;">${agentId}</span>
+          </div>
+          <div style="padding-top: 2px;">
+            <span style="font-weight: 700; font-size: 7px; font-family: Arial, sans-serif; color: black;">TOTAL: </span>
+            <span style="font-weight: 700; font-size: 9px; font-family: Arial, sans-serif; color: black;">${formatCurrency(totalAmount)}</span>
+          </div>
         </div>
       </td>
       <td style="width: 48%; vertical-align: top; text-align: center; padding: 0 0 0 1px;">
@@ -146,12 +141,12 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
     </tr>
   </table>
   
-  <!-- Ticket Number Section - Table Layout -->
-  <table style="width: 100%; border-collapse: collapse; background: #f0f0f0; border: 1px solid #333; border-radius: 2px; margin: 3px 0;">
+  <!-- Ticket Number - Compact Text Only -->
+  <table style="width: 100%; border-collapse: collapse; margin: 4px 0;">
     <tr>
-      <td style="text-align: center; padding: 2px;">
-        <p style="text-align: center; font-size: 7px; margin: 0 0 1px 0; font-weight: 700; font-family: Arial, sans-serif; color: black;">TICKET NUMBER</p>
-        <div style="background: white; border: 1px solid #ccc; padding: 2px 1px; text-align: center;">
+      <td style="text-align: center; padding: 2px 0;">
+        <p style="text-align: center; font-size: 7px; margin: 0 0 2px 0; font-weight: 700; font-family: Arial, sans-serif; color: black;">TICKET NUMBER</p>
+        <div style="text-align: center; padding: 0;">
           ${digits}
         </div>
       </td>
@@ -161,8 +156,8 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
   <!-- Bets Section -->
   ${betsHtml}
   
-  <!-- Footer Spacing -->
-  <div style="margin: 6px 0; height: 6px;"></div>
+  <!-- Footer Spacing with Extra Clearance for Cutting -->
+  <div style="margin: 6px 0; height: 30px;"></div>
 </div>`;
 }
 

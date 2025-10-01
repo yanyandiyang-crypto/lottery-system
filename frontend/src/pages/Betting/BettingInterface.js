@@ -389,12 +389,20 @@ const BettingInterface = () => {
         setCurrentDigitIndex(0);
         setShowConfirmModal(false);
         
-        // Check if running in Android POS app
+        // Smart detection: Printer available = Print, No printer = Share
         const isAndroidPOS = typeof window.AndroidPOS !== 'undefined';
+        const hasPrinter = isAndroidPOS && window.AndroidPOS.isConnected && window.AndroidPOS.isConnected();
+        const hasPrintImage = isAndroidPOS && typeof window.AndroidPOS.printImage === 'function';
         
-        if (isAndroidPOS) {
-          // Android POS: Direct print without modal
-          console.log('📱 Android POS detected - printing directly...');
+        console.log('🔍 Device detection:', {
+          isAndroidPOS,
+          hasPrinter,
+          hasPrintImage
+        });
+        
+        if (isAndroidPOS && hasPrintImage && hasPrinter) {
+          // Android POS with printer: Direct print
+          console.log('🖨️ Printer detected - printing directly...');
           setCreatedTicket(ticket);
           
           // Print immediately without showing modal
@@ -402,8 +410,29 @@ const BettingInterface = () => {
             generateAndPrintTicket(ticket, true);
           }, 300);
           
-          // Show success message
           toast.success('🖨️ Printing ticket...', { duration: 2000 });
+          
+        } else if (isAndroidPOS && !hasPrinter) {
+          // Android POS without printer: Show share dialog
+          console.log('📤 No printer detected - showing share options...');
+          setCreatedTicket(ticket);
+          setShowMobileTicket(true);
+          
+          // Auto-trigger share dialog
+          setTimeout(() => {
+            handleShareTicket(ticket);
+          }, 500);
+          
+          toast.success('📤 Ticket created! Opening share options...', { duration: 2000 });
+          
+        } else if (isAndroidPOS && !hasPrintImage) {
+          // Android POS without printImage: Show upgrade message
+          console.log('⚠️ printImage not available - showing modal...');
+          setCreatedTicket(ticket);
+          setShowMobileTicket(true);
+          
+          toast.warning('⚠️ Please update app for direct printing', { duration: 3000 });
+          
         } else {
           // Web/Browser: Show modal with preview
           console.log('🌐 Web browser detected - showing preview modal...');
