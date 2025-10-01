@@ -187,8 +187,17 @@ ${signatureImage ? `<div class="signature-section" style="text-align: center; ma
           return result;
         } catch (androidError) {
           console.error('❌ Android native printing failed:', androidError);
-          console.log('⚠️ Falling back to browser print...');
-          // Don't return here, let it fall through to browser print
+          
+          // Show user-friendly error message
+          const errorMsg = androidError.message || 'Printing failed';
+          if (errorMsg.includes('not connected')) {
+            alert('⚠️ Printer not connected!\n\nPlease:\n1. Turn on Bluetooth printer\n2. Pair in Bluetooth settings\n3. Try printing again');
+          } else {
+            alert('❌ Print failed: ' + errorMsg);
+          }
+          
+          // Return error instead of falling back to browser print
+          return { success: false, error: errorMsg };
         }
       }
       
