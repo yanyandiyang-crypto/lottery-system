@@ -67,6 +67,9 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login(credentials);
       clearTimeout(loginTimeout);
       
+      // Clear SSL retry count on success
+      if (window.sslRetryCount) window.sslRetryCount = 0;
+      
       // Handle clean API response structure
       const { token, user: userData } = response.data.data || response.data;
       
@@ -78,9 +81,22 @@ export const AuthProvider = ({ children }) => {
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed. Please try again.';
-      toast.error(message);
-      return { success: false, message };
+      // Check for SSL/TLS errors on Android 6-8
+      const isSSLError = error.code === 'ERR_NETWORK' || 
+                        error.message?.includes('SSL') || 
+                        error.message?.includes('certificate') ||
+                        error.message?.includes('ECONNREFUSED');
+      
+      if (isSSLError && /Android [6-8]/.test(navigator.userAgent)) {
+        toast.error('Connection failed. Android ' + navigator.userAgent.match(/Android ([0-9])/)?.[1] + ' SSL issue. Try switching network or use WiFi.', {
+          duration: 8000
+        });
+      } else {
+        const message = error.response?.data?.message || 'Login failed. Please try again.';
+        toast.error(message);
+      }
+      
+      return { success: false, message: error.message };
     } finally {
       setLoading(false);
     }
