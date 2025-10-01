@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
@@ -43,27 +43,29 @@ const Dashboard = () => {
       const response = await api.get('/dashboard', { params: dateRange });
       return response.data.data; // unwrap { success, data }
     },
-    refetchInterval: isTodayRange ? 60000 : false, // Reduced from 30s to 60s
-    staleTime: 30000, // Consider data fresh for 30s
-    gcTime: 300000, // Keep in cache for 5 minutes (renamed from cacheTime in v5)
+    refetchInterval: isTodayRange ? 120000 : false, // Optimized: 2min for mobile POS
+    staleTime: 60000, // Consider data fresh for 60s
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false, // Disable refetch on focus for mobile
   });
 
   // Live dashboard data polling disabled to reduce server load
   // Main dashboard query with 60s interval is sufficient for real-time updates
 
-  // Fetch active draws
+  // Fetch active draws - optimized for mobile
   const { data: activeDraws, isLoading: drawsLoading, error: drawsError } = useQuery({
     queryKey: ['activeDraws'],
     queryFn: async () => {
       const response = await api.get('/draws/current/active');
       return response.data.data || [];
     },
-    refetchInterval: 60000, // Reduced from 30s to 60s
-    staleTime: 30000, // Consider data fresh for 30s
+    refetchInterval: 90000, // Optimized: 90s for mobile POS
+    staleTime: 45000, // Consider data fresh for 45s
+    refetchOnWindowFocus: false, // Disable refetch on focus
   });
 
-  // Create all three draws with proper status
-  const createDrawCard = (drawTime, hour, label) => {
+  // Create all three draws with proper status - memoized for performance
+  const createDrawCard = useCallback((drawTime, hour, label) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const drawDateTime = new Date(today);
@@ -142,13 +144,14 @@ const Dashboard = () => {
       bettingWindow: existingDraw?.bettingWindow,
       drawTime: drawTime
     };
-  };
+  }, [activeDraws]);
 
-  const drawTimes = [
+  // Memoize draw times to prevent unnecessary recalculations
+  const drawTimes = useMemo(() => [
     createDrawCard('twoPM', 14, '2P'),
     createDrawCard('fivePM', 17, '5P'),
     createDrawCard('ninePM', 21, '9P')
-  ];
+  ], [createDrawCard]);
 
   // Use live data if available, otherwise fall back to regular dashboard data
   // currentData aggregation removed with simplified layout
@@ -159,7 +162,7 @@ const Dashboard = () => {
   const recentDraws = dashboardData?.recentDraws || [];
   const recentTickets = dashboardData?.recentTickets || [];
 
-  // Calculate accurate sales metrics
+  // Calculate accurate sales metrics - optimized with memoization
   const salesMetrics = useMemo(() => {
     // Check if we have dashboard data
     if (!dashboardData) {

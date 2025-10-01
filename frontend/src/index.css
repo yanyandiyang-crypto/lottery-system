@@ -10,6 +10,24 @@
   box-sizing: border-box;
 }
 
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS FOR MOBILE POS
+   ======================================== */
+
+/* Smooth scrolling with hardware acceleration */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  
+  /* GPU acceleration for entire page */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -18,6 +36,20 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8fafc;
+  
+  /* Mobile POS optimizations */
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+  overflow-x: hidden;
+  
+  /* Disable text selection by default (prevents lag) */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 code {
@@ -25,32 +57,66 @@ code {
     monospace;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - optimized for smooth scrolling */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 3px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-/* Custom animations */
+/* Smooth scrolling for all scrollable elements */
+* {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Disable tap highlight globally */
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  
+  /* Smooth font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Enable text selection for text elements */
+p, span, h1, h2, h3, h4, h5, h6, 
+a, li, td, th, label, 
+input, textarea, select {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Hardware acceleration for smooth animations */
+.smooth-transition {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Custom animations - GPU accelerated */
 @keyframes shimmer {
   0% {
-    background-position: -200px 0;
+    transform: translateX(-100%);
   }
   100% {
-    background-position: calc(200px + 100%) 0;
+    transform: translateX(100%);
   }
 }
 
@@ -58,9 +124,70 @@ code {
   animation: shimmer 2s infinite;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200px 100%;
+  will-change: transform;
 }
 
-/* Loading spinner */
+/* Smooth sidebar toggle animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Sidebar animations with hardware acceleration */
+.sidebar-enter {
+  animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.sidebar-exit {
+  animation: slideOut 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.overlay-enter {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.overlay-exit {
+  animation: fadeOut 0.2s ease-out forwards;
+}
+
+/* Loading spinner - GPU accelerated */
 .spinner {
   border: 2px solid #f3f3f3;
   border-top: 2px solid #3b82f6;
@@ -68,11 +195,13 @@ code {
   width: 20px;
   height: 20px;
   animation: spin 1s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { transform: rotate(0deg) translateZ(0); }
+  100% { transform: rotate(360deg) translateZ(0); }
 }
 
 /* Custom button styles */
@@ -182,7 +311,21 @@ code {
   body {
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    touch-action: pan-y;
+  }
+  
+  /* Optimize scroll performance on mobile */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  
+  /* Smooth sidebar on mobile */
+  .mobile-sidebar {
+    transform: translateZ(0);
+    will-change: transform;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .table {
@@ -281,6 +424,161 @@ img {
 }
 
 /* Print styles */
+/* Performance optimizations for lists and tables */
+.optimized-list {
+  contain: layout style paint;
+  content-visibility: auto;
+}
+
+.optimized-list-item {
+  contain: layout style;
+  will-change: transform;
+}
+
+/* Reduce repaints during scroll */
+.scroll-optimized {
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+/* Smooth transitions for interactive elements */
+button, a, .interactive {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+  
+  /* Smooth interactions */
+  touch-action: manipulation;
+  
+  /* GPU acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+button:active, a:active, .interactive:active {
+  transform: scale(0.98) translateZ(0);
+}
+
+/* Input elements optimization */
+input, select, textarea {
+  touch-action: manipulation;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Optimize modal/overlay animations */
+.modal-overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease-out;
+  will-change: opacity;
+}
+
+.modal-content {
+  transform: translateZ(0);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out;
+  will-change: transform, opacity;
+}
+
+/* Sidebar performance optimizations */
+.sidebar-container {
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  contain: layout style paint;
+}
+
+.sidebar-collapsed {
+  transform: translateX(-100%);
+}
+
+.sidebar-expanded {
+  transform: translateX(0);
+}
+
+/* Prevent layout shift during animations */
+.no-layout-shift {
+  contain: layout;
+}
+
+/* GPU-accelerated transforms */
+.gpu-accelerated {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Scrollable containers optimization */
+.scroll-container,
+.scrollable,
+[style*="overflow: auto"],
+[style*="overflow: scroll"],
+[style*="overflow-y: auto"],
+[style*="overflow-y: scroll"] {
+  -webkit-overflow-scrolling: touch;
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Image optimization */
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Fixed/Sticky elements optimization */
+.fixed, .sticky,
+[style*="position: fixed"],
+[style*="position: sticky"] {
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Lists & Tables optimization */
+ul, ol, table {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* React root optimization */
+#root, #__next {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Dynamic content optimization */
+.dynamic-content {
+  contain: layout style paint;
+}
+
+/* Expensive components isolation */
+.expensive-component {
+  contain: strict;
+  content-visibility: auto;
+}
+
+/* Smooth scroll utility */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disable scroll utility */
+.no-scroll {
+  overflow: hidden;
+  touch-action: none;
+}
+
 @media print {
   .no-print {
     display: none !important;
@@ -288,6 +586,12 @@ img {
   
   .print-break {
     page-break-before: always;
+  }
+  
+  /* Disable transforms for print */
+  * {
+    transform: none !important;
+    will-change: auto !important;
   }
 }
 

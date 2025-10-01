@@ -138,7 +138,7 @@ const BettingInterface = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
 
-  // Fetch active draws
+  // Fetch active draws - optimized for mobile POS
   const { data: draws, isLoading: drawsLoading } = useQuery({
     queryKey: ['activeDraws'],
     queryFn: async () => {
@@ -146,13 +146,15 @@ const BettingInterface = () => {
       // The API returns { success: true, data: [...] }, so we need response.data.data
       return response.data.data || [];
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 90000, // Optimized: 90s for mobile POS (reduced from 30s)
+    staleTime: 45000, // Consider data fresh for 45s
+    refetchOnWindowFocus: false, // Disable refetch on focus for mobile
     onError: (error) => {
       toast.error('Failed to load draw information');
     }
   });
 
-  // Fetch user balance
+  // Fetch user balance - optimized polling
   const { data: balance, refetch: refetchBalance, isLoading: balanceLoading } = useQuery({
     queryKey: ['balance', user?.id],
     queryFn: async () => {
@@ -162,11 +164,13 @@ const BettingInterface = () => {
       return response.data.data || response.data;
     },
     enabled: !!user?.id,
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 30000, // Optimized: 30s for mobile POS (reduced from 10s)
+    staleTime: 15000, // Consider data fresh for 15s
+    refetchOnWindowFocus: false, // Disable refetch on focus
   });
 
 
-  // Set default draw when draws are loaded
+  // Set default draw when draws are loaded - memoized for performance
   useEffect(() => {
     if (draws && Array.isArray(draws) && draws.length > 0 && !selectedDraw) {
       // First, try to find the draw by ID from URL parameter
@@ -249,34 +253,35 @@ const BettingInterface = () => {
   // Create ticket mutation
 
 
-  const handleDigitInput = (digit) => {
+  // Optimized digit input handler with useCallback
+  const handleDigitInput = useCallback((digit) => {
     if (currentDigitIndex < 3) {
       const newDigits = [...betDigits];
       newDigits[currentDigitIndex] = digit.toString();
       setBetDigits(newDigits);
       setCurrentDigitIndex(prev => Math.min(prev + 1, 2));
     }
-  };
+  }, [betDigits, currentDigitIndex]);
 
-  const handleClearDigits = () => {
+  const handleClearDigits = useCallback(() => {
     setBetDigits(['?', '?', '?']);
     setCurrentDigitIndex(0);
-  };
+  }, []);
 
-  const handleBackspace = () => {
+  const handleBackspace = useCallback(() => {
     if (currentDigitIndex > 0) {
       const newDigits = [...betDigits];
       newDigits[currentDigitIndex - 1] = '?';
       setBetDigits(newDigits);
       setCurrentDigitIndex(prev => Math.max(prev - 1, 0));
     }
-  };
+  }, [currentDigitIndex, betDigits]);
 
   const handleDigitClick = (index) => {
     setCurrentDigitIndex(index);
   };
 
-  const handleAddBet = () => {
+  const handleAddBet = useCallback(() => {
     const hasAllDigits = betDigits.every(digit => digit !== '?');
     
     if (!hasAllDigits) {
@@ -311,18 +316,18 @@ const BettingInterface = () => {
     setBetDigits(['?', '?', '?']);
     setCurrentDigitIndex(0);
     toast.success(`Bet ${betNumber} (${betType}) added for ₱${betAmount}`);
-  };
+  }, [betDigits, betAmount, betType, addedBets]);
 
-  const handleRemoveBet = (betId) => {
+  const handleRemoveBet = useCallback((betId) => {
     setAddedBets(prev => prev.filter(bet => bet.id !== betId));
     toast.success('Bet removed');
-  };
+  }, []);
 
-  const getTotalBetAmount = () => {
+  const getTotalBetAmount = useCallback(() => {
     return addedBets.reduce((total, bet) => total + bet.amount, 0);
-  };
+  }, [addedBets]);
 
-  const handleConfirmAllBets = () => {
+  const handleConfirmAllBets = useCallback(() => {
     if (addedBets.length === 0) {
       toast.error('Please add at least one bet');
       return;
@@ -334,7 +339,7 @@ const BettingInterface = () => {
     }
 
     setShowConfirmModal(true);
-  };
+  }, [addedBets, balance, getTotalBetAmount]);
 
   const handleFinalConfirm = async () => {
     // Check if draws are loaded

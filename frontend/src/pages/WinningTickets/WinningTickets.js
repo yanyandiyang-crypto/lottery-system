@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -249,20 +249,23 @@ const WinningTickets = () => {
     }
   };
 
-  const handleViewTicket = (ticketId) => {
+  // Memoize ticket view handler
+  const handleViewTicket = useCallback((ticketId) => {
     const ticket = tickets.find(t => t.id === ticketId);
     setSelectedTicket(ticket);
     setShowTicketModal(true);
-  };
+  }, [tickets]);
 
-  const formatCurrency = (amount) => {
+  // Memoize currency formatter for performance
+  const formatCurrency = useCallback((amount) => {
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
       currency: 'PHP'
     }).format(amount || 0);
-  };
+  }, []);
 
-  const calculateActualPrizeAmount = (ticket) => {
+  // Memoize prize calculation for performance
+  const calculateActualPrizeAmount = useCallback((ticket) => {
     if (!ticket.bets || !ticket.draw?.winningNumber) {
       return 0;
     }
@@ -290,12 +293,13 @@ const WinningTickets = () => {
     });
     
     return totalPrize;
-  };
+  }, [prizeConfig]);
 
-  const getWinningAmount = (ticket) => {
+  // Memoize winning amount calculation
+  const getWinningAmount = useCallback((ticket) => {
     // Always calculate from bets for accurate display (ignore pre-calculated winAmount)
     return calculateActualPrizeAmount(ticket);
-  };
+  }, [calculateActualPrizeAmount]);
 
   // Helper function to check if a number has double digits (e.g., 223, 112, 334)
   const hasDoubleDigits = (numberString) => {

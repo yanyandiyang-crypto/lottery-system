@@ -225,8 +225,8 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
   }
 
   return (
-    <div className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col z-30 transition-all duration-300 ${
-      isCollapsed ? 'lg:w-16' : 'lg:w-64 xl:w-72 2xl:w-80'
+    <div className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col z-30 sidebar-container ${
+      isCollapsed ? 'lg:w-16 sidebar-collapsed' : 'lg:w-64 xl:w-72 2xl:w-80 sidebar-expanded'
     }`}>
       <div className="flex flex-col flex-grow bg-white/95 backdrop-blur-sm border-r border-gray-200 pt-4 lg:pt-5 pb-4 overflow-y-auto shadow-lg">
         {/* Logo - Enhanced responsive design with collapse support */}

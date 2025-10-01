@@ -763,8 +763,8 @@ export class MobileTicketUtils {
       
       document.body.appendChild(tempContainer);
       
-      // Wait a moment for fonts and styles to load (reduced for speed)
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Minimal wait for faster generation
+      await new Promise(resolve => setTimeout(resolve, 10));
       
       // Use html2canvas to convert HTML to image
       let canvas;
@@ -772,12 +772,13 @@ export class MobileTicketUtils {
         console.log('Using html2canvas to generate ticket image...');
         canvas = await html2canvas(tempContainer, {
           backgroundColor: 'white',
-          scale: 4, // Higher scale for bigger output (was 3)
+          scale: 3, // Balanced quality/speed (was 4)
           useCORS: true,
           allowTaint: true,
           width: 220, // 58mm width
           height: tempContainer.scrollHeight, // Auto height based on content
           logging: false, // Disable logging for speed
+          removeContainer: false, // Keep container for faster cleanup
           onclone: (clonedDoc) => {
             // Ensure fonts are loaded in cloned document
             const clonedContainer = clonedDoc.querySelector('div');
