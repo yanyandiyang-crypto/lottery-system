@@ -556,11 +556,14 @@ const BettingInterface = () => {
     setBetAmount(Math.max(1, newAmount));
   }, []);
 
+  // Detect Android 6-8 for performance optimizations
+  const isOldAndroid = /Android [6-8]/.test(navigator.userAgent);
+
   if (drawsLoading || balanceLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+          <div className={`rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4 ${isOldAndroid ? '' : 'animate-spin'}`}></div>
           <p className="text-primary-600 font-medium">Loading betting interface...</p>
         </div>
       </div>
@@ -577,7 +580,7 @@ const BettingInterface = () => {
             variant="elevated" 
             className={`border-l-4 ${
               timeRemaining.isCutoff && timeRemaining.total < 300000 // 5 minutes
-                ? 'border-danger-500 animate-pulse'
+                ? `border-danger-500 ${isOldAndroid ? '' : 'animate-pulse'}`
                 : timeRemaining.isCutoff && timeRemaining.total < 600000 // 10 minutes
                 ? 'border-warning-500'
                 : 'border-primary-500'
@@ -592,7 +595,7 @@ const BettingInterface = () => {
                   <p className="text-xs sm:text-sm text-gray-600">
                     {new Date(selectedDraw.drawDate).toLocaleDateString()}
                     {timeRemaining.isCutoff && timeRemaining.total < 300000 && (
-                      <span className="ml-2 font-bold text-danger-600 animate-pulse">⚠️ HURRY!</span>
+                      <span className={`ml-2 font-bold text-danger-600 ${isOldAndroid ? '' : 'animate-pulse'}`}>⚠️ HURRY!</span>
                     )}
                   </p>
                 </div>
