@@ -57,7 +57,15 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       setLoading(true);
+      
+      // Add timeout for Android 6 (15 seconds)
+      const loginTimeout = setTimeout(() => {
+        setLoading(false);
+        toast.error('Login timeout. Please check your connection and try again.');
+      }, 15000);
+      
       const response = await authAPI.login(credentials);
+      clearTimeout(loginTimeout);
       
       // Handle clean API response structure
       const { token, user: userData } = response.data.data || response.data;
@@ -70,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed';
+      const message = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(message);
       return { success: false, message };
     } finally {
