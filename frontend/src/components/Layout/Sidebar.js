@@ -55,7 +55,7 @@ const navigationGroups = {
     { name: 'Draw Results', href: '/draw-results', icon: StarIcon, emoji: '⭐', functionKey: 'draw_results' },
     { name: 'Agent Results', href: '/agent-results', icon: TrophyIcon, emoji: '🏆', roles: ['agent'] },
     { name: 'Winning Tickets', href: '/winning-tickets', icon: GiftIcon, emoji: '🎁', roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
-    { name: 'Agent Tickets', href: '/agent-tickets', icon: TicketIcon, emoji: '🎫', roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
+    { name: 'Agent Tickets', href: '/agent-tickets', icon: TicketIcon, emoji: '🎫', functionKey: 'agent_tickets' },
     { name: 'Bet History', href: '/bet-history', icon: ClockIcon, emoji: '🕒', roles: ['agent'] },
     { name: 'Printer Manager', href: '/printer', icon: PrinterIcon, emoji: '🖨️', roles: ['agent'] },
   ],
@@ -159,9 +159,18 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
           'users',
           'balance_management', 
           'sales_reports',
-          'draw_results'
+          'draw_results',
+          'agent_tickets'
         ];
         setAllowedFunctions(coordinatorFunctions);
+        setLoading(false);
+        return;
+      }
+
+      // Agent has access to agent_tickets for reprinting
+      if (user.role === 'agent') {
+        const agentFunctions = ['agent_tickets'];
+        setAllowedFunctions(agentFunctions);
         setLoading(false);
         return;
       }

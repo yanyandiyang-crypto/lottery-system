@@ -144,22 +144,27 @@ export class MobileTicketUtils {
       
       document.body.appendChild(tempContainer);
       
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Detect Android 6-8 for faster rendering
+      const isOldAndroid = /Android [6-8]/.test(navigator.userAgent);
       
-      // Use html2canvas with minimal settings
+      // Reduced wait time for faster printing
+      await new Promise(resolve => setTimeout(resolve, isOldAndroid ? 100 : 200));
+      
+      // Use html2canvas with optimized settings
       const canvas = await html2canvas(tempContainer, {
         backgroundColor: 'white',
-        scale: 2,
+        scale: isOldAndroid ? 1 : 2, // Lower quality for Android 6-8 = faster
         useCORS: true,
         allowTaint: true,
-        logging: false
+        logging: false,
+        removeContainer: true // Auto cleanup
       });
       
       // Clean up
       document.body.removeChild(tempContainer);
       
-      // Convert canvas to blob with higher quality
+      // Convert canvas to blob with optimized quality
+      const quality = isOldAndroid ? 0.7 : 0.95; // Lower quality for Android 6-8 = faster
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (blob) {
@@ -167,7 +172,7 @@ export class MobileTicketUtils {
           } else {
             reject(new Error('Failed to convert canvas to blob'));
           }
-        }, 'image/png', 0.95); // High quality PNG
+        }, 'image/png', quality);
       });
       
     } catch (error) {

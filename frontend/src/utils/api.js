@@ -46,14 +46,14 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 const API_VERSION = process.env.REACT_APP_API_VERSION || 'v1';
 
-// Detect Android 6 for special timeout handling
-const isAndroid6 = typeof navigator !== 'undefined' && 
-  /Android 6/.test(navigator.userAgent);
+// Detect Android 6-8 for special timeout handling
+const isOldAndroid = typeof navigator !== 'undefined' && 
+  /Android [6-8]/.test(navigator.userAgent);
 
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
-  timeout: isAndroid6 ? 15000 : 120000, // 15s for Android 6, 2min for others
+  timeout: isOldAndroid ? 15000 : 120000, // 15s for Android 6-8, 2min for others
   headers: {
     'Content-Type': 'application/json',
     'X-API-Version': API_VERSION,
@@ -70,9 +70,9 @@ const api = axios.create({
   }
 });
 
-// Log Android 6 detection
-if (isAndroid6) {
-  console.warn('⚠️ Android 6 detected - Using shorter timeout (15s)');
+// Log Android 6-8 detection
+if (isOldAndroid) {
+  console.warn('⚠️ Android 6-8 detected - Using shorter timeout (15s)');
 }
 
 // Retry logic disabled - let requests fail naturally without popups

@@ -176,30 +176,57 @@
     };
   }
 
-  // 10. Disable expensive CSS features for Android 6
-  var style = document.createElement('style');
-  style.textContent = `
-    /* Disable expensive effects on Android 6 */
-    * {
-      box-shadow: none !important;
-      text-shadow: none !important;
-      filter: none !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
-    
-    /* Simplify animations */
-    * {
-      transition-duration: 0.1s !important;
-      animation-duration: 0.1s !important;
-    }
-    
-    /* Reduce gradients */
-    .gradient {
-      background: #2563eb !important;
-    }
-  `;
-  document.head.appendChild(style);
+  // 10. Disable expensive CSS features for Android 6-8
+  if (androidVersion > 0 && androidVersion < 9) {
+    var style = document.createElement('style');
+    style.textContent = `
+      /* CRITICAL: Disable ALL expensive effects on Android 6 */
+      *, *::before, *::after {
+        box-shadow: none !important;
+        text-shadow: none !important;
+        filter: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background-image: none !important;
+        -webkit-background-clip: border-box !important;
+        background-clip: border-box !important;
+      }
+      
+      /* Disable all animations */
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+        transform: none !important;
+        -webkit-transform: none !important;
+      }
+      
+      /* Replace gradients with solid colors */
+      .bg-gradient-to-r,
+      .bg-gradient-to-br,
+      .bg-gradient-to-l,
+      .bg-gradient-to-t,
+      .bg-gradient-to-b {
+        background: #2563eb !important;
+        background-image: none !important;
+      }
+      
+      /* Simplify borders */
+      * {
+        border-radius: 4px !important;
+      }
+      
+      /* Disable GPU acceleration (causes lag on Android 6) */
+      * {
+        will-change: auto !important;
+        backface-visibility: visible !important;
+        -webkit-backface-visibility: visible !important;
+        perspective: none !important;
+        -webkit-perspective: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+    console.log('✅ Android 6-8 CSS optimizations applied');
+  }
 
   // 11. Optimize images for Android 6
   document.addEventListener('DOMContentLoaded', function() {
@@ -251,14 +278,14 @@
 
   console.log('📱 Android version detected:', androidVersion);
 
-  if (androidVersion > 0 && androidVersion < 7) {
-    console.warn('⚠️ Running on Android ' + androidVersion + ' - Legacy mode enabled');
+  if (androidVersion > 0 && androidVersion < 9) {
+    console.warn('⚠️ Running on Android ' + androidVersion + ' (6-8) - Legacy mode enabled');
     
     // Add warning banner
     window.addEventListener('load', function() {
       var banner = document.createElement('div');
       banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff9800;color:#000;padding:8px;text-align:center;font-size:12px;z-index:99999;';
-      banner.innerHTML = '⚠️ Old Android version detected. Some features may be slower.';
+      banner.innerHTML = '⚠️ Android ' + androidVersion + ' detected. Optimizations enabled for better performance.';
       document.body.insertBefore(banner, document.body.firstChild);
       
       // Auto-hide after 5 seconds
@@ -295,7 +322,7 @@
   window.legacySupport = {
     enabled: true,
     androidVersion: androidVersion,
-    isLegacy: androidVersion > 0 && androidVersion < 7
+    isLegacy: androidVersion > 0 && androidVersion < 9
   };
 
 })();
