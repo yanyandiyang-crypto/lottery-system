@@ -466,16 +466,9 @@ export class MobileTicketUtils {
     try {
       console.log('🏪 Printing via Mobile POS system...');
       
-      // Get pre-generated HTML for consistent layout
-      const preGeneratedHTML = await this.getPreGeneratedHTML(ticket);
-      
-      // Convert HTML to plain text format for thermal printer
-      const plainTextReceipt = this.convertHTMLToPlainText(preGeneratedHTML, ticket, user);
-      
       // Android POS printing (using AndroidPOS interface)
       if (window.AndroidPOS) {
-        console.log('📱 Using AndroidPOS.printReceipt()');
-        console.log('📄 Plain text receipt length:', plainTextReceipt.length);
+        console.log('📱 Using AndroidPOS for printing');
         
         // Check if connected first
         if (window.AndroidPOS.isConnected) {
@@ -503,12 +496,54 @@ export class MobileTicketUtils {
           console.warn('⚠️ isConnected() method not available, proceeding anyway...');
         }
         
+        // Check if AndroidPOS supports image printing
+        if (window.AndroidPOS.printImage) {
+          console.log('🖼️ Using image-based printing (base64)...');
+          
+          try {
+            // Generate ticket image as base64
+            const imageBlob = await this.getPreGeneratedImage(ticket);
+            
+            // Convert blob to base64
+            const base64Image = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const base64 = reader.result.split(',')[1]; // Remove data:image/png;base64, prefix
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(imageBlob);
+            });
+            
+            console.log('📄 Base64 image generated, length:', base64Image.length);
+            
+            // Send base64 image to printer
+            window.AndroidPOS.printImage(base64Image);
+            console.log('✅ Image print command sent successfully!');
+            return { success: true, method: 'android-pos-image' };
+            
+          } catch (imageError) {
+            console.error('❌ Image printing failed:', imageError);
+            console.log('⚠️ Falling back to text printing...');
+          }
+        }
+        
+        // Fallback to text printing if image printing not available or failed
+        console.log('📝 Using text-based printing...');
+        
+        // Get pre-generated HTML for consistent layout
+        const preGeneratedHTML = await this.getPreGeneratedHTML(ticket);
+        
+        // Convert HTML to plain text format for thermal printer
+        const plainTextReceipt = this.convertHTMLToPlainText(preGeneratedHTML, ticket, user);
+        console.log('📄 Plain text receipt length:', plainTextReceipt.length);
+        
         // Use printReceipt for auto-cut functionality
         console.log('🖨️ Calling AndroidPOS.printReceipt()...');
         try {
           window.AndroidPOS.printReceipt(plainTextReceipt);
           console.log('✅ Print command sent successfully!');
-          return { success: true, method: 'android-pos' };
+          return { success: true, method: 'android-pos-text' };
         } catch (printError) {
           console.error('❌ AndroidPOS.printReceipt() failed:', printError);
           throw printError;
@@ -517,6 +552,7 @@ export class MobileTicketUtils {
       
       // iOS WebView printing
       if (window.webkit?.messageHandlers?.printTicket) {
+        const preGeneratedHTML = await this.getPreGeneratedHTML(ticket);
         window.webkit.messageHandlers.printTicket.postMessage({
           html: preGeneratedHTML,
           ticketNumber: ticket.ticketNumber
