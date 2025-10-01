@@ -178,8 +178,18 @@ ${signatureImage ? `<div class="signature-section" style="text-align: center; ma
       // Check if running in Android app with POS support
       if (window.AndroidPOS) {
         console.log('📱 Detected Android POS app, using native printing');
-        const MobileTicketUtils = (await import('./mobileTicketUtils')).default;
-        return await MobileTicketUtils.printMobileTicket(ticket, user);
+        console.log('🔍 AndroidPOS methods available:', Object.keys(window.AndroidPOS || {}));
+        
+        try {
+          const MobileTicketUtils = (await import('./mobileTicketUtils')).default;
+          const result = await MobileTicketUtils.printMobileTicket(ticket, user);
+          console.log('✅ Native print result:', result);
+          return result;
+        } catch (androidError) {
+          console.error('❌ Android native printing failed:', androidError);
+          console.log('⚠️ Falling back to browser print...');
+          // Don't return here, let it fall through to browser print
+        }
       }
       
       console.log('🌐 Using browser print with backend template');

@@ -90,14 +90,22 @@
             const details = {
                 hasAndroidPOS: typeof window.AndroidPOS !== 'undefined',
                 hasAndroidApp: typeof window.AndroidApp !== 'undefined',
-                userAgent: navigator.userAgent
+                userAgent: navigator.userAgent,
+                androidPOSMethods: window.AndroidPOS ? Object.keys(window.AndroidPOS) : []
             };
+
+            let methodsList = '';
+            if (details.hasAndroidPOS) {
+                methodsList = '<br><strong>Available Methods:</strong><br>' + 
+                    details.androidPOSMethods.map(m => `- ${m}`).join('<br>');
+            }
 
             document.getElementById('details').innerHTML = `
                 <div class="info">
                     <strong>AndroidPOS Available:</strong> ${details.hasAndroidPOS ? '✅ Yes' : '❌ No'}<br>
                     <strong>AndroidApp Available:</strong> ${details.hasAndroidApp ? '✅ Yes' : '❌ No'}<br>
                     <strong>User Agent:</strong> ${details.userAgent}
+                    ${methodsList}
                 </div>
             `;
 

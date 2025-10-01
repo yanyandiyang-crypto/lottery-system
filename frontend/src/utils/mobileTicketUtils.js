@@ -475,20 +475,44 @@ export class MobileTicketUtils {
       // Android POS printing (using AndroidPOS interface)
       if (window.AndroidPOS) {
         console.log('📱 Using AndroidPOS.printReceipt()');
+        console.log('📄 Plain text receipt length:', plainTextReceipt.length);
         
         // Check if connected first
-        if (window.AndroidPOS.isConnected && !window.AndroidPOS.isConnected()) {
-          console.log('⚠️ Printer not connected, attempting to connect...');
-          if (window.AndroidPOS.connectPOS) {
-            window.AndroidPOS.connectPOS();
+        if (window.AndroidPOS.isConnected) {
+          const isConnected = window.AndroidPOS.isConnected();
+          console.log('🔌 Printer connection status:', isConnected);
+          
+          if (!isConnected) {
+            console.log('⚠️ Printer not connected, attempting to connect...');
+            if (window.AndroidPOS.connectPOS) {
+              window.AndroidPOS.connectPOS();
+              // Wait for connection
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              // Check again
+              const reconnected = window.AndroidPOS.isConnected();
+              console.log('🔌 After reconnect attempt:', reconnected);
+              
+              if (!reconnected) {
+                console.error('❌ Failed to connect to printer');
+                throw new Error('Printer not connected. Please connect via Bluetooth settings.');
+              }
+            }
           }
-          // Wait a bit for connection
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          console.warn('⚠️ isConnected() method not available, proceeding anyway...');
         }
         
         // Use printReceipt for auto-cut functionality
-        window.AndroidPOS.printReceipt(plainTextReceipt);
-        return { success: true, method: 'android-pos' };
+        console.log('🖨️ Calling AndroidPOS.printReceipt()...');
+        try {
+          window.AndroidPOS.printReceipt(plainTextReceipt);
+          console.log('✅ Print command sent successfully!');
+          return { success: true, method: 'android-pos' };
+        } catch (printError) {
+          console.error('❌ AndroidPOS.printReceipt() failed:', printError);
+          throw printError;
+        }
       }
       
       // iOS WebView printing
