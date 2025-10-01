@@ -383,18 +383,38 @@ const BettingInterface = () => {
       if (response.data.success) {
         const ticket = response.data.ticket;
         
-        // Set the created ticket and show mobile ticket modal
-        setCreatedTicket(ticket);
-        setShowMobileTicket(true);
+        // Clear form
         setAddedBets([]);
         setBetDigits(['?', '?', '?']);
         setCurrentDigitIndex(0);
         setShowConfirmModal(false);
         
-        // Auto-print ticket immediately after creation
-        setTimeout(() => {
-          generateAndPrintTicket(ticket, false);
-        }, 500);
+        // Check if running in Android POS app
+        const isAndroidPOS = typeof window.AndroidPOS !== 'undefined';
+        
+        if (isAndroidPOS) {
+          // Android POS: Direct print without modal
+          console.log('📱 Android POS detected - printing directly...');
+          setCreatedTicket(ticket);
+          
+          // Print immediately without showing modal
+          setTimeout(() => {
+            generateAndPrintTicket(ticket, true);
+          }, 300);
+          
+          // Show success message
+          toast.success('🖨️ Printing ticket...', { duration: 2000 });
+        } else {
+          // Web/Browser: Show modal with preview
+          console.log('🌐 Web browser detected - showing preview modal...');
+          setCreatedTicket(ticket);
+          setShowMobileTicket(true);
+          
+          // Auto-print after modal opens
+          setTimeout(() => {
+            generateAndPrintTicket(ticket, false);
+          }, 500);
+        }
         
         // Refresh balance after successful bet
         queryClient.invalidateQueries(['userBalance', user.id]);
