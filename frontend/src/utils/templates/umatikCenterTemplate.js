@@ -37,9 +37,53 @@ const formatDrawId = (drawId) => {
   return `S${String(drawId).padStart(6, '0')}`;
 };
 
-// Optimized QR code URL generation (smaller size for faster loading)
+// Offline QR Code generation using qrcode library
+// Generates QR code as base64 data URL - works without internet
 const getQuickChartQrUrl = (text, size = 100) => {
-  return `https://quickchart.io/qr?text=${encodeURIComponent(text)}&size=${size}&margin=0&ecc=M`;
+  try {
+    const QRCode = require('qrcode');
+    
+    // Generate QR code synchronously as data URL
+    // Using toDataURLSync would be ideal but it doesn't exist
+    // So we'll use a workaround with canvas
+    const canvas = document.createElement('canvas');
+    QRCode.toCanvas(canvas, text, {
+      width: size,
+      margin: 0,
+      errorCorrectionLevel: 'M',
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+    
+    // Convert canvas to data URL (base64)
+    return canvas.toDataURL('image/png');
+  } catch (error) {
+    console.error('Offline QR generation failed:', error);
+    
+    // Fallback: Generate simple SVG QR placeholder
+    return `data:image/svg+xml,${encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">
+        <rect fill="#fff" width="100" height="100"/>
+        <rect fill="#000" x="10" y="10" width="10" height="10"/>
+        <rect fill="#000" x="30" y="10" width="10" height="10"/>
+        <rect fill="#000" x="50" y="10" width="10" height="10"/>
+        <rect fill="#000" x="70" y="10" width="10" height="10"/>
+        <rect fill="#000" x="10" y="30" width="10" height="10"/>
+        <rect fill="#000" x="70" y="30" width="10" height="10"/>
+        <rect fill="#000" x="10" y="50" width="10" height="10"/>
+        <rect fill="#000" x="30" y="50" width="10" height="10"/>
+        <rect fill="#000" x="50" y="50" width="10" height="10"/>
+        <rect fill="#000" x="70" y="50" width="10" height="10"/>
+        <rect fill="#000" x="10" y="70" width="10" height="10"/>
+        <rect fill="#000" x="30" y="70" width="10" height="10"/>
+        <rect fill="#000" x="50" y="70" width="10" height="10"/>
+        <rect fill="#000" x="70" y="70" width="10" height="10"/>
+        <text x="50" y="95" text-anchor="middle" font-size="8" fill="#666">QR Error</text>
+      </svg>
+    `)}`;
+  }
 };
 
 export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {

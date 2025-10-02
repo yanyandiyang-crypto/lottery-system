@@ -28,7 +28,11 @@ const formatDrawId = (drawId) => {
   return `S${String(drawId).padStart(6, '0')}`;
 };
 
-// Optimized QR code URL generation (smaller size for faster loading)
+// QR Code generation - Using QuickChart.io API
+// Note: This is an external API call. For offline support, consider:
+// 1. Pre-generating QR codes on backend during ticket creation
+// 2. Using local qrcode library with async/await in ticket generation flow
+// Current implementation uses online API for simplicity and compatibility
 const getQuickChartQrUrl = (text, size = 100) => {
   return `https://quickchart.io/qr?text=${encodeURIComponent(text)}&size=${size}&margin=0&ecc=M`;
 };
