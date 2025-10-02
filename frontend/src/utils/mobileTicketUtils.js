@@ -109,10 +109,10 @@ export class MobileTicketUtils {
       // Generate HTML directly using template system
       const templateHTML = TicketGenerator.generateWithTemplate(ticket, {}, template, {});
       
-      // Wrap HTML exactly like the working preview
+      // Wrap HTML with CSS scaling for wider display (2.5x larger)
       const wrappedHTML = `
-        <div style="width:220px;margin:0 auto;overflow:hidden;position:relative;border:1px solid #ddd;background:white;">
-          <div style="width:220px;transform-origin:top left;position:relative;">${templateHTML}</div>
+        <div style="width:550px;margin:0 auto;overflow:hidden;position:relative;border:1px solid #ddd;background:white;">
+          <div style="width:220px;transform:scale(2.5);transform-origin:top left;position:relative;">${templateHTML}</div>
         </div>
       `;
       
@@ -147,13 +147,15 @@ export class MobileTicketUtils {
       // Wait for rendering
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Use html2canvas with minimal settings
+      // Use html2canvas with higher scale for wider display
       const canvas = await html2canvas(tempContainer, {
         backgroundColor: 'white',
-        scale: 2,
+        scale: 3, // Increased from 2 to 3 for better quality at larger size
         useCORS: true,
         allowTaint: true,
-        logging: false
+        logging: false,
+        width: tempContainer.scrollWidth,
+        height: tempContainer.scrollHeight
       });
       
       // Clean up

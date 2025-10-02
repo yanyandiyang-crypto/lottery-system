@@ -46,6 +46,19 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 const API_VERSION = process.env.REACT_APP_API_VERSION || 'v1';
 
+// Session management - Store last activity time
+let lastActivityTime = Date.now();
+const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours (stay logged in)
+
+// Update activity time on user interaction
+if (typeof window !== 'undefined') {
+  ['click', 'touchstart', 'keydown', 'scroll'].forEach(event => {
+    window.addEventListener(event, () => {
+      lastActivityTime = Date.now();
+    }, { passive: true });
+  });
+}
+
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
@@ -128,9 +141,21 @@ api.interceptors.response.use(
           // Bad Request - Validation failed (silently handled)
           break;
         case 401:
-          // Unauthorized - clear token but don't auto-redirect
-          localStorage.removeItem('token');
-          delete axios.defaults.headers.common['Authorization'];
+          // Unauthorized - Only logout if session truly expired (24 hours)
+          const timeSinceActivity = Date.now() - lastActivityTime;
+          if (timeSinceActivity > SESSION_TIMEOUT) {
+            console.log('🔒 Session expired after 24 hours of inactivity');
+            localStorage.removeItem('token');
+            delete axios.defaults.headers.common['Authorization'];
+            // Redirect to login only if truly expired
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+              window.location.href = '/login?session=expired';
+            }
+          } else {
+            // Token might be invalid but session is still active
+            // Keep user logged in, just log the error
+            console.warn('⚠️ 401 error but session still active - keeping user logged in');
+          }
           break;
         case 403:
           // Forbidden - silently handled

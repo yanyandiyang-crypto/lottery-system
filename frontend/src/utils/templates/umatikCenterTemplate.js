@@ -140,7 +140,7 @@ export function generateUmatikCenterTicketHTML(ticket, user, assets = {}) {
   }).join('');
 
   return `
-<div style="font-family: Arial, sans-serif; font-size: 8px; width: 220px; color: black; font-weight: 800; background: white; padding: 4px; box-sizing: border-box;">
+<div style="font-family: Arial, sans-serif; font-size: 8px; width: 100%; max-width: 600px; min-width: 220px; color: black; font-weight: 800; background: white; padding: 4px; box-sizing: border-box;">
   <!-- Centered Logo - Table Layout -->
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
     <tr>

@@ -29,7 +29,8 @@ import {
   StopIcon,
   CommandLineIcon,
   UserIcon,
-  IdentificationIcon
+  IdentificationIcon,
+  PrinterIcon
 } from '@heroicons/react/24/outline';
 
 // Mobile navigation groups with modern emojis and icons (same as desktop)
@@ -57,13 +58,14 @@ const navigationGroups = {
     { name: 'Draw Results', href: '/draw-results', icon: StarIcon, emoji: '⭐', functionKey: 'draw_results' },
     { name: 'Agent Results', href: '/agent-results', icon: TrophyIcon, emoji: '🏆', roles: ['agent'] },
     { name: 'Winning Tickets', href: '/winning-tickets', icon: GiftIcon, emoji: '🎁', roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
-    { name: 'Agent Tickets', href: '/agent-tickets', icon: TicketIcon, emoji: '🎫', functionKey: 'agent_tickets' },
+    { name: 'Agent Tickets', href: '/agent-tickets', icon: TicketIcon, emoji: '🎫', roles: ['agent', 'coordinator', 'area_coordinator', 'admin', 'superadmin'] },
     { name: 'Bet History', href: '/bet-history', icon: ClockIcon, emoji: '🕒', roles: ['agent'] },
+    { name: 'Printer Manager', href: '/printer', icon: PrinterIcon, emoji: '🖨️', roles: ['agent'] },
   ],
   
   verification: [
     { name: 'Claim Prize', href: '/claim', icon: GiftIcon, emoji: '💰', roles: ['agent', 'admin', 'superadmin'] },
-    { name: 'Claim approvals', href: '/claim-approvals', icon: LockClosedIcon, emoji: '🔒', roles: ['superadmin', 'admin'] },
+    { name: 'Claim Approvals', href: '/claim-approvals', icon: LockClosedIcon, emoji: '🔒', roles: ['superadmin', 'admin'] },
   ],
   
   system: [
@@ -213,7 +215,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
   if (loading) {
     return (
       <Transition.Root show={isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50 lg:hidden" onClose={onClose}>
+        <Dialog as="div" className="relative z-[100] lg:hidden" onClose={onClose}>
           <Transition.Child
             as={Fragment}
             enter="transition-opacity ease-linear duration-300"
@@ -241,7 +243,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50 lg:hidden" onClose={onClose}>
+      <Dialog as="div" className="relative z-[100] lg:hidden" onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="transition-opacity ease-linear duration-300"

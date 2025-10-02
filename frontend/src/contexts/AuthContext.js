@@ -30,6 +30,8 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
+        
         if (!token) {
           setLoading(false);
           return;
@@ -38,13 +40,39 @@ export const AuthProvider = ({ children }) => {
         // Set the token in axios headers before making the request
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
-        const response = await authAPI.getMe();
-        setUser(response.data.data?.user || response.data.user);
+        // Try to use saved user data first (instant login)
+        if (savedUser) {
+          try {
+            const userData = JSON.parse(savedUser);
+            setUser(userData);
+            console.log('✅ Restored session from localStorage');
+          } catch (e) {
+            console.warn('Failed to parse saved user data');
+          }
+        }
+        
+        // Verify token with backend (in background)
+        try {
+          const response = await authAPI.getMe();
+          const freshUserData = response.data.data?.user || response.data.user;
+          setUser(freshUserData);
+          // Update saved user data
+          localStorage.setItem('user', JSON.stringify(freshUserData));
+        } catch (error) {
+          // If verification fails but we have saved user, keep them logged in
+          if (savedUser && error.response?.status === 401) {
+            console.warn('⚠️ Token verification failed but keeping session active');
+            // Don't clear token - let user stay logged in
+          } else {
+            // Only clear if no saved user data
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            delete axios.defaults.headers.common['Authorization'];
+            setUser(null);
+          }
+        }
       } catch (error) {
         console.error('Auth check failed:', error);
-        // Clear invalid token
-        localStorage.removeItem('token');
-        delete axios.defaults.headers.common['Authorization'];
         setUser(null);
       } finally {
         setLoading(false);
@@ -62,12 +90,15 @@ export const AuthProvider = ({ children }) => {
       // Handle clean API response structure
       const { token, user: userData } = response.data.data || response.data;
       
-      // Store token and user data
+      // Store token and user data (persistent session)
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('loginTime', Date.now().toString());
+      
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(userData);
       
-      toast.success('Login successful!');
+      toast.success('Login successful! Session will stay active for 24 hours.');
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';
@@ -84,8 +115,10 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear local storage and state
+      // Clear all session data
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('loginTime');
       delete axios.defaults.headers.common['Authorization'];
       setUser(null);
       toast.success('Logged out successfully');

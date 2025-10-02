@@ -122,9 +122,20 @@ public class MainActivity extends AppCompatActivity {
         // Additional speed optimizations
         webSettings.setSaveFormData(false);
         webSettings.setSavePassword(false);
-        webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+        webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
         webSettings.setUseWideViewPort(true);
         webSettings.setLoadWithOverviewMode(true);
+        
+        // Auto-resize and responsive layout support
+        webSettings.setSupportZoom(true);
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDisplayZoomControls(false); // Hide zoom buttons but keep pinch-to-zoom
+        
+        // Viewport meta tag support for responsive design
+        webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
+        webSettings.setMinimumFontSize(8);
+        webSettings.setMinimumLogicalFontSize(8);
+        webSettings.setDefaultFontSize(16);
         
         // Enable ALL hardware acceleration
         webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
@@ -156,12 +167,42 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                // Inject performance boost and smooth scrolling script
+                // Inject performance boost, smooth scrolling, and responsive layout script
                 view.evaluateJavascript(
                     "(function() {" +
                     "  if (window.performance && window.performance.setResourceTimingBufferSize) {" +
                     "    window.performance.setResourceTimingBufferSize(1000);" +
                     "  }" +
+                    "  " +
+                    "  // AUTO-RESIZE: Add viewport meta tag if missing" +
+                    "  if (!document.querySelector('meta[name=\"viewport\"]')) {" +
+                    "    var meta = document.createElement('meta');" +
+                    "    meta.name = 'viewport';" +
+                    "    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';" +
+                    "    document.head.appendChild(meta);" +
+                    "    console.log('✅ Viewport meta tag added');" +
+                    "  }" +
+                    "  " +
+                    "  // AUTO-RESIZE: Force responsive layout" +
+                    "  document.documentElement.style.width = '100%';" +
+                    "  document.documentElement.style.maxWidth = '100vw';" +
+                    "  document.body.style.width = '100%';" +
+                    "  document.body.style.maxWidth = '100vw';" +
+                    "  document.body.style.overflowX = 'hidden';" +
+                    "  " +
+                    "  // AUTO-RESIZE: Handle orientation changes" +
+                    "  window.addEventListener('orientationchange', function() {" +
+                    "    setTimeout(function() {" +
+                    "      window.scrollTo(0, 1);" +
+                    "      window.scrollTo(0, 0);" +
+                    "    }, 100);" +
+                    "  });" +
+                    "  " +
+                    "  // AUTO-RESIZE: Handle window resize" +
+                    "  window.addEventListener('resize', function() {" +
+                    "    document.body.style.width = '100%';" +
+                    "    document.body.style.maxWidth = '100vw';" +
+                    "  });" +
                     "  " +
                     "  // Enable smooth scrolling CSS" +
                     "  document.documentElement.style.scrollBehavior = 'smooth';" +
@@ -184,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
                     "    el.style.willChange = 'transform';" +
                     "  });" +
                     "  " +
-                    "  console.log('✅ Scroll optimization injected');" +
+                    "  console.log('✅ Responsive layout + scroll optimization injected');" +
                     "})()", null);
             }
 
