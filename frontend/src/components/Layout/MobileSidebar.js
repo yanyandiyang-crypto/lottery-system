@@ -22,7 +22,6 @@ import {
   ChartBarSquareIcon,
   DocumentDuplicateIcon,
   StarIcon,
-  QrCodeIcon,
   GiftIcon,
   DevicePhoneMobileIcon,
   LockClosedIcon,
