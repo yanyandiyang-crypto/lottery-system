@@ -1,5 +1,5 @@
 
-// DEPLOYMENT VERSION: 2.0.0 - 2025-09-27T12:03:10.316Z
+// DEPLOYMENT VERSION: 2.0.1 - 2025-10-02 Cloudflare Pages CORS Fix
 const express = require('express');
 // Sentry for error tracking and tracing
 const Sentry = require('@sentry/node');
@@ -185,6 +185,7 @@ app.options('*', (req, res) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
     'https://lottery-system-gamma.vercel.app',
+    'https://lottery-system.pages.dev',
     'http://localhost:3000',
     'http://localhost:3002',
     'https://localhost',  // Capacitor Android app
