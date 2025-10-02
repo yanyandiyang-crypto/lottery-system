@@ -51,8 +51,8 @@ const Layout = ({ children }) => {
       {/* Main content area - adjusts based on sidebar state */}
       <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${
         desktopSidebarCollapsed 
-          ? 'lg:pl-16' 
-          : 'lg:pl-64 xl:pl-72 2xl:pl-80'
+          ? 'lg:pl-14' 
+          : 'lg:pl-56'
       }`}>
         {/* Header - responsive across all devices */}
         <Header onMenuClick={() => setSidebarOpen(true)} />

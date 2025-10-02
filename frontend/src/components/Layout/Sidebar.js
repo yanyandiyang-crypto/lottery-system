@@ -221,8 +221,8 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
 
   if (loading) {
     return (
-      <div className={`fixed inset-y-0 left-0 flex flex-col z-30 transition-all duration-300 ${
-        isCollapsed ? 'w-16' : 'w-64 xl:w-72 2xl:w-80'
+      <div className={`fixed inset-y-0 left-0 hidden lg:flex flex-col z-30 transition-all duration-300 ${
+        isCollapsed ? 'lg:w-14' : 'lg:w-56'
       }`}>
         <div className="flex flex-col flex-grow bg-white/95 backdrop-blur-sm border-r border-gray-200 pt-5 pb-4 overflow-y-auto shadow-lg">
           <div className="flex items-center justify-center h-32">
@@ -234,26 +234,26 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
   }
 
   return (
-    <div className={`fixed inset-y-0 left-0 flex flex-col z-30 sidebar-container ${
-      isCollapsed ? 'w-16 sidebar-collapsed' : 'w-64 xl:w-72 2xl:w-80 sidebar-expanded'
+    <div className={`fixed inset-y-0 left-0 hidden lg:flex flex-col z-30 sidebar-container ${
+      isCollapsed ? 'lg:w-14 sidebar-collapsed' : 'lg:w-56 sidebar-expanded'
     }`}>
-      <div className="flex flex-col flex-grow bg-white/95 backdrop-blur-sm border-r border-gray-200 pt-4 lg:pt-5 pb-4 overflow-y-auto shadow-lg">
+      <div className="flex flex-col flex-grow bg-white/95 backdrop-blur-sm border-r border-gray-200 pt-2 pb-2 overflow-y-auto shadow-lg">
         {/* Logo - Enhanced responsive design with collapse support */}
-        <div className={`flex items-center flex-shrink-0 ${isCollapsed ? 'px-2 justify-center' : 'px-4 lg:px-5 xl:px-6'}`}>
+        <div className={`flex items-center flex-shrink-0 ${isCollapsed ? 'px-1 justify-center' : 'px-3'}`}>
           <div className="flex items-center min-w-0 w-full">
             <div className="flex-shrink-0">
               <button
                 onClick={onToggleCollapse}
-                className="h-8 w-8 lg:h-9 lg:w-9 xl:h-10 xl:w-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md hover:from-primary-700 hover:to-primary-800 transition-all duration-200 cursor-pointer"
+                className="h-8 w-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-sm hover:from-primary-700 hover:to-primary-800 transition-all duration-200 cursor-pointer"
                 title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
               >
-                <span className="text-white font-bold text-lg lg:text-xl xl:text-2xl">N</span>
+                <span className="text-white font-bold text-lg">N</span>
               </button>
             </div>
             {!isCollapsed && (
-              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
-                <h1 className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 truncate">NewBetting</h1>
-                <p className="text-xs lg:text-sm text-gray-500 font-medium">Lottery System</p>
+              <div className="ml-2 min-w-0 flex-1">
+                <h1 className="text-base font-bold text-gray-900 truncate">NewBetting</h1>
+                <p className="text-xs text-gray-500 font-medium">Lottery System</p>
               </div>
             )}
           </div>
@@ -261,19 +261,19 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
 
         {/* User Info - Enhanced design with collapse support */}
         {!isCollapsed && (
-          <div className="mt-4 lg:mt-5 xl:mt-6 px-4 lg:px-5 xl:px-6">
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-3 lg:p-4 border border-gray-200 shadow-sm">
+          <div className="mt-2 px-3">
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-2.5 border border-gray-200 shadow-sm">
               <div className="flex items-center min-w-0">
                 <div className="flex-shrink-0">
-                  <div className="h-9 w-9 lg:h-10 lg:w-10 xl:h-12 xl:w-12 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center border-2 border-primary-300 shadow-sm">
-                    <span className="text-primary-700 font-semibold text-sm lg:text-base xl:text-lg">
+                  <div className="h-9 w-9 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center border-2 border-primary-300 shadow-sm">
+                    <span className="text-primary-700 font-semibold text-sm">
                       {user?.fullName?.charAt(0) || 'U'}
                     </span>
                   </div>
                 </div>
-                <div className="ml-3 lg:ml-4 min-w-0 flex-1">
-                  <p className="text-sm lg:text-base xl:text-lg font-semibold text-gray-900 truncate">{user?.fullName}</p>
-                  <p className="text-xs lg:text-sm text-gray-600 font-medium">{roleLabels[user?.role]}</p>
+                <div className="ml-2 min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{user?.fullName}</p>
+                  <p className="text-xs text-gray-600 font-medium">{roleLabels[user?.role]}</p>
                 </div>
               </div>
             </div>
@@ -281,17 +281,17 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
         )}
 
         {/* Navigation - Modern grouped design with collapse support */}
-        <nav className={`mt-4 lg:mt-5 xl:mt-6 flex-1 overflow-y-auto ${isCollapsed ? 'px-2' : 'px-3 lg:px-4 xl:px-5'}`}>
-          <div className="space-y-6">
+        <nav className={`mt-2 flex-1 overflow-y-auto ${isCollapsed ? 'px-1' : 'px-2'}`}>
+          <div className="space-y-3">
             {Object.entries(filteredNavigation).map(([groupKey, items]) => (
-              <div key={groupKey} className="space-y-2">
+              <div key={groupKey} className="space-y-1">
                 {/* Group Header */}
                 {!isCollapsed && (
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2">
                       {groupLabels[groupKey]}
                     </h3>
-                    <div className="flex-1 ml-3 border-t border-gray-200"></div>
+                    <div className="flex-1 ml-2 border-t border-gray-200"></div>
                   </div>
                 )}
                 
@@ -316,14 +316,14 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
                             : 'border-transparent text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900 hover:shadow-md hover:border-gray-200'
                         } group flex items-center ${
                           isCollapsed 
-                            ? 'px-2 py-3 justify-center' 
-                            : 'px-3 lg:px-4 py-2.5 lg:py-3'
-                        } text-sm lg:text-base font-medium border-l-4 rounded-r-xl transition-all duration-200 ease-in-out transform hover:scale-[1.01] active:scale-[0.99]`}
+                            ? 'px-2 py-2 justify-center' 
+                            : 'px-3 py-2'
+                        } text-sm font-medium border-l-4 rounded-r-lg transition-all duration-200 ease-in-out`}
                         title={isCollapsed ? item.name : ''}
                       >
-                        <div className={`${isCollapsed ? '' : 'mr-3 lg:mr-4'} flex-shrink-0 flex items-center justify-center relative`}>
+                        <div className={`${isCollapsed ? '' : 'mr-2.5'} flex-shrink-0 flex items-center justify-center relative`}>
                           {/* Emoji Background */}
-                          <div className={`absolute inset-0 flex items-center justify-center text-lg lg:text-xl transition-all duration-200 ${
+                          <div className={`absolute inset-0 flex items-center justify-center text-lg transition-all duration-200 ${
                             isActive ? 'scale-110 opacity-100' : 'scale-100 opacity-70 group-hover:opacity-90'
                           }`}>
                             {item.emoji}
@@ -332,7 +332,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
                           <item.icon
                             className={`${
                               isActive ? 'text-sky-600/20' : 'text-gray-400/20 group-hover:text-gray-600/30'
-                            } h-5 w-5 lg:h-6 lg:w-6 transition-colors duration-200 relative z-10`}
+                            } h-5 w-5 transition-colors duration-200 relative z-10`}
                             aria-hidden="true"
                           />
                         </div>
@@ -351,12 +351,12 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
           </div>
         </nav>
 
-        {/* Footer info - Enhanced */}
+        {/* Footer info - Compact */}
         {!isCollapsed && (
-          <div className="mt-4 px-4 lg:px-5 xl:px-6 py-3 border-t border-gray-200/50">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <p className="text-xs text-gray-500 font-semibold">NewBetting v2.0.1</p>
+          <div className="mt-2 px-2 py-1.5 border-t border-gray-200/50">
+            <div className="flex items-center justify-center space-x-1">
+              <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+              <p className="text-xs text-gray-500 font-medium">v2.0.1</p>
             </div>
           </div>
         )}
