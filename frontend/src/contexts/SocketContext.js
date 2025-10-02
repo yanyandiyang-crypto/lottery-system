@@ -19,11 +19,15 @@ export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
 
   useEffect(() => {
+    // SOCKET.IO DISABLED - Temporary fix for CORS/connection issues
+    // Real-time updates disabled, users need to manually refresh
+    const SOCKET_DISABLED = true;
+    
     // Disable socket for localhost development to prevent connection loop
     const isLocalhost = process.env.REACT_APP_SOCKET_URL?.includes('localhost') || 
                        process.env.REACT_APP_SOCKET_URL?.includes('127.0.0.1');
     
-    if (user && !isLocalhost) {
+    if (user && !isLocalhost && !SOCKET_DISABLED) {
       // Initialize socket connection (only for production)
       const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://lottery-system-tna9.onrender.com', {
         transports: ['websocket', 'polling'],

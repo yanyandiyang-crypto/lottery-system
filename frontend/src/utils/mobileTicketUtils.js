@@ -629,11 +629,24 @@ export class MobileTicketUtils {
               width: 58mm;
               max-width: 58mm;
             }
+            /* Screen preview - show at actual size */
+            @media screen {
+              body {
+                padding: 10px;
+                background: #f0f0f0;
+              }
+            }
+            /* Print settings for 58mm thermal printer */
             @media print { 
+              * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
               body { 
                 margin: 0 !important; 
                 padding: 0 !important;
                 width: 58mm !important;
+                background: white !important;
               }
               @page { 
                 margin: 0; 
