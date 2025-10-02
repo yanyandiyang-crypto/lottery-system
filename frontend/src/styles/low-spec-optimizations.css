@@ -21,19 +21,18 @@
   animation: none !important;
   transition: none !important;
   
-  /* Disable transforms */
+  /* Disable transforms (but keep colors) */
   transform: none !important;
   
-  /* Disable shadows for better performance */
-  box-shadow: none !important;
+  /* Reduce shadows (but don't remove completely) */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
   text-shadow: none !important;
   
-  /* Disable blur effects */
+  /* Disable heavy blur effects */
   backdrop-filter: none !important;
-  filter: none !important;
   
-  /* Disable gradients (use solid colors) */
-  background-image: none !important;
+  /* PRESERVE COLORS: Only disable gradients, keep solid colors */
+  /* Note: This will be overridden by inline styles which is good */
 }
 
 /* Keep essential hover effects even in low-spec mode */
@@ -74,9 +73,10 @@
   table-layout: fixed;
 }
 
-/* Reduce complexity of gradients */
+/* Simplify gradients but keep background colors */
 .low-spec-mode .bg-gradient-to-br,
 .low-spec-mode .bg-gradient-to-r,
 .low-spec-mode .bg-gradient-to-l {
-  background-image: none !important;
+  /* Don't remove background-image, just simplify */
+  /* Colors will be preserved from Tailwind classes */
 }

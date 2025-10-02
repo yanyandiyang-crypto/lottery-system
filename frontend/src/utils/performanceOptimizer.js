@@ -10,38 +10,55 @@ export const isAndroidWebView = () => {
          /wv/.test(navigator.userAgent);
 };
 
-// Detect low-spec device (optimized for 1GB RAM devices)
+// Detect low-spec device (SMART detection for 1GB RAM devices)
 export const isLowSpecDevice = () => {
-  // AGGRESSIVE: Assume low-spec for mobile devices (most POS are 1-2GB)
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // PRIORITY 1: Always optimize for POS devices (Android WebView)
+  if (typeof window.AndroidPOS !== 'undefined' || typeof window.AndroidApp !== 'undefined') {
+    console.log('🔍 Low-spec mode: POS device detected');
+    return true;
+  }
   
-  // Check device memory (if available)
+  // PRIORITY 2: Check device memory (most reliable indicator)
   if (navigator.deviceMemory) {
     if (navigator.deviceMemory <= 2) {
-      return true; // 2GB or less (includes 1GB devices)
+      console.log(`🔍 Low-spec mode: Low RAM detected (${navigator.deviceMemory}GB)`);
+      return true; // 2GB or less
+    } else {
+      console.log(`✅ Normal mode: Good RAM (${navigator.deviceMemory}GB)`);
+      return false; // Desktop/high-end device
     }
   }
   
-  // Check hardware concurrency (CPU cores)
-  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) {
-    return true; // 2 cores or less
+  // PRIORITY 3: Check CPU cores (secondary indicator)
+  if (navigator.hardwareConcurrency) {
+    if (navigator.hardwareConcurrency <= 2) {
+      console.log(`🔍 Low-spec mode: Low CPU cores (${navigator.hardwareConcurrency})`);
+      return true;
+    } else {
+      console.log(`✅ Normal mode: Good CPU (${navigator.hardwareConcurrency} cores)`);
+      return false; // Desktop/high-end device
+    }
   }
   
-  // Check connection speed
+  // PRIORITY 4: Check connection speed
   if (navigator.connection) {
     const slowConnections = ['slow-2g', '2g', '3g'];
     if (slowConnections.includes(navigator.connection.effectiveType)) {
-      return true; // Slow internet
+      console.log(`🔍 Low-spec mode: Slow connection (${navigator.connection.effectiveType})`);
+      return true;
     }
   }
   
-  // Default to low-spec for mobile WebView (POS devices)
-  if (typeof window.AndroidPOS !== 'undefined' || typeof window.AndroidApp !== 'undefined') {
-    return true; // Always optimize for POS devices
+  // PRIORITY 5: Mobile detection (but only if no other info available)
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    console.log('🔍 Low-spec mode: Mobile device (no memory info)');
+    return true; // Assume low-spec for mobile without memory info
   }
   
-  // Default to low-spec for all mobile devices
-  return isMobile;
+  // DEFAULT: Desktop without memory info = assume normal mode
+  console.log('✅ Normal mode: Desktop device');
+  return false;
 };
 
 // Get performance mode based on device

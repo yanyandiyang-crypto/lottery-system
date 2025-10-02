@@ -105,12 +105,7 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
         
-        // AGGRESSIVE caching for low-spec devices
-        // Cache everything possible to reduce network and CPU load
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setAppCachePath(getApplicationContext().getCacheDir().getAbsolutePath());
-        webSettings.setAppCacheMaxSize(50 * 1024 * 1024); // 50MB cache
-        
+        // AGGRESSIVE caching for low-spec devices (1GB RAM optimized)
         if (networkMonitor != null && networkMonitor.isNetworkAvailable()) {
             webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK); // Prefer cache for speed
         } else {
