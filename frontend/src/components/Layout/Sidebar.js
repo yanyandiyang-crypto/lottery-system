@@ -19,7 +19,6 @@ import {
   ChartBarSquareIcon,
   DocumentDuplicateIcon,
   StarIcon,
-  QrCodeIcon,
   GiftIcon,
   LockClosedIcon,
   BellAlertIcon,
