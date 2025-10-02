@@ -146,6 +146,7 @@ app.use(cors({
     // Define allowed origins
     const allowedOrigins = [
       'https://lottery-system-gamma.vercel.app',
+      'https://lottery-system.pages.dev',
       'http://localhost:3000',
       'http://localhost:3002',
       'https://localhost',  // Capacitor Android app
@@ -159,7 +160,10 @@ app.use(cors({
     console.log('CORS: Checking origin:', origin);
     console.log('CORS: Allowed origins:', allowedOrigins);
     
-    if (allowedOrigins.includes(origin)) {
+    // Check if origin matches allowed origins or Cloudflare Pages preview URLs
+    const isCloudflarePages = origin && origin.match(/^https:\/\/[a-f0-9]+\.lottery-system\.pages\.dev$/);
+    
+    if (allowedOrigins.includes(origin) || isCloudflarePages) {
       console.log('CORS: Origin allowed:', origin);
       callback(null, true);
     } else {
@@ -196,7 +200,10 @@ app.options('*', (req, res) => {
     'http://192.168.0.167:3001'   // Local network testing
   ];
   
-  if (allowedOrigins.includes(origin)) {
+  // Check if origin matches allowed origins or Cloudflare Pages preview URLs
+  const isCloudflarePages = origin && origin.match(/^https:\/\/[a-f0-9]+\.lottery-system\.pages\.dev$/);
+  
+  if (allowedOrigins.includes(origin) || isCloudflarePages) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version, cache-control');
