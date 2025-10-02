@@ -74,19 +74,10 @@ if (process.env.SENTRY_DSN) {
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration - Define allowed origins first
-const allowedOrigins = [
-  'https://lottery-system.pages.dev',
-  'https://4c1148d3.lottery-system.pages.dev',
-  'http://localhost:3002'
-];
-
-console.log('CORS Allowed Origins:', allowedOrigins);
-
-// CORS: Explicit origin check for Cloudflare Pages
-console.log('CORS: Environment CORS_ORIGIN:', process.env.CORS_ORIGIN);
-console.log('CORS: Final allowed origins:', allowedOrigins);
-console.log('CORS: Cloudflare Pages origins included:', allowedOrigins.includes('https://lottery-system.pages.dev'));
+// CORS configuration - Using pattern matching for Cloudflare Pages
+// Allows: *.lottery-system.pages.dev and http://localhost:*
+console.log('CORS: Using wildcard pattern for Cloudflare Pages deployments');
+console.log('CORS: Allowed patterns: *.lottery-system.pages.dev, http://localhost:*');
 
 // Socket.IO DISABLED - Preventing disconnection issues
 const io = {
@@ -151,22 +142,19 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Define allowed origins
-    const allowedOrigins = [
-      'https://lottery-system.pages.dev',
-      'https://4c1148d3.lottery-system.pages.dev',
-      'http://localhost:3002'
-    ];
+    // Check if origin matches allowed patterns
+    const isCloudflarePages = origin.endsWith('.lottery-system.pages.dev') || origin === 'https://lottery-system.pages.dev';
+    const isLocalhost = origin === 'http://localhost:3002' || origin.startsWith('http://localhost:');
     
     console.log('CORS: Checking origin:', origin);
-    console.log('CORS: Allowed origins:', allowedOrigins);
+    console.log('CORS: Cloudflare Pages?', isCloudflarePages);
+    console.log('CORS: Localhost?', isLocalhost);
     
-    if (allowedOrigins.includes(origin)) {
+    if (isCloudflarePages || isLocalhost) {
       console.log('CORS: Origin allowed:', origin);
       callback(null, true);
     } else {
       console.log('CORS: Blocked origin:', origin);
-      console.log('CORS: Available origins:', allowedOrigins);
       callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
     }
   },
@@ -185,13 +173,12 @@ app.use(helmet({
 app.options('*', (req, res) => {
   console.log('CORS: Handling preflight request for:', req.headers.origin);
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    'https://lottery-system.pages.dev',
-    'https://4c1148d3.lottery-system.pages.dev',
-    'http://localhost:3002'
-  ];
   
-  if (allowedOrigins.includes(origin)) {
+  // Check if origin matches allowed patterns
+  const isCloudflarePages = origin && (origin.endsWith('.lottery-system.pages.dev') || origin === 'https://lottery-system.pages.dev');
+  const isLocalhost = origin && (origin === 'http://localhost:3002' || origin.startsWith('http://localhost:'));
+  
+  if (isCloudflarePages || isLocalhost) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version, cache-control');
