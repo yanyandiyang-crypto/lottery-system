@@ -153,7 +153,7 @@ export class MobileTicketUtils {
       // Use html2canvas with optimized settings
       const canvas = await html2canvas(tempContainer, {
         backgroundColor: 'white',
-        scale: isOldAndroid ? 1 : 2, // Lower quality for Android 6-8 = faster
+        scale: isOldAndroid ? 2 : 3, // Higher scale for better print quality
         useCORS: true,
         allowTaint: true,
         logging: false,
