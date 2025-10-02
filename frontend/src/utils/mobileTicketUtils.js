@@ -617,10 +617,28 @@ export class MobileTicketUtils {
         <head>
           <title>Print Ticket ${ticket.ticketNumber}</title>
           <style>
-            body { margin: 0; padding: 4px; font-family: Arial, sans-serif; }
+            * { 
+              margin: 0; 
+              padding: 0; 
+              box-sizing: border-box;
+            }
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Arial, sans-serif;
+              width: 58mm;
+              max-width: 58mm;
+            }
             @media print { 
-              body { margin: 0; padding: 0; } 
-              @page { margin: 0; size: 58mm auto; }
+              body { 
+                margin: 0 !important; 
+                padding: 0 !important;
+                width: 58mm !important;
+              }
+              @page { 
+                margin: 0; 
+                size: 58mm auto; 
+              }
             }
           </style>
         </head>

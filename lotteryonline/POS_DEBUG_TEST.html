@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Debug & Test Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-connected {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .log-container {
+            background: #1f2937;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #10b981;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+
+        .log-time {
+            color: #6b7280;
+        }
+
+        .emoji {
+            font-size: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 120px;
+            margin-bottom: 10px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🖨️ POS Debug & Test Panel</h1>
+            <div id="statusBadge" class="status-badge status-disconnected">
+                ⚠️ Checking...
+            </div>
+            <div style="margin-top: 10px; font-size: 14px; color: #666;" id="deviceInfo">
+                Device: Unknown
+            </div>
+        </div>
+
+        <!-- Connection Controls -->
+        <div class="card">
+            <h2><span class="emoji">🔌</span> Connection</h2>
+            <button class="btn btn-primary" onclick="scanAndConnect()">
+                🔍 Scan & Connect to POS
+            </button>
+            <button class="btn btn-success" onclick="testConnection()">
+                ✅ Test Connection
+            </button>
+            <button class="btn btn-danger" onclick="disconnect()">
+                ❌ Disconnect
+            </button>
+        </div>
+
+        <!-- Device Info -->
+        <div class="card">
+            <h2><span class="emoji">📊</span> Device Information</h2>
+            <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="info-value" id="infoStatus">Unknown</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Device:</span>
+                <span class="info-value" id="infoDevice">None</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Connected:</span>
+                <span class="info-value" id="infoConnected">No</span>
+            </div>
+            <button class="btn btn-secondary" onclick="refreshInfo()">
+                🔄 Refresh Info
+            </button>
+        </div>
+
+        <!-- Print Tests -->
+        <div class="card">
+            <h2><span class="emoji">🖨️</span> Print Tests</h2>
+            <button class="btn btn-success" onclick="testPrint()">
+                📄 Test Print (Receipt)
+            </button>
+            <button class="btn btn-warning" onclick="printDebugInfo()">
+                🐛 Print Debug Info
+            </button>
+            
+            <h3 style="margin-top: 20px; margin-bottom: 10px; color: #666; font-size: 14px;">
+                Custom Text:
+            </h3>
+            <textarea id="customText" placeholder="Enter custom text to print...">Hello from Lottery Online!
+This is a test print.
+================================
+Date: 2025-10-01
+Time: 19:41
+================================</textarea>
+            <button class="btn btn-primary" onclick="printCustomText()">
+                📝 Print Custom Text
+            </button>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <h2><span class="emoji">⚡</span> Quick Actions</h2>
+            <div class="grid-2">
+                <button class="btn btn-secondary" onclick="enableBluetooth()">
+                    📡 Enable Bluetooth
+                </button>
+                <button class="btn btn-secondary" onclick="clearLogs()">
+                    🗑️ Clear Logs
+                </button>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="card">
+            <h2><span class="emoji">📝</span> Activity Log</h2>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry">
+                    <span class="log-time">[Ready]</span> Debug panel loaded. Ready to test POS devices.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if Android interface is available
+        const hasAndroidPOS = typeof AndroidPOS !== 'undefined';
+        
+        if (!hasAndroidPOS) {
+            log('⚠️ WARNING: Not running in Android app. POS functions disabled.');
+        }
+
+        // Initialize
+        window.addEventListener('load', function() {
+            log('✅ Debug panel initialized');
+            refreshInfo();
+            
+            // Auto-refresh status every 3 seconds
+            setInterval(refreshInfo, 3000);
+        });
+
+        // Logging function
+        function log(message) {
+            const logContainer = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Clear logs
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '';
+            log('🗑️ Logs cleared');
+        }
+
+        // Refresh device info
+        function refreshInfo() {
+            if (!hasAndroidPOS) return;
+
+            try {
+                const status = AndroidPOS.getStatus();
+                const deviceInfo = AndroidPOS.getDeviceInfo();
+                const isConnected = AndroidPOS.isConnected();
+
+                // Update header
+                const statusBadge = document.getElementById('statusBadge');
+                const deviceInfoEl = document.getElementById('deviceInfo');
+                
+                if (isConnected) {
+                    statusBadge.className = 'status-badge status-connected';
+                    statusBadge.textContent = '✅ Connected';
+                } else if (status.includes('disabled')) {
+                    statusBadge.className = 'status-badge status-warning';
+                    statusBadge.textContent = '⚠️ Bluetooth Off';
+                } else {
+                    statusBadge.className = 'status-badge status-disconnected';
+                    statusBadge.textContent = '❌ Disconnected';
+                }
+
+                deviceInfoEl.textContent = 'Device: ' + deviceInfo;
+
+                // Update info card
+                document.getElementById('infoStatus').textContent = status;
+                document.getElementById('infoDevice').textContent = deviceInfo;
+                document.getElementById('infoConnected').textContent = isConnected ? 'Yes ✅' : 'No ❌';
+
+            } catch (error) {
+                log('❌ Error refreshing info: ' + error.message);
+            }
+        }
+
+        // Scan and connect
+        function scanAndConnect() {
+            if (!hasAndroidPOS) {
+                alert('Not running in Android app');
+                return;
+            }
+
+            log('🔍 Scanning for POS devices...');
+            try {
+                AndroidPOS.scanDevices();
+                log('📡 Scan initiated. Check for toast messages.');
+                
+                // Refresh after 3 seconds
+                setTimeout(refreshInfo, 3000);
+            } catch (error) {
+                log('❌ Scan error: ' + error.message);
+            }
+        }
+
+        // Test connection
+        function testConnection() {
+            if (!hasAndroidPOS) {
+                alert('Not running in Android app');
+                return;
+            }
+
+            log('🔍 Testing connection...');
+            try {
+                const isConnected = AndroidPOS.isConnected();
+                const status = AndroidPOS.getStatus();
+                
+                if (isConnected) {
+                    log('✅ Connection test PASSED');
+                    log('📊 Status: ' + status);
+                } else {
+                    log('❌ Connection test FAILED');
+                    log('⚠️ Status: ' + status);
+                }
+                
+                refreshInfo();
+            } catch (error) {
+                log('❌ Test error: ' + error.message);
+            }
+        }
+
+        // Disconnect
+        function disconnect() {
+            if (!hasAndroidPOS) {
+                alert('Not running in Android app');
+                return;
+            }
+
+            log('🔌 Disconnecting from POS...');
+            try {
+                AndroidPOS.disconnectPOS();
+                log('✅ Disconnect command sent');
+                setTimeout(refreshInfo, 1000);
+            } catch (error) {
+                log('❌ Disconnect error: ' + error.message);
+            }
+        }
+
+        // Test print
+        function testPrint() {
+            if (!hasAndroidPOS) {
+                alert('Not running in Android app');
+                return;
+            }
+
+            log('🖨️ Sending test print...');
+            try {
+                AndroidPOS.testPrint();
+                log('✅ Test print command sent. Check your printer.');
+            } catch (error) {
+                log('❌ Print error: ' + error.message);
+            }
+        }
+
+        // Print debug info
+        function printDebugInfo() {
+            if (!hasAndroidPOS) {
+                alert('Not running in Android app');
+                return;
+            }
+
+            log('🐛 Printing debug information...');
+            try {
+                AndroidPOS.printDebugInfo();
+                log('✅ Debug info sent to printer');
+            } catch (error) {
+                log('❌ Debug print error: ' + error.message);
+            }
+        }
+
+        // Print custom text
+        function printCustomText() {
+            if (!hasAndroidPOS) {
+                alert('Not running in Android app');
+                return;
+            }
+
+            const text = document.getElementById('customText').value;
+            if (!text.trim()) {
+                alert('Please enter some text to print');
+                return;
+            }
+
+            log('📝 Printing custom text...');
+            try {
+                AndroidPOS.printText(text);
+                log('✅ Custom text sent to printer');
+            } catch (error) {
+                log('❌ Print error: ' + error.message);
+            }
+        }
+
+        // Enable Bluetooth
+        function enableBluetooth() {
+            if (!hasAndroidPOS) {
+                alert('Not running in Android app');
+                return;
+            }
+
+            log('📡 Enabling Bluetooth...');
+            try {
+                AndroidPOS.enableBluetooth();
+                log('✅ Bluetooth enable command sent');
+                setTimeout(refreshInfo, 2000);
+            } catch (error) {
+                log('❌ Bluetooth error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

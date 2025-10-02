@@ -76,23 +76,31 @@ const server = http.createServer(app);
 
 // CORS configuration - Define allowed origins first
 const allowedOrigins = [
-  'https://lottery-system-gamma.vercel.app',
   'https://lottery-system.pages.dev',
   'http://localhost:3000',
   'http://localhost:3002'
 ];
 
 console.log('CORS Allowed Origins:', allowedOrigins);
-
-// CORS: Explicit origin check for Vercel
-console.log('CORS: Environment CORS_ORIGIN:', process.env.CORS_ORIGIN);
-console.log('CORS: Final allowed origins:', allowedOrigins);
-console.log('CORS: Vercel origin included:', allowedOrigins.includes('https://lottery-system-gamma.vercel.app'));
+console.log('CORS: Cloudflare Pages production:', allowedOrigins.includes('https://lottery-system.pages.dev'));
 
 const io = socketIo(server, {
   cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"]
+    origin: function (origin, callback) {
+      // Allow requests with no origin
+      if (!origin) return callback(null, true);
+      
+      // Check if origin matches allowed origins or Cloudflare Pages preview URLs
+      const isCloudflarePages = origin.match(/^https:\/\/[a-f0-9]+\.lottery-system\.pages\.dev$/);
+      
+      if (allowedOrigins.includes(origin) || isCloudflarePages) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ["GET", "POST"],
+    credentials: true
   },
   // Render-compatible Socket.IO configuration
   transports: ["websocket", "polling"],
@@ -145,7 +153,6 @@ app.use(cors({
     
     // Define allowed origins
     const allowedOrigins = [
-      'https://lottery-system-gamma.vercel.app',
       'https://lottery-system.pages.dev',
       'http://localhost:3000',
       'http://localhost:3002',
@@ -188,7 +195,6 @@ app.options('*', (req, res) => {
   console.log('CORS: Handling preflight request for:', req.headers.origin);
   const origin = req.headers.origin;
   const allowedOrigins = [
-    'https://lottery-system-gamma.vercel.app',
     'https://lottery-system.pages.dev',
     'http://localhost:3000',
     'http://localhost:3002',

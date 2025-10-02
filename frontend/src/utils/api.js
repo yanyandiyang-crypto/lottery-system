@@ -30,8 +30,8 @@ const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const currentDomain = window.location.origin;
     
-    // If deployed on Vercel/Netlify, use Render backend
-    if (currentDomain.includes('vercel.app') || currentDomain.includes('netlify.app')) {
+    // If deployed on Cloudflare Pages, use Render backend
+    if (currentDomain.includes('pages.dev')) {
       return 'https://lottery-backend-l1k7.onrender.com';
     }
     
