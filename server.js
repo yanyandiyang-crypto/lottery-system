@@ -1,5 +1,5 @@
 
-// DEPLOYMENT VERSION: 2.0.1 - 2025-10-02 Cloudflare Pages CORS Fix
+// DEPLOYMENT VERSION: 2.0.0 - 2025-09-27T12:03:10.316Z
 const express = require('express');
 // Sentry for error tracking and tracing
 const Sentry = require('@sentry/node');
@@ -77,63 +77,63 @@ const server = http.createServer(app);
 // CORS configuration - Define allowed origins first
 const allowedOrigins = [
   'https://lottery-system.pages.dev',
-  'http://localhost:3000',
+  'https://4c1148d3.lottery-system.pages.dev',
   'http://localhost:3002'
 ];
 
 console.log('CORS Allowed Origins:', allowedOrigins);
-console.log('CORS: Cloudflare Pages production:', allowedOrigins.includes('https://lottery-system.pages.dev'));
 
-const io = socketIo(server, {
-  cors: {
-    origin: function (origin, callback) {
-      // Allow requests with no origin
-      if (!origin) return callback(null, true);
-      
-      // Check if origin matches allowed origins or Cloudflare Pages preview URLs
-      const isCloudflarePages = origin.match(/^https:\/\/[a-f0-9]+\.lottery-system\.pages\.dev$/);
-      
-      if (allowedOrigins.includes(origin) || isCloudflarePages) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    methods: ["GET", "POST"],
-    credentials: true
-  },
-  // Render-compatible Socket.IO configuration
-  transports: ["websocket", "polling"],
-  allowEIO3: true,
-  // Socket.IO timeout configuration
-  pingTimeout: 60000,        // 60 seconds
-  pingInterval: 25000,       // 25 seconds
-  upgradeTimeout: 10000,     // 10 seconds
-  // Connection timeout
-  connectTimeout: 45000,     // 45 seconds
-  // Heartbeat configuration
-  heartbeatInterval: 25000   // 25 seconds
-});
+// CORS: Explicit origin check for Cloudflare Pages
+console.log('CORS: Environment CORS_ORIGIN:', process.env.CORS_ORIGIN);
+console.log('CORS: Final allowed origins:', allowedOrigins);
+console.log('CORS: Cloudflare Pages origins included:', allowedOrigins.includes('https://lottery-system.pages.dev'));
 
-// If Redis is available, attach Socket.IO Redis adapter for horizontal scaling
-try {
-  if (process.env.REDIS_URL) {
-    const { createAdapter } = require('@socket.io/redis-adapter');
-    const { createClient } = require('redis');
-    const pubClient = createClient({ url: process.env.REDIS_URL });
-    const subClient = pubClient.duplicate();
-    pubClient.on('error', (err) => logger.error('Redis pubClient error', { error: err.message }));
-    subClient.on('error', (err) => logger.error('Redis subClient error', { error: err.message }));
-    Promise.all([pubClient.connect(), subClient.connect()])
-      .then(() => {
-        io.adapter(createAdapter(pubClient, subClient));
-        logger.info('Socket.IO Redis adapter attached');
-      })
-      .catch((e) => logger.error('Failed to connect Redis adapter', { error: e.message }));
-  }
-} catch (e) {
-  logger.error('Socket.IO Redis adapter initialization failed', { error: e.message });
-}
+// Socket.IO DISABLED - Preventing disconnection issues
+const io = {
+  on: () => {},
+  emit: () => {},
+  to: () => ({ emit: () => {} }),
+  adapter: () => {},
+  engine: { opts: { transports: [], cors: {} } }
+};
+
+// const io = socketIo(server, {
+//   cors: {
+//     origin: allowedOrigins,
+//     methods: ["GET", "POST"]
+//   },
+//   // Render-compatible Socket.IO configuration
+//   transports: ["websocket", "polling"],
+//   allowEIO3: true,
+//   // Socket.IO timeout configuration
+//   pingTimeout: 60000,        // 60 seconds
+//   pingInterval: 25000,       // 25 seconds
+//   upgradeTimeout: 10000,     // 10 seconds
+//   // Connection timeout
+//   connectTimeout: 45000,     // 45 seconds
+//   // Heartbeat configuration
+//   heartbeatInterval: 25000   // 25 seconds
+// });
+
+// Socket.IO Redis adapter DISABLED
+// try {
+//   if (process.env.REDIS_URL) {
+//     const { createAdapter } = require('@socket.io/redis-adapter');
+//     const { createClient } = require('redis');
+//     const pubClient = createClient({ url: process.env.REDIS_URL });
+//     const subClient = pubClient.duplicate();
+//     pubClient.on('error', (err) => logger.error('Redis pubClient error', { error: err.message }));
+//     subClient.on('error', (err) => logger.error('Redis subClient error', { error: err.message }));
+//     Promise.all([pubClient.connect(), subClient.connect()])
+//       .then(() => {
+//         io.adapter(createAdapter(pubClient, subClient));
+//         logger.info('Socket.IO Redis adapter attached');
+//       })
+//       .catch((e) => logger.error('Failed to connect Redis adapter', { error: e.message }));
+//   }
+// } catch (e) {
+//   logger.error('Socket.IO Redis adapter initialization failed', { error: e.message });
+// }
 
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
@@ -154,23 +154,14 @@ app.use(cors({
     // Define allowed origins
     const allowedOrigins = [
       'https://lottery-system.pages.dev',
-      'http://localhost:3000',
-      'http://localhost:3002',
-      'https://localhost',  // Capacitor Android app
-      'http://localhost',   // Capacitor iOS app
-      'capacitor://localhost',  // Capacitor internal
-      'ionic://localhost',   // Ionic Capacitor
-      'http://192.168.0.167:3000',  // Local network testing
-      'http://192.168.0.167:3001'   // Local network testing
+      'https://4c1148d3.lottery-system.pages.dev',
+      'http://localhost:3002'
     ];
     
     console.log('CORS: Checking origin:', origin);
     console.log('CORS: Allowed origins:', allowedOrigins);
     
-    // Check if origin matches allowed origins or Cloudflare Pages preview URLs
-    const isCloudflarePages = origin && origin.match(/^https:\/\/[a-f0-9]+\.lottery-system\.pages\.dev$/);
-    
-    if (allowedOrigins.includes(origin) || isCloudflarePages) {
+    if (allowedOrigins.includes(origin)) {
       console.log('CORS: Origin allowed:', origin);
       callback(null, true);
     } else {
@@ -196,20 +187,11 @@ app.options('*', (req, res) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
     'https://lottery-system.pages.dev',
-    'http://localhost:3000',
-    'http://localhost:3002',
-    'https://localhost',  // Capacitor Android app
-    'http://localhost',   // Capacitor iOS app
-    'capacitor://localhost',  // Capacitor internal
-    'ionic://localhost',   // Ionic Capacitor
-    'http://192.168.0.167:3000',  // Local network testing
-    'http://192.168.0.167:3001'   // Local network testing
+    'https://4c1148d3.lottery-system.pages.dev',
+    'http://localhost:3002'
   ];
   
-  // Check if origin matches allowed origins or Cloudflare Pages preview URLs
-  const isCloudflarePages = origin && origin.match(/^https:\/\/[a-f0-9]+\.lottery-system\.pages\.dev$/);
-  
-  if (allowedOrigins.includes(origin) || isCloudflarePages) {
+  if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Version, API-Version, x-client-version, cache-control');
@@ -416,46 +398,47 @@ if ((process.env.NODE_ENV || 'development') !== 'production') {
 }
 
 
-// Socket.IO WebSocket debugging
-io.engine.on("connection_error", (err) => {
-  console.log("Socket.IO connection error:", err.req, err.code, err.message, err.context);
-});
+// Socket.IO WebSocket debugging - DISABLED
+// io.engine.on("connection_error", (err) => {
+//   console.log("Socket.IO connection error:", err.req, err.code, err.message, err.context);
+// });
 
-io.engine.on("upgrade_error", (err) => {
-  console.log("Socket.IO upgrade error:", err.req, err.code, err.message, err.context);
-});
+// io.engine.on("upgrade_error", (err) => {
+//   console.log("Socket.IO upgrade error:", err.req, err.code, err.message, err.context);
+// });
 
-console.log('Socket.IO server configured with transports:', io.engine.opts.transports);
-console.log('Socket.IO CORS origins:', io.engine.opts.cors?.origin);
-// Socket.IO for real-time features
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+console.log('Socket.IO DISABLED - Real-time features turned off');
+// console.log('Socket.IO server configured with transports:', io.engine.opts.transports);
+// console.log('Socket.IO CORS origins:', io.engine.opts.cors?.origin);
+// // Socket.IO for real-time features
+// io.on('connection', (socket) => {
+//   console.log('User connected:', socket.id);
 
-  // Join user to their role-based room
-  socket.on('join-room', (data) => {
-    const { userId, role } = data;
-    socket.join(`user-${userId}`);
-    socket.join(`role-${role}`);
-    console.log(`User ${userId} joined role room: ${role}`);
-  });
+//   // Join user to their role-based room
+//   socket.on('join-room', (data) => {
+//     const { userId, role } = data;
+//     socket.join(`user-${userId}`);
+//     socket.join(`role-${role}`);
+//     console.log(`User ${userId} joined role room: ${role}`);
+//   });
 
-  // Handle ticket creation notifications
-  socket.on('ticket-created', (data) => {
-    // Broadcast to coordinators and admins
-    socket.to('role-coordinator').to('role-admin').to('role-superadmin').emit('new-ticket', data);
-  });
+//   // Handle ticket creation notifications
+//   socket.on('ticket-created', (data) => {
+//     // Broadcast to coordinators and admins
+//     socket.to('role-coordinator').to('role-admin').to('role-superadmin').emit('new-ticket', data);
+//   });
 
-  // Handle winning ticket notifications
-  socket.on('winning-ticket', (data) => {
-    // Broadcast to all relevant users
-    socket.to(`user-${data.agentId}`).emit('you-won', data);
-    socket.to(`user-${data.coordinatorId}`).emit('agent-won', data);
-  });
+//   // Handle winning ticket notifications
+//   socket.on('winning-ticket', (data) => {
+//     // Broadcast to all relevant users
+//     socket.to(`user-${data.agentId}`).emit('you-won', data);
+//     socket.to(`user-${data.coordinatorId}`).emit('agent-won', data);
+//   });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-});
+//   socket.on('disconnect', () => {
+//     console.log('User disconnected:', socket.id);
+//   });
+// });
 
 // Initialize socket utility
 initSocket(io);
@@ -505,7 +488,7 @@ server.listen(PORT, () => {
   // Initialize services
   drawScheduler.initialize();
   backupService.scheduleBackups();
-  notificationService.initialize(io);
+  // notificationService.initialize(io); // DISABLED - Socket.IO turned off
 });
 
 // Keep-alive settings for mobile connections

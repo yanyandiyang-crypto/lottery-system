@@ -30,8 +30,8 @@ const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const currentDomain = window.location.origin;
     
-    // If deployed on Cloudflare Pages, use Render backend
-    if (currentDomain.includes('pages.dev')) {
+    // If deployed on Vercel/Netlify, use Render backend
+    if (currentDomain.includes('vercel.app') || currentDomain.includes('netlify.app')) {
       return 'https://lottery-backend-l1k7.onrender.com';
     }
     
@@ -46,14 +46,10 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 const API_VERSION = process.env.REACT_APP_API_VERSION || 'v1';
 
-// Detect Android 6-8 for special timeout handling
-const isOldAndroid = typeof navigator !== 'undefined' && 
-  /Android [6-8]/.test(navigator.userAgent);
-
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
-  timeout: isOldAndroid ? 15000 : 120000, // 15s for Android 6-8, 2min for others
+  timeout: 120000, // 2 minutes for slow mobile networks
   headers: {
     'Content-Type': 'application/json',
     'X-API-Version': API_VERSION,
@@ -69,11 +65,6 @@ const api = axios.create({
     return status >= 200 && status < 300; // default
   }
 });
-
-// Log Android 6-8 detection
-if (isOldAndroid) {
-  console.warn('⚠️ Android 6-8 detected - Using shorter timeout (15s)');
-}
 
 // Retry logic disabled - let requests fail naturally without popups
 api.interceptors.response.use(

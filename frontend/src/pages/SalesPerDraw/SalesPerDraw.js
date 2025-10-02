@@ -56,12 +56,10 @@ const SalesPerDraw = () => {
 
   const fetchDailyStats = async () => {
     try {
-      // Use selectedDate directly (already in YYYY-MM-DD format from Philippines timezone)
-      const selectedISO = selectedDate;
+      // Anchor ranges to the selectedDate instead of the current date
+      const base = new Date(selectedDate);
+      const selectedISO = base.toISOString().split('T')[0];
 
-      // Parse date in Philippines timezone (add 'T00:00:00' to avoid UTC conversion)
-      const base = new Date(selectedDate + 'T00:00:00');
-      
       // Week range (Mon-Sun) anchored to selectedDate
       const weekStart = new Date(base);
       const day = weekStart.getDay();
@@ -90,18 +88,10 @@ const SalesPerDraw = () => {
       const todayTickets = todayDraws.reduce((sum, d) => sum + (d.ticketCount || 0), 0);
 
       // Week via reports draw-time-sales (range) then sum
-      // Format dates as YYYY-MM-DD without UTC conversion
-      const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-      
       const weekResp = await api.get('/reports/draw-time-sales', {
         params: {
-          startDate: formatDate(weekStart),
-          endDate: formatDate(weekEnd)
+          startDate: weekStart.toISOString().split('T')[0],
+          endDate: weekEnd.toISOString().split('T')[0]
         }
       });
       const weekSummary = weekResp.data?.data?.summary;
@@ -110,8 +100,8 @@ const SalesPerDraw = () => {
       // Month via reports draw-time-sales (range) then sum
       const monthResp = await api.get('/reports/draw-time-sales', {
         params: {
-          startDate: formatDate(monthStart),
-          endDate: formatDate(monthEnd)
+          startDate: monthStart.toISOString().split('T')[0],
+          endDate: monthEnd.toISOString().split('T')[0]
         }
       });
       const monthSummary = monthResp.data?.data?.summary;

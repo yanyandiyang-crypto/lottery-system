@@ -122,9 +122,6 @@ prisma/migrations/
 # Heroku
 .heroku/
 
-# Vercel
-.vercel
-
 # Local development
 .env.local
 .env.development.local

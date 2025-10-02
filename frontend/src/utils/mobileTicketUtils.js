@@ -144,27 +144,22 @@ export class MobileTicketUtils {
       
       document.body.appendChild(tempContainer);
       
-      // Detect Android 6-8 for faster rendering
-      const isOldAndroid = /Android [6-8]/.test(navigator.userAgent);
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Reduced wait time for faster printing
-      await new Promise(resolve => setTimeout(resolve, isOldAndroid ? 100 : 200));
-      
-      // Use html2canvas with optimized settings
+      // Use html2canvas with minimal settings
       const canvas = await html2canvas(tempContainer, {
         backgroundColor: 'white',
-        scale: isOldAndroid ? 2 : 3, // Higher scale for better print quality
+        scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: false,
-        removeContainer: true // Auto cleanup
+        logging: false
       });
       
       // Clean up
       document.body.removeChild(tempContainer);
       
-      // Convert canvas to blob with optimized quality
-      const quality = isOldAndroid ? 0.7 : 0.95; // Lower quality for Android 6-8 = faster
+      // Convert canvas to blob with higher quality
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (blob) {
@@ -172,7 +167,7 @@ export class MobileTicketUtils {
           } else {
             reject(new Error('Failed to convert canvas to blob'));
           }
-        }, 'image/png', quality);
+        }, 'image/png', 0.95); // High quality PNG
       });
       
     } catch (error) {
@@ -617,41 +612,10 @@ export class MobileTicketUtils {
         <head>
           <title>Print Ticket ${ticket.ticketNumber}</title>
           <style>
-            * { 
-              margin: 0; 
-              padding: 0; 
-              box-sizing: border-box;
-            }
-            body { 
-              margin: 0; 
-              padding: 0; 
-              font-family: Arial, sans-serif;
-              width: 58mm;
-              max-width: 58mm;
-            }
-            /* Screen preview - show at actual size */
-            @media screen {
-              body {
-                padding: 10px;
-                background: #f0f0f0;
-              }
-            }
-            /* Print settings for 58mm thermal printer */
+            body { margin: 0; padding: 4px; font-family: Arial, sans-serif; }
             @media print { 
-              * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-              }
-              body { 
-                margin: 0 !important; 
-                padding: 0 !important;
-                width: 58mm !important;
-                background: white !important;
-              }
-              @page { 
-                margin: 0; 
-                size: 58mm auto; 
-              }
+              body { margin: 0; padding: 0; } 
+              @page { margin: 0; size: 58mm auto; }
             }
           </style>
         </head>
@@ -799,8 +763,8 @@ export class MobileTicketUtils {
       
       document.body.appendChild(tempContainer);
       
-      // Minimal wait for faster generation
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Wait a moment for fonts and styles to load (reduced for speed)
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       // Use html2canvas to convert HTML to image
       let canvas;
@@ -808,13 +772,12 @@ export class MobileTicketUtils {
         console.log('Using html2canvas to generate ticket image...');
         canvas = await html2canvas(tempContainer, {
           backgroundColor: 'white',
-          scale: 3, // Balanced quality/speed (was 4)
+          scale: 4, // Higher scale for bigger output (was 3)
           useCORS: true,
           allowTaint: true,
           width: 220, // 58mm width
           height: tempContainer.scrollHeight, // Auto height based on content
           logging: false, // Disable logging for speed
-          removeContainer: false, // Keep container for faster cleanup
           onclone: (clonedDoc) => {
             // Ensure fonts are loaded in cloned document
             const clonedContainer = clonedDoc.querySelector('div');

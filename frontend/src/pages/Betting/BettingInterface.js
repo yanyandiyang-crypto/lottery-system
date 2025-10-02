@@ -138,7 +138,7 @@ const BettingInterface = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
 
-  // Fetch active draws - optimized for mobile POS
+  // Fetch active draws
   const { data: draws, isLoading: drawsLoading } = useQuery({
     queryKey: ['activeDraws'],
     queryFn: async () => {
@@ -146,15 +146,13 @@ const BettingInterface = () => {
       // The API returns { success: true, data: [...] }, so we need response.data.data
       return response.data.data || [];
     },
-    refetchInterval: 90000, // Optimized: 90s for mobile POS (reduced from 30s)
-    staleTime: 45000, // Consider data fresh for 45s
-    refetchOnWindowFocus: false, // Disable refetch on focus for mobile
+    refetchInterval: 30000, // Refetch every 30 seconds
     onError: (error) => {
       toast.error('Failed to load draw information');
     }
   });
 
-  // Fetch user balance - optimized polling
+  // Fetch user balance
   const { data: balance, refetch: refetchBalance, isLoading: balanceLoading } = useQuery({
     queryKey: ['balance', user?.id],
     queryFn: async () => {
@@ -164,13 +162,11 @@ const BettingInterface = () => {
       return response.data.data || response.data;
     },
     enabled: !!user?.id,
-    refetchInterval: 30000, // Optimized: 30s for mobile POS (reduced from 10s)
-    staleTime: 15000, // Consider data fresh for 15s
-    refetchOnWindowFocus: false, // Disable refetch on focus
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
 
-  // Set default draw when draws are loaded - memoized for performance
+  // Set default draw when draws are loaded
   useEffect(() => {
     if (draws && Array.isArray(draws) && draws.length > 0 && !selectedDraw) {
       // First, try to find the draw by ID from URL parameter
@@ -253,35 +249,34 @@ const BettingInterface = () => {
   // Create ticket mutation
 
 
-  // Optimized digit input handler with useCallback
-  const handleDigitInput = useCallback((digit) => {
+  const handleDigitInput = (digit) => {
     if (currentDigitIndex < 3) {
       const newDigits = [...betDigits];
       newDigits[currentDigitIndex] = digit.toString();
       setBetDigits(newDigits);
       setCurrentDigitIndex(prev => Math.min(prev + 1, 2));
     }
-  }, [betDigits, currentDigitIndex]);
+  };
 
-  const handleClearDigits = useCallback(() => {
+  const handleClearDigits = () => {
     setBetDigits(['?', '?', '?']);
     setCurrentDigitIndex(0);
-  }, []);
+  };
 
-  const handleBackspace = useCallback(() => {
+  const handleBackspace = () => {
     if (currentDigitIndex > 0) {
       const newDigits = [...betDigits];
       newDigits[currentDigitIndex - 1] = '?';
       setBetDigits(newDigits);
       setCurrentDigitIndex(prev => Math.max(prev - 1, 0));
     }
-  }, [currentDigitIndex, betDigits]);
+  };
 
   const handleDigitClick = (index) => {
     setCurrentDigitIndex(index);
   };
 
-  const handleAddBet = useCallback(() => {
+  const handleAddBet = () => {
     const hasAllDigits = betDigits.every(digit => digit !== '?');
     
     if (!hasAllDigits) {
@@ -316,18 +311,18 @@ const BettingInterface = () => {
     setBetDigits(['?', '?', '?']);
     setCurrentDigitIndex(0);
     toast.success(`Bet ${betNumber} (${betType}) added for ₱${betAmount}`);
-  }, [betDigits, betAmount, betType, addedBets]);
+  };
 
-  const handleRemoveBet = useCallback((betId) => {
+  const handleRemoveBet = (betId) => {
     setAddedBets(prev => prev.filter(bet => bet.id !== betId));
     toast.success('Bet removed');
-  }, []);
+  };
 
-  const getTotalBetAmount = useCallback(() => {
+  const getTotalBetAmount = () => {
     return addedBets.reduce((total, bet) => total + bet.amount, 0);
-  }, [addedBets]);
+  };
 
-  const handleConfirmAllBets = useCallback(() => {
+  const handleConfirmAllBets = () => {
     if (addedBets.length === 0) {
       toast.error('Please add at least one bet');
       return;
@@ -339,7 +334,7 @@ const BettingInterface = () => {
     }
 
     setShowConfirmModal(true);
-  }, [addedBets, balance, getTotalBetAmount]);
+  };
 
   const handleFinalConfirm = async () => {
     // Check if draws are loaded
@@ -556,14 +551,11 @@ const BettingInterface = () => {
     setBetAmount(Math.max(1, newAmount));
   }, []);
 
-  // Detect Android 6-8 for performance optimizations
-  const isOldAndroid = /Android [6-8]/.test(navigator.userAgent);
-
   if (drawsLoading || balanceLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center">
         <div className="text-center">
-          <div className={`rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4 ${isOldAndroid ? '' : 'animate-spin'}`}></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
           <p className="text-primary-600 font-medium">Loading betting interface...</p>
         </div>
       </div>
@@ -580,7 +572,7 @@ const BettingInterface = () => {
             variant="elevated" 
             className={`border-l-4 ${
               timeRemaining.isCutoff && timeRemaining.total < 300000 // 5 minutes
-                ? `border-danger-500 ${isOldAndroid ? '' : 'animate-pulse'}`
+                ? 'border-danger-500 animate-pulse'
                 : timeRemaining.isCutoff && timeRemaining.total < 600000 // 10 minutes
                 ? 'border-warning-500'
                 : 'border-primary-500'
@@ -595,7 +587,7 @@ const BettingInterface = () => {
                   <p className="text-xs sm:text-sm text-gray-600">
                     {new Date(selectedDraw.drawDate).toLocaleDateString()}
                     {timeRemaining.isCutoff && timeRemaining.total < 300000 && (
-                      <span className={`ml-2 font-bold text-danger-600 ${isOldAndroid ? '' : 'animate-pulse'}`}>⚠️ HURRY!</span>
+                      <span className="ml-2 font-bold text-danger-600 animate-pulse">⚠️ HURRY!</span>
                     )}
                   </p>
                 </div>

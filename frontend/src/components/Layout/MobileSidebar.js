@@ -22,6 +22,7 @@ import {
   ChartBarSquareIcon,
   DocumentDuplicateIcon,
   StarIcon,
+  QrCodeIcon,
   GiftIcon,
   DevicePhoneMobileIcon,
   LockClosedIcon,
@@ -159,18 +160,9 @@ const MobileSidebar = ({ isOpen, onClose }) => {
           'users',
           'balance_management', 
           'sales_reports',
-          'draw_results',
-          'agent_tickets'
+          'draw_results'
         ];
         setAllowedFunctions(coordinatorFunctions);
-        setLoading(false);
-        return;
-      }
-
-      // Agent has access to agent_tickets for reprinting
-      if (user.role === 'agent') {
-        const agentFunctions = ['agent_tickets'];
-        setAllowedFunctions(agentFunctions);
         setLoading(false);
         return;
       }

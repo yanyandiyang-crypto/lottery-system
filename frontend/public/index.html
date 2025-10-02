@@ -39,13 +39,10 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     
-    <!-- Babel Polyfills for Android 6 (async/await support) - Load FIRST -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.12.1/polyfill.min.js" crossorigin="anonymous"></script>
-    
-    <!-- Legacy Support for Android 6 - Load SECOND -->
+    <!-- Legacy Support for Android 6 - Load FIRST -->
     <script src="%PUBLIC_URL%/legacy-support.js"></script>
     
-    <!-- Mobile WebView Optimizations - Load THIRD -->
+    <!-- Mobile WebView Optimizations - Load second -->
     <script src="%PUBLIC_URL%/mobile-optimizations.js"></script>
     
     <div id="root"></div>

@@ -130,34 +130,6 @@ const AgentTickets = () => {
     try {
       console.log('Starting reprint for ticket:', ticket.id);
       
-      // Check if running in Android POS app
-      const isAndroidPOS = typeof window.AndroidPOS !== 'undefined';
-      
-      if (isAndroidPOS) {
-        // Use image-based printing for Android POS
-        console.log('📱 Android POS detected - using image printing');
-        const MobileTicketUtils = (await import('../../utils/mobileTicketUtils')).default;
-        
-        try {
-          const result = await MobileTicketUtils.printMobileTicket(ticket, ticket.user || user);
-          console.log('✅ Print result:', result);
-          
-          if (result.success) {
-            toast.success('🖨️ Ticket reprinted successfully!');
-          } else {
-            toast.error('❌ Print failed: ' + (result.error || 'Unknown error'));
-          }
-          return;
-        } catch (error) {
-          console.error('❌ Android printing failed:', error);
-          toast.error('Print failed: ' + error.message);
-          return;
-        }
-      }
-      
-      // Web browser: Use traditional print window
-      console.log('🌐 Web browser detected - using browser print');
-      
       // Get system-wide active template
       let template = null;
       try {

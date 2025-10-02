@@ -68,12 +68,12 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
       <div style="margin-bottom: 2px; border-bottom: 1px solid #ddd; padding: 2px 0; background-color: #f9f9f9; width: 100%; box-sizing: border-box;">
         <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
           <tr>
-            <td style="font-weight: 700; font-size: 8px; text-align: left; padding: 0;">${betTypeLabel}</td>
-            <td style="font-size: 7px; text-align: right; padding: 0;">${letter}</td>
+            <td style="font-weight: 700; font-size: 6px; text-align: left; padding: 0;">${betTypeLabel}</td>
+            <td style="font-size: 5px; text-align: right; padding: 0;">${letter}</td>
           </tr>
           <tr>
-            <td style="font-weight: 700; font-size: 12px; letter-spacing: 2px; text-align: left; padding: 0;">${spacedCombo}</td>
-            <td style="font-size: 8px; font-weight: 700; text-align: right; padding: 0;">₱${amount.toFixed(2)}</td>
+            <td style="font-weight: 700; font-size: 9px; letter-spacing: 1.5px; text-align: left; padding: 0;">${spacedCombo}</td>
+            <td style="font-size: 6px; font-weight: 700; text-align: right; padding: 0;">₱${amount.toFixed(2)}</td>
           </tr>
         </table>
       </div>`;
@@ -87,7 +87,7 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
   }).join('');
 
   return `
-<div style="font-family: Arial, sans-serif; font-size: 10px; width: 220px; color: black; font-weight: 800; background: white; padding: 6px; box-sizing: border-box;">
+<div style="font-family: Arial, sans-serif; font-size: 8px; width: 220px; color: black; font-weight: 800; background: white; padding: 4px; box-sizing: border-box;">
   <!-- Header with Both Logos - Table Layout for Consistency -->
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; border-bottom: 1px solid #000; padding-bottom: 2px;">
     <tr>
@@ -102,11 +102,11 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
   
   <!-- Info Section - Table Layout -->
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
-    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif;">Bet Date: ${betDateFmt.full}</td></tr>
-    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif;">Draw Date: ${fullDrawDate}</td></tr>
-    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif;">Draw ID: ${drawId}</td></tr>
-    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif;">Agent ID: ${agentId}</td></tr>
-    <tr><td style="padding: 1px 0 4px 0; font-weight: 700; font-size: 9px; font-family: Arial, sans-serif;">Ticket Price: ${formatCurrency(totalAmount)}</td></tr>
+    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Bet Date: ${betDateFmt.full}</td></tr>
+    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Draw Date: ${fullDrawDate}</td></tr>
+    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Draw ID: ${drawId}</td></tr>
+    <tr><td style="padding: 1px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Agent ID: ${agentId}</td></tr>
+    <tr><td style="padding: 1px 0 4px 0; font-weight: 700; font-size: 7px; font-family: Arial, sans-serif;">Ticket Price: ${formatCurrency(totalAmount)}</td></tr>
   </table>
   
   <!-- QR Code Section - Centered Table -->
@@ -122,7 +122,7 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
   <table style="width: 100%; border-collapse: collapse; margin: 4px 0; border-top: 1px dashed #666; border-bottom: 1px dashed #666;">
     <tr>
       <td style="text-align: center; padding: 4px 2px;">
-        <div style="font-size: 9px; font-weight: 700; letter-spacing: 0.5px; line-height: 1.4; word-spacing: -1px;">
+        <div style="font-size: 7px; font-weight: 700; letter-spacing: 0.3px; line-height: 1.3; word-spacing: -1px;">
           ${digits}
         </div>
       </td>
@@ -130,7 +130,7 @@ export function generateUmatikTicketHTML(ticket, user, assets = {}) {
   </table>
   <table style="width: 100%; border-collapse: collapse; margin: 2px 0 6px 0;">
     <tr>
-      <td style="text-align: center; font-size: 9px; font-weight: 700; font-family: Arial, sans-serif;">Ticket Number</td>
+      <td style="text-align: center; font-size: 7px; font-weight: 700; font-family: Arial, sans-serif;">Ticket Number</td>
     </tr>
   </table>
   
