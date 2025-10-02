@@ -10,6 +10,48 @@ export const isAndroidWebView = () => {
          /wv/.test(navigator.userAgent);
 };
 
+// Detect low-spec device (optimized for 1GB RAM devices)
+export const isLowSpecDevice = () => {
+  // AGGRESSIVE: Assume low-spec for mobile devices (most POS are 1-2GB)
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  // Check device memory (if available)
+  if (navigator.deviceMemory) {
+    if (navigator.deviceMemory <= 2) {
+      return true; // 2GB or less (includes 1GB devices)
+    }
+  }
+  
+  // Check hardware concurrency (CPU cores)
+  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) {
+    return true; // 2 cores or less
+  }
+  
+  // Check connection speed
+  if (navigator.connection) {
+    const slowConnections = ['slow-2g', '2g', '3g'];
+    if (slowConnections.includes(navigator.connection.effectiveType)) {
+      return true; // Slow internet
+    }
+  }
+  
+  // Default to low-spec for mobile WebView (POS devices)
+  if (typeof window.AndroidPOS !== 'undefined' || typeof window.AndroidApp !== 'undefined') {
+    return true; // Always optimize for POS devices
+  }
+  
+  // Default to low-spec for all mobile devices
+  return isMobile;
+};
+
+// Get performance mode based on device
+export const getPerformanceMode = () => {
+  if (isLowSpecDevice()) {
+    return 'low-spec'; // Disable animations, reduce features
+  }
+  return 'normal'; // Full features
+};
+
 // Debounce function for expensive operations
 export const debounce = (func, wait = 300) => {
   let timeout;
@@ -65,17 +107,16 @@ export const measurePerformance = (name, callback) => {
   return result;
 };
 
-// Optimize React re-renders
-export const useMemoizedValue = (value, dependencies = []) => {
-  // Simple memoization helper
-  return React.useMemo(() => value, dependencies);
-};
-
-export default {
+// Export all utilities
+const performanceOptimizer = {
   isAndroidWebView,
+  isLowSpecDevice,
+  getPerformanceMode,
   debounce,
   throttle,
   shouldComponentUpdate,
   cleanupMemory,
   measurePerformance
 };
+
+export default performanceOptimizer;

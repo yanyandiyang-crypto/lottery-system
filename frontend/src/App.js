@@ -5,6 +5,8 @@ import { SocketProvider } from './contexts/SocketContext';
 import { DataModeProvider } from './contexts/DataModeContext';
 import Layout from './components/Layout/Layout';
 import LoadingSpinner from './components/UI/LoadingSpinner';
+import { useLowSpecMode } from './hooks/useLowSpecMode';
+import './styles/low-spec-optimizations.css';
 
 // Critical pages - load immediately
 import Login from './pages/Auth/Login';
@@ -98,6 +100,9 @@ const ManagementRoute = ({ children }) => (
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+  
+  // Enable low-spec mode for better performance on weak devices
+  useLowSpecMode();
 
   if (loading) {
     return <LoadingSpinner fullScreen={true} />;

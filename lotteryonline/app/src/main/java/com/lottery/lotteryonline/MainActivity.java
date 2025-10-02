@@ -105,16 +105,21 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
         
-        // ULTRA FAST caching and performance
-        // Use aggressive caching for better performance
+        // AGGRESSIVE caching for low-spec devices
+        // Cache everything possible to reduce network and CPU load
+        webSettings.setAppCacheEnabled(true);
+        webSettings.setAppCachePath(getApplicationContext().getCacheDir().getAbsolutePath());
+        webSettings.setAppCacheMaxSize(50 * 1024 * 1024); // 50MB cache
+        
         if (networkMonitor != null && networkMonitor.isNetworkAvailable()) {
-            webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // Load from cache when available
+            webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK); // Prefer cache for speed
         } else {
-            webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK); // Offline mode
+            webSettings.setCacheMode(WebSettings.LOAD_CACHE_ONLY); // Full offline mode
         }
         
-        webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        webSettings.setEnableSmoothTransition(true);
+        // LOW-SPEC DEVICE OPTIMIZATIONS
+        webSettings.setRenderPriority(WebSettings.RenderPriority.NORMAL); // Changed from HIGH to reduce CPU
+        webSettings.setEnableSmoothTransition(false); // Disable for better performance
         webSettings.setLoadsImagesAutomatically(true);
         webSettings.setBlockNetworkImage(false);
         webSettings.setBlockNetworkLoads(false);
@@ -137,8 +142,10 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setMinimumLogicalFontSize(8);
         webSettings.setDefaultFontSize(16);
         
-        // Enable ALL hardware acceleration
-        webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
+        // OPTIMIZED FOR 1GB RAM DEVICES
+        // Always use software rendering for better stability on low-spec devices
+        webView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
+        Log.d("MainActivity", "⚡ Software rendering enabled (optimized for 1GB RAM)");
         
         // ULTRA SMOOTH SCROLLING - No lag!
         webView.setVerticalScrollBarEnabled(false);
@@ -286,6 +293,14 @@ public class MainActivity extends AppCompatActivity {
         } else {
             loadOfflinePage();
         }
+        
+        // Memory management for 1GB RAM devices
+        // Clear cache periodically to prevent memory buildup
+        webView.postDelayed(() -> {
+            webView.clearCache(false); // Clear non-critical cache
+            System.gc(); // Suggest garbage collection
+            Log.d("MainActivity", "🧹 Memory cleanup performed");
+        }, 60000); // Every 60 seconds
         
         // Auto-connect to POS devices after page loads
         webView.postDelayed(() -> {

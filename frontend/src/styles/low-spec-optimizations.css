@@ -1,0 +1,82 @@
+/**
+ * Low-Spec Device Optimizations
+ * Disables heavy animations and effects for better performance
+ */
+
+/* Detect low-spec devices and disable animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Low-spec mode class (applied via JavaScript) */
+.low-spec-mode * {
+  /* Disable all animations */
+  animation: none !important;
+  transition: none !important;
+  
+  /* Disable transforms */
+  transform: none !important;
+  
+  /* Disable shadows for better performance */
+  box-shadow: none !important;
+  text-shadow: none !important;
+  
+  /* Disable blur effects */
+  backdrop-filter: none !important;
+  filter: none !important;
+  
+  /* Disable gradients (use solid colors) */
+  background-image: none !important;
+}
+
+/* Keep essential hover effects even in low-spec mode */
+.low-spec-mode button:hover,
+.low-spec-mode a:hover {
+  opacity: 0.8;
+}
+
+/* Optimize images for low-spec devices */
+.low-spec-mode img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Reduce motion for scrolling */
+.low-spec-mode {
+  scroll-behavior: auto !important;
+}
+
+/* Simplify cards */
+.low-spec-mode .rounded-2xl {
+  border-radius: 0.5rem !important;
+}
+
+.low-spec-mode .rounded-xl {
+  border-radius: 0.375rem !important;
+}
+
+/* Remove expensive effects */
+.low-spec-mode .animate-spin,
+.low-spec-mode .animate-pulse,
+.low-spec-mode .animate-bounce {
+  animation: none !important;
+}
+
+/* Optimize table rendering */
+.low-spec-mode table {
+  table-layout: fixed;
+}
+
+/* Reduce complexity of gradients */
+.low-spec-mode .bg-gradient-to-br,
+.low-spec-mode .bg-gradient-to-r,
+.low-spec-mode .bg-gradient-to-l {
+  background-image: none !important;
+}
