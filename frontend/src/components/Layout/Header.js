@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSocket } from '../../contexts/SocketContext';
+// import { useSocket } from '../../contexts/SocketContext'; // Socket.IO disabled
 import { BellIcon, Bars3Icon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
-  const { connected } = useSocket();
+  // const { connected } = useSocket(); // Socket.IO disabled - not needed
   const navigate = useNavigate();
   const [userBalance, setUserBalance] = useState(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
@@ -126,14 +126,6 @@ const Header = ({ onMenuClick }) => {
         
         {/* Header actions - Responsive layout */}
         <div className="flex items-center gap-x-1 sm:gap-x-2 md:gap-x-3 lg:gap-x-4">
-          {/* Connection Status - Progressive disclosure */}
-          <div className="hidden md:flex items-center gap-x-2">
-            <div className={`h-2 w-2 rounded-full transition-colors duration-200 ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
-            <span className="text-xs lg:text-sm text-gray-500 font-medium">
-              {connected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-
           {/* Balance Display - Enhanced responsive design */}
           {canViewBalance && (
             <div 

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSocket } from '../../contexts/SocketContext';
+// import { useSocket } from '../../contexts/SocketContext'; // Socket.IO disabled
 import api from '../../utils/api';
 import WinnerNotifications from '../../components/Notifications/WinnerNotifications';
 import { formatDrawTime } from '../../utils/drawTimeFormatter';
@@ -26,7 +26,7 @@ import StatCard from '../../components/UI/StatCard';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { connected } = useSocket();
+  // const { connected } = useSocket(); // Socket.IO disabled - not needed
   const [showWinnerNotifications, setShowWinnerNotifications] = useState(false);
 
   // Check if user is an agent (only agents get the betting interface)
@@ -226,26 +226,17 @@ const Dashboard = () => {
   // Agent Dashboard - Modern Betting Interface
   if (isAgent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="mb-6 sm:mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-              <div className="mb-4 sm:mb-0">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent animate-fade-in" style={{animationDelay: '100ms'}}>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
                   Today's Draws
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600 mt-2">
-                  Select a draw time to place your bets
+                <p className="text-sm text-gray-500 mt-1">
+                  Select a draw to place your bets
                 </p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <CalendarDaysIcon className="h-6 w-6 text-gray-400" />
-                <div className="flex items-center space-x-2">
-                  <div className={`h-3 w-3 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
-                  <span className="text-sm text-gray-600 font-medium">
-                    {connected ? 'Live Updates' : 'Disconnected'}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -279,157 +270,88 @@ const Dashboard = () => {
               </div>
             ) : (
               <>
-                {/* Ultra Compact Draw Cards */}
-                <div className="space-y-2">
+                {/* Simple Clean Draw Cards */}
+                <div className="space-y-3">
                   {drawTimes.map((draw, index) => (
                     <div
                       key={draw.id}
-                      className={`group relative overflow-hidden rounded-xl transition-all duration-300 ${
+                      className={`relative rounded-2xl transition-all duration-200 ${
                         (draw.status === 'betting' || draw.status === 'cutoff')
-                          ? 'cursor-pointer hover:shadow-md' 
-                          : 'cursor-default'
+                          ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]' 
+                          : 'cursor-default opacity-75'
                       }`}
-                      style={{ animationDelay: `${index * 50}ms` }}
                       onClick={() => {
                         if (draw.status === 'betting' || draw.status === 'cutoff') {
                           window.location.href = `/betting?draw=${draw.id}&time=${encodeURIComponent(draw.time)}`;
                         }
                       }}
                     >
-                      {/* Background Gradient */}
-                      <div className={`absolute inset-0 ${
+                      {/* Simple Gradient Background */}
+                      <div className={`rounded-2xl p-4 ${
                         draw.status === 'betting' 
-                          ? 'bg-gradient-to-r from-emerald-400 to-green-500' 
+                          ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-green-500/30' 
                           : draw.status === 'cutoff'
-                          ? 'bg-gradient-to-r from-orange-400 to-red-500 animate-pulse'
+                          ? 'bg-gradient-to-br from-orange-500 to-red-600 shadow-lg shadow-orange-500/30 animate-pulse'
                           : draw.status === 'completed'
-                          ? 'bg-gradient-to-r from-blue-400 to-indigo-500'
-                          : draw.status === 'closed'
-                          ? 'bg-gradient-to-r from-gray-400 to-gray-500'
-                          : 'bg-gradient-to-r from-slate-300 to-gray-400'
-                      } opacity-90`} />
-                      
-                      {/* Shimmer Effect */}
-                      {(draw.status === 'betting' || draw.status === 'cutoff') && (
-                        <div className="absolute inset-0 opacity-20">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent transform -skew-x-12 animate-shimmer" />
-                        </div>
-                      )}
-                      
-                      {/* Content */}
-                      <div className="relative p-3 text-white">
-                        <div className="flex items-center justify-between">
-                          {/* Left Side - Draw Info */}
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold shadow-md backdrop-blur-sm ${
-                              draw.status === 'betting' 
-                                ? 'bg-white/25 border border-white/40' 
-                                : 'bg-white/15 border border-white/25'
-                            }`}>
-                              {draw.label}
+                          ? 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md'
+                          : 'bg-gradient-to-br from-gray-400 to-gray-500 shadow-sm'
+                      }`}>
+                        
+                        <div className="flex items-center justify-between text-white">
+                          {/* Left - Time Badge & Info */}
+                          <div className="flex items-center gap-3">
+                            <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                              <span className="text-2xl font-bold">{draw.label}</span>
                             </div>
                             <div>
-                              <h3 className="text-base font-bold">3D LOTTO</h3>
-                              <p className="text-white/90 text-xs">{draw.time} • {draw.description}</p>
+                              <h3 className="text-lg font-bold">3D LOTTO</h3>
+                              <p className="text-sm text-white/90">{draw.time}</p>
                             </div>
                           </div>
                           
-                          {/* Center - Prize */}
-                          <div className="text-center">
-                            <div className="text-xl font-bold">{draw.prize}</div>
-                            <p className="text-white/80 text-xs">Prize</p>
-                          </div>
-                          
-                          {/* Right Side - Action */}
-                          <div className="flex items-center">
-                            {draw.status === 'betting' && (
-                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-medium hover:bg-white/30 transition-all duration-300">
-                                <PlayIcon className="w-3 h-3 mr-1" />
-                                Bet
-                              </div>
-                            )}
-                            
-                            {draw.status === 'cutoff' && (
-                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-400/90 text-yellow-900 text-xs font-medium animate-pulse">
-                                <ClockIcon className="w-3 h-3 mr-1" />
-                                Last Call!
-                              </div>
-                            )}
-
-                            {draw.status === 'upcoming' && (
-                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/15 backdrop-blur-sm border border-white/25 text-white/70 text-xs font-medium">
-                                <ClockIcon className="w-3 h-3 mr-1" />
-                                Soon
-                              </div>
-                            )}
-
-                            {draw.status === 'closed' && (
-                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/15 backdrop-blur-sm border border-white/25 text-white/70 text-xs font-medium">
-                                <CheckCircleIcon className="w-3 h-3 mr-1" />
-                                Closed
-                              </div>
-                            )}
-
-                            {draw.status === 'completed' && (
-                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-medium">
-                                <CheckCircleIcon className="w-3 h-3 mr-1" />
-                                Done
-                              </div>
-                            )}
-
-                            {(draw.status === 'pending' || draw.status === 'unavailable') && (
-                              <div className="inline-flex items-center px-2 py-1 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 text-white/50 text-xs font-medium">
-                                <ClockIcon className="w-3 h-3 mr-1" />
-                                {draw.status === 'pending' ? 'Wait' : 'N/A'}
-                              </div>
-                            )}
+                          {/* Right - Prize & Status */}
+                          <div className="text-right">
+                            <div className="text-2xl font-bold mb-1">{draw.prize}</div>
+                            <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                              draw.status === 'betting' 
+                                ? 'bg-white/25 text-white' 
+                                : draw.status === 'cutoff'
+                                ? 'bg-yellow-400 text-yellow-900'
+                                : 'bg-white/15 text-white/80'
+                            }`}>
+                              {draw.status === 'betting' && <><PlayIcon className="w-3 h-3" /> OPEN</>}
+                              {draw.status === 'cutoff' && <><ClockIcon className="w-3 h-3" /> CLOSING</>}
+                              {draw.status === 'completed' && <><CheckCircleIcon className="w-3 h-3" /> DONE</>}
+                              {draw.status === 'closed' && <><CheckCircleIcon className="w-3 h-3" /> CLOSED</>}
+                              {draw.status === 'upcoming' && <><ClockIcon className="w-3 h-3" /> SOON</>}
+                              {(draw.status === 'pending' || draw.status === 'unavailable') && <><ClockIcon className="w-3 h-3" /> WAIT</>}
+                            </div>
                           </div>
                         </div>
                       </div>
                       
-                      {/* Status Indicator */}
-                      {(draw.status === 'betting' || draw.status === 'cutoff') && (
-                        <div className="absolute top-2 right-2">
-                          <div className={`w-3 h-3 rounded-full ${
-                            draw.status === 'betting' ? 'bg-green-300 animate-pulse' : 'bg-orange-300 animate-ping'
-                          }`}></div>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
                 
-                {/* Compact Stats */}
-                <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200 p-4 shadow-md">
-                  <div className="flex items-center justify-around text-center">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-1">
-                        <PlayIcon className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="text-lg font-bold text-gray-900">
+                {/* Quick Stats */}
+                <div className="bg-white rounded-2xl shadow-md p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-emerald-600">
                         {drawTimes.filter(d => d.status === 'betting').length}
                       </div>
-                      <div className="text-xs text-gray-600">Open</div>
+                      <div className="text-xs text-gray-500 mt-1">Open Now</div>
                     </div>
                     
-                    <div className="w-px h-8 bg-gray-200"></div>
-                    
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-1">
-                        <TrophyIcon className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="text-lg font-bold text-gray-900">₱4,500</div>
-                      <div className="text-xs text-gray-600">Prize</div>
+                    <div className="text-center border-x border-gray-200">
+                      <div className="text-2xl font-bold text-blue-600">₱4.5K</div>
+                      <div className="text-xs text-gray-500 mt-1">Prize</div>
                     </div>
                     
-                    <div className="w-px h-8 bg-gray-200"></div>
-                    
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center mb-1">
-                        <ClockIcon className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="text-lg font-bold text-gray-900">3</div>
-                      <div className="text-xs text-gray-600">Daily</div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">3</div>
+                      <div className="text-xs text-gray-500 mt-1">Daily Draws</div>
                     </div>
                   </div>
                 </div>
@@ -458,12 +380,6 @@ const Dashboard = () => {
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className={`h-3 w-3 rounded-full ${connected && isTodayRange ? 'bg-green-400' : 'bg-red-400'}`} />
-                <span className="text-sm text-gray-600 font-medium">
-                  {isTodayRange ? (connected ? 'Live Updates' : 'Disconnected') : 'Historical Data'}
-                </span>
-              </div>
               <div className="flex items-center space-x-1 text-sm text-gray-500">
                 <CalendarDaysIcon className="h-4 w-4" />
                 <span>{new Date(dateRange.startDate).toLocaleDateString()}</span>
