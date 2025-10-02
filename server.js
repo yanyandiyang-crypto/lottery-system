@@ -77,6 +77,7 @@ const server = http.createServer(app);
 // CORS configuration - Define allowed origins first
 const allowedOrigins = [
   'https://lottery-system-gamma.vercel.app',
+  'https://lottery-system.pages.dev',
   'http://localhost:3000',
   'http://localhost:3002'
 ];
