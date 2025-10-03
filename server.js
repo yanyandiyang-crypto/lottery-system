@@ -471,6 +471,7 @@ server.listen(PORT, () => {
   });
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🌏 Timezone: ${process.env.TZ || 'UTC'}`);
+  console.log(`🕐 Server started at: ${new Date().toISOString()}`);
   
   // Initialize services
   drawScheduler.initialize();
