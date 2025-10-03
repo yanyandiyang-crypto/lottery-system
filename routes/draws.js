@@ -394,6 +394,15 @@ router.get('/current/active', async (req, res) => {
             endTime: cutoffTime,
             description: '9:00 PM (previous day) to 4:55 PM'
           };
+        } else if (isTomorrow) {
+          // Tomorrow's 5PM draw: available from 9PM today
+          const todayStartTime = now.clone().hour(21).minute(0).second(0);
+          isAvailable = now.isAfter(todayStartTime) || now.hour() >= 21;
+          bettingWindow = {
+            startTime: todayStartTime,
+            endTime: cutoffTime,
+            description: '9:00 PM (today) to 4:55 PM (tomorrow)'
+          };
         }
       } else if (draw.drawTime === 'ninePM') {
         // 9PM draw is available from 9PM previous day until 8:55PM same day
@@ -406,6 +415,15 @@ router.get('/current/active', async (req, res) => {
             startTime: startTime,
             endTime: cutoffTime,
             description: '9:00 PM (previous day) to 8:55 PM'
+          };
+        } else if (isTomorrow) {
+          // Tomorrow's 9PM draw: available from 9PM today
+          const todayStartTime = now.clone().hour(21).minute(0).second(0);
+          isAvailable = now.isAfter(todayStartTime) || now.hour() >= 21;
+          bettingWindow = {
+            startTime: todayStartTime,
+            endTime: cutoffTime,
+            description: '9:00 PM (today) to 8:55 PM (tomorrow)'
           };
         }
       }
