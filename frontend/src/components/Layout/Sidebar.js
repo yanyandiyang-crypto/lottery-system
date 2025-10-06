@@ -308,7 +308,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
                           isCollapsed 
                             ? 'px-2 py-3 justify-center' 
                             : 'px-3 lg:px-4 py-2.5 lg:py-3'
-                        } text-sm lg:text-base font-medium border-l-4 rounded-r-xl transition-colors duration-200`}
+                        } text-sm lg:text-base font-medium border-l-4 rounded-r-xl transition-all duration-200 ease-in-out transform hover:scale-[1.01] active:scale-[0.99]`}
                         title={isCollapsed ? item.name : ''}
                       >
                         <div className={`${isCollapsed ? '' : 'mr-3 lg:mr-4'} flex-shrink-0 flex items-center justify-center relative`}>
@@ -328,6 +328,9 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
                         </div>
                         {!isCollapsed && (
                           <span className="truncate font-medium">{item.name}</span>
+                        )}
+                        {isActive && !isCollapsed && (
+                          <div className="ml-auto w-2 h-2 bg-sky-500 rounded-full animate-pulse shadow-sm"></div>
                         )}
                       </NavLink>
                     );

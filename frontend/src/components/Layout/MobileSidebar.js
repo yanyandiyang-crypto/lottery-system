@@ -345,7 +345,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
                                     isActive
                                       ? 'bg-gradient-to-r from-sky-50 to-blue-50 border-sky-500 text-sky-700 shadow-lg shadow-sky-100'
                                       : 'border-transparent text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900 hover:shadow-md hover:border-gray-200'
-                                  } group flex items-center px-3 sm:px-4 py-3 sm:py-4 text-sm sm:text-base font-medium border-l-4 rounded-r-xl transition-colors duration-200`
+                                  } group flex items-center px-3 sm:px-4 py-3 sm:py-4 text-sm sm:text-base font-medium border-l-4 rounded-r-xl transition-all duration-200 ease-in-out touch-target transform hover:scale-[1.01] active:scale-[0.99]`
                                 }
                               >
                                 {({ isActive }) => (
@@ -366,6 +366,9 @@ const MobileSidebar = ({ isOpen, onClose }) => {
                                       />
                                     </div>
                                     <span className="truncate font-medium">{item.name}</span>
+                                    {isActive && (
+                                      <div className="ml-auto w-2 h-2 bg-sky-500 rounded-full animate-pulse shadow-sm"></div>
+                                    )}
                                   </>
                                 )}
                               </NavLink>

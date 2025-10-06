@@ -144,7 +144,7 @@ app.use(cors({
     
     // Check if origin matches allowed patterns
     const isCloudflarePages = origin.endsWith('.lottery-system.pages.dev') || origin === 'https://lottery-system.pages.dev';
-    const isLocalhost = origin === 'http://localhost:3002' || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+    const isLocalhost = origin === 'http://localhost:3002' || origin.startsWith('http://localhost:');
     
     console.log('CORS: Checking origin:', origin);
     console.log('CORS: Cloudflare Pages?', isCloudflarePages);
@@ -176,7 +176,7 @@ app.options('*', (req, res) => {
   
   // Check if origin matches allowed patterns
   const isCloudflarePages = origin && (origin.endsWith('.lottery-system.pages.dev') || origin === 'https://lottery-system.pages.dev');
-  const isLocalhost = origin && (origin === 'http://localhost:3002' || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'));
+  const isLocalhost = origin && (origin === 'http://localhost:3002' || origin.startsWith('http://localhost:'));
   
   if (isCloudflarePages || isLocalhost) {
     res.header('Access-Control-Allow-Origin', origin);
@@ -471,7 +471,6 @@ server.listen(PORT, () => {
   });
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🌏 Timezone: ${process.env.TZ || 'UTC'}`);
-  console.log(`🕐 Server started at: ${new Date().toISOString()}`);
   
   // Initialize services
   drawScheduler.initialize();

@@ -122,7 +122,6 @@ router.post('/create',
 
       // Generate ticket number and QR code (like the old system)
       const { generateTicketNumber } = require('../utils/ticketGenerator');
-      const QRCode = require('qrcode');
       const crypto = require('crypto');
       
       const ticketNumber = generateTicketNumber();
@@ -131,7 +130,8 @@ router.post('/create',
       const hashData = `${ticketNumber}:${totalAmount}:${drawId}:${userId}:${Date.now()}`;
       const hash = crypto.createHash('sha256').update(hashData).digest('hex').substring(0, 16);
       const qrCodeData = `${ticketNumber}|${hash}`;
-      const qrCode = await QRCode.toDataURL(qrCodeData);
+      // Store compact QR code data in DB to avoid exceeding column length
+      const qrCode = qrCodeData;
       
       // Prepare ticket data for atomic transaction
       const ticketData = {
