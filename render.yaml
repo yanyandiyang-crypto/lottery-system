@@ -20,7 +20,7 @@ services:
       - key: PORT
         value: 10000
       - key: JWT_SECRET
-        value: your-super-secret-jwt-key-change-this-in-production
+        value: 00130fc95f7437bc6e24ad416830110b5a57605df247b34b501253e9c57f00d6782ce19c709a6a86db5642749347b0ad757336d9182ba6cacce5b11ccf08f590
       - key: BCRYPT_ROUNDS
         value: 10
     # Note: Frontend deployed to Cloudflare Pages for better performance
