@@ -3,11 +3,8 @@ services:
     name: lottery-backend
     runtime: node
     plan: free
-    branch: main
-    autoDeploy: true
     buildCommand: npm install && npx prisma generate
     startCommand: node server.js
-    healthCheckPath: /v1/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -23,6 +20,9 @@ services:
         value: 00130fc95f7437bc6e24ad416830110b5a57605df247b34b501253e9c57f00d6782ce19c709a6a86db5642749347b0ad757336d9182ba6cacce5b11ccf08f590
       - key: BCRYPT_ROUNDS
         value: 10
+    healthCheckPath: /v1/health
+    autoDeploy: true
+    branch: main
     # Note: Frontend deployed to Cloudflare Pages for better performance
 
 databases:
