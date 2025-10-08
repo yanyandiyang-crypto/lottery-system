@@ -1,0 +1,39 @@
+# Frontend build artifacts
+frontend/node_modules
+frontend/build
+frontend/src
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git
+.gitignore
+
+# Logs
+logs
+*.log
+
+# Environment
+.env.local
+.env.development
+.env.test
+
+# Backups
+backups/
+
+# IDE
+.vscode
+.cursor
+.codeium
+.windsurf
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Render config (not needed for AWS)
+render.yaml
+wrangler.toml
+
