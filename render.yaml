@@ -22,7 +22,7 @@ services:
         value: 10
     healthCheckPath: /v1/health
     autoDeploy: true
-    branch: main
+    branch: master
     # Note: Frontend deployed to Cloudflare Pages for better performance
 
 databases:
