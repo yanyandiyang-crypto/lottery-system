@@ -254,18 +254,8 @@
   if (androidVersion > 0 && androidVersion < 7) {
     console.warn('⚠️ Running on Android ' + androidVersion + ' - Legacy mode enabled');
     
-    // Add warning banner
-    window.addEventListener('load', function() {
-      var banner = document.createElement('div');
-      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff9800;color:#000;padding:8px;text-align:center;font-size:12px;z-index:99999;';
-      banner.innerHTML = '⚠️ Old Android version detected. Some features may be slower.';
-      document.body.insertBefore(banner, document.body.firstChild);
-      
-      // Auto-hide after 5 seconds
-      setTimeout(function() {
-        banner.style.display = 'none';
-      }, 5000);
-    });
+    // Warning banner removed per user request
+    // Legacy support polyfills remain active for compatibility
   }
 
   // 16. Optimize network requests for slow connections

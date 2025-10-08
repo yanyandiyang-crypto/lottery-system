@@ -30,6 +30,7 @@ const AuditDashboard = () => {
   const [filterUserId, setFilterUserId] = useState('');
   const [filterOperation, setFilterOperation] = useState('');
   const [filterTable, setFilterTable] = useState('');
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     if (user?.role === 'superadmin' || user?.role === 'admin') {
@@ -56,17 +57,53 @@ const AuditDashboard = () => {
       if (filterOperation) params.set('operation', filterOperation);
       if (filterTable) params.set('tableName', filterTable);
 
+      // Helper function to silently catch 403 errors
+      const silentFetch = async (promise) => {
+        try {
+          return { status: 'fulfilled', value: await promise };
+        } catch (error) {
+          if (error.response?.status === 403) {
+            // Silently handle 403 - expected for non-superadmin users
+            return { status: 'rejected', reason: { response: { status: 403 } } };
+          }
+          return { status: 'rejected', reason: error };
+        }
+      };
+
       const [summaryRes, failedLoginsRes, auditRes] = await Promise.all([
-        api.get('/audit/security-summary'),
-        api.get('/audit/failed-logins'),
-        api.get(`/audit/system-log?${params.toString()}`)
+        silentFetch(api.get('/audit/security-summary')),
+        silentFetch(api.get('/audit/failed-logins')),
+        silentFetch(api.get(`/audit/system-log?${params.toString()}`))
       ]);
 
-      setSecuritySummary(summaryRes.data.data);
-      setFailedLogins(failedLoginsRes.data.data.failedLogins);
-      setRecentAudit(auditRes.data.data.auditLogs);
+      // Handle results with fallbacks
+      if (summaryRes.status === 'fulfilled') {
+        setSecuritySummary(summaryRes.value.data.data);
+        setAccessDenied(false);
+      } else {
+        if (summaryRes.reason?.response?.status === 403) {
+          setAccessDenied(true);
+        }
+        setSecuritySummary({ failedLogins24h: 0, successfulLogins24h: 0, failedTransactions24h: 0, suspiciousIPs: [] });
+      }
+
+      if (failedLoginsRes.status === 'fulfilled') {
+        setFailedLogins(failedLoginsRes.value.data.data.failedLogins || []);
+      } else {
+        setFailedLogins([]);
+      }
+
+      if (auditRes.status === 'fulfilled') {
+        setRecentAudit(auditRes.value.data.data.auditLogs || []);
+      } else {
+        setRecentAudit([]);
+      }
     } catch (error) {
       console.error('Error fetching security data:', error);
+      // Set safe defaults
+      setSecuritySummary({ failedLogins24h: 0, successfulLogins24h: 0, failedTransactions24h: 0, suspiciousIPs: [] });
+      setFailedLogins([]);
+      setRecentAudit([]);
     } finally {
       setLoading(false);
     }
@@ -113,7 +150,7 @@ const AuditDashboard = () => {
 
   if (!user || (user.role !== 'superadmin' && user.role !== 'admin')) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
         <ModernCard variant="elevated" className="p-8 text-center max-w-md">
           <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-6">
             <ShieldCheckIcon className="h-10 w-10 text-red-500" />
@@ -127,7 +164,7 @@ const AuditDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading security data...</p>
@@ -137,17 +174,30 @@ const AuditDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      <div className="w-full px-2 sm:px-4 py-4 sm:py-6">
         <PageHeader
           title="Security Audit Dashboard"
-          subtitle="Monitor system security, user activities, and audit trails"
-          breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Admin', href: '/admin' },
-            { label: 'Security Audit' }
-          ]}
         />
+
+        {/* Access Limited Warning */}
+        {accessDenied && (
+          <ModernCard variant="elevated" className="mb-6 border-l-4 border-amber-500">
+            <div className="p-4">
+              <div className="flex items-start">
+                <div className="p-2 rounded-lg bg-amber-100 mr-3">
+                  <ExclamationTriangleIcon className="h-5 w-5 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold text-amber-900">Limited Audit Access</h3>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Some audit features are restricted to superadmin users only. Contact your system administrator for full audit access.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </ModernCard>
+        )}
 
         {/* Filters + Actions */}
         <ModernCard variant="glass" className="mb-6">

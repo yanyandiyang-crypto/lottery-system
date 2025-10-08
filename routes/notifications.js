@@ -92,6 +92,16 @@ router.get('/winners', async (req, res) => {
 // @access  Private
 router.get('/', async (req, res) => {
   try {
+    // Check if user is authenticated
+    if (!req.user || !req.user.id) {
+      console.error('❌ Notifications: User not authenticated');
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    console.log('✅ Fetching notifications for user:', req.user.id, 'role:', req.user.role);
 
     const { page = 1, limit = 20, isRead, type } = req.query;
     const pageNum = parseInt(page);
@@ -109,6 +119,8 @@ router.get('/', async (req, res) => {
       whereClause.type = type;
     }
 
+    console.log('📋 Query where clause:', whereClause);
+
     const notifications = await prisma.notification.findMany({
       where: whereClause,
       include: {
@@ -117,7 +129,7 @@ router.get('/', async (req, res) => {
             id: true,
             ticketNumber: true,
             totalAmount: true,
-            status: true,
+            // status: true,  // Removed - causes enum error with 'claimed' status
             createdAt: true
           }
         },
@@ -135,6 +147,8 @@ router.get('/', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    console.log('✅ Found notifications:', notifications.length);
+
     const total = await prisma.notification.count({ where: whereClause });
 
     res.json({
@@ -149,10 +163,13 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get notifications error:', error);
+    console.error('❌ Get notifications error:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error code:', error.code);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

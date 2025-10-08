@@ -62,16 +62,16 @@ const StatCard = ({
 
   if (loading) {
     return (
-      <ModernCard className={`p-6 ${className}`} hover={false}>
+      <ModernCard className={`p-3 sm:p-6 ${className}`} hover={false}>
         <div className="animate-pulse">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gray-200 rounded-lg sm:rounded-xl"></div>
             <div className="text-right">
-              <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-24"></div>
+              <div className="h-2 sm:h-3 bg-gray-200 rounded w-16 sm:w-20 mb-1 sm:mb-2"></div>
+              <div className="h-6 sm:h-8 bg-gray-200 rounded w-20 sm:w-24"></div>
             </div>
           </div>
-          <div className="h-4 bg-gray-200 rounded w-16"></div>
+          <div className="h-3 sm:h-4 bg-gray-200 rounded w-12 sm:w-16"></div>
         </div>
       </ModernCard>
     );
@@ -79,25 +79,25 @@ const StatCard = ({
 
   return (
     <ModernCard 
-      className={`p-6 ${className}`} 
+      className={`p-3 sm:p-6 ${className}`} 
       variant="elevated"
       hover={true}
       {...props}
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2 sm:mb-4">
         {Icon && (
           <div 
-            className={`p-3 rounded-xl ${colors.iconBg} transition-transform duration-200 hover:scale-105`}
+            className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${colors.iconBg} transition-transform duration-200 hover:scale-105`}
           >
-            <Icon className={`h-6 w-6 ${colors.iconColor}`} />
+            <Icon className={`h-4 w-4 sm:h-6 sm:w-6 ${colors.iconColor}`} />
           </div>
         )}
-        <div className="text-right flex-1 ml-4 min-w-0">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+        <div className="text-right flex-1 ml-2 sm:ml-4 min-w-0">
+          <div className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5 sm:mb-1">
             {title}
           </div>
           <div 
-            className={`text-lg sm:text-xl lg:text-2xl font-bold ${colors.valueColor} animate-bounce-in whitespace-nowrap`}
+            className={`text-sm sm:text-lg lg:text-xl font-bold ${colors.valueColor} animate-bounce-in whitespace-nowrap`}
           >
             {value}
           </div>
@@ -106,22 +106,22 @@ const StatCard = ({
       
       <div className="flex items-center justify-between">
         {subtitle && (
-          <span className="text-sm text-gray-600 font-medium">
+          <span className="text-xs sm:text-sm text-gray-600 font-medium">
             {subtitle}
           </span>
         )}
         
         {trend && trendValue && (
-          <div className="flex items-center text-sm">
+          <div className="flex items-center text-xs sm:text-sm">
             <div
               className={`flex items-center ${trend === 'up' ? colors.trendUp : colors.trendDown} animate-slide-in`}
             >
               {trend === 'up' ? (
-                <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7H7" />
                 </svg>
               ) : (
-                <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 7l-9.2 9.2M7 7v10h10" />
                 </svg>
               )}

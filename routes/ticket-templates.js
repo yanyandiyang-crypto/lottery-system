@@ -655,23 +655,25 @@ router.get('/agent/:agentId', requireAuth, async (req, res) => {
   }
 });
 
-// @route   POST /api/ticket-templates/generate
+// @route   GET /api/ticket-templates/generate
 // @desc    Generate ticket HTML from template
 // @access  Private
-router.post('/generate', requireAuth, async (req, res) => {
+router.get('/generate', requireAuth, async (req, res) => {
   try {
-    const { ticketId, templateId } = req.body;
+    const { ticketId, templateId } = req.query;
 
-    if (!ticketId || !templateId) {
+    if (!ticketId) {
       return res.status(400).json({
         success: false,
-        message: 'Ticket ID and Template ID are required'
+        message: 'Ticket ID is required'
       });
     }
 
-    // Get ticket data
-    const ticket = await prisma.ticket.findUnique({
-      where: { id: parseInt(ticketId) },
+    // Get ticket data - support both ID and ticket number
+    const ticket = await prisma.ticket.findFirst({
+      where: isNaN(parseInt(ticketId)) 
+        ? { ticketNumber: ticketId }
+        : { id: parseInt(ticketId) },
       include: {
         bets: true,
         draw: true,
@@ -692,30 +694,18 @@ router.post('/generate', requireAuth, async (req, res) => {
       });
     }
 
-    // Get template
-    const template = await prisma.ticketTemplate.findUnique({
-      where: { id: parseInt(templateId) }
-    });
-
-    if (!template) {
-      return res.status(404).json({
-        success: false,
-        message: 'Template not found'
-      });
-    }
-
-    // Generate HTML using template renderer
-    const TemplateRenderer = require('../utils/templateRenderer');
-    const ticketHtml = await TemplateRenderer.generateTicketHTML(ticket, template, ticket.user);
+    // Use single Umatik template (no database template lookup needed)
+    const { generateUmatikCenterTicketHTML } = require('../utils/umatikTicketTemplate');
+    const ticketHtml = await generateUmatikCenterTicketHTML(ticket, ticket.user);
 
     res.json({
       success: true,
       data: {
         html: ticketHtml,
         template: {
-          id: template.id,
-          name: template.name,
-          type: template.design?.templateType || 'standard'
+          id: 'umatik-center',
+          name: 'Umatik Center Template',
+          type: 'mobile-pos'
         }
       }
     });

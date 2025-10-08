@@ -91,23 +91,24 @@ export class MobileTicketUtils {
   // Now using pre-generated HTML from backend + template system
 
   /**
-   * Get ticket image using DIRECT template generation (bypass pre-generated HTML)
+   * Get ticket image using backend-generated HTML
    */
   static async getPreGeneratedImage(ticket) {
     try {
-      // Use direct template generation for consistent layout
-      const TicketGenerator = (await import('./ticketGenerator')).default;
-      const TemplateAssigner = (await import('./templateAssigner')).default;
+      // Fetch HTML from backend (Umatik template)
+      const api = (await import('./api')).default;
+      const response = await api.get('/ticket-templates/generate', {
+        params: {
+          ticketId: ticket.id || ticket.ticketNumber,
+          templateId: 'umatik-center'
+        }
+      });
       
-      let template = null;
-      try {
-        template = await TemplateAssigner.fetchSystemTemplate();
-      } catch (_) {
-        // Use default template
+      const templateHTML = response.data?.data?.html || '';
+      
+      if (!templateHTML) {
+        throw new Error('No HTML generated from backend');
       }
-      
-      // Generate HTML directly using template system
-      const templateHTML = TicketGenerator.generateWithTemplate(ticket, {}, template, {});
       
       // Wrap HTML with CSS scaling for wider display (2.5x larger)
       const wrappedHTML = `
@@ -717,17 +718,17 @@ export class MobileTicketUtils {
       
       throw new Error('Pre-generated HTML not available');
     } catch (error) {
-      console.log('Falling back to template generation...');
-      // Fallback to template generation using TicketGenerator
-      const TicketGenerator = (await import('./ticketGenerator')).default;
-      const TemplateAssigner = (await import('./templateAssigner')).default;
+      console.log('Falling back to backend generation...');
+      // Fallback to backend template generation
+      const api = (await import('./api')).default;
+      const response = await api.get('/ticket-templates/generate', {
+        params: {
+          ticketId: ticket.id || ticket.ticketNumber,
+          templateId: 'umatik-center'
+        }
+      });
       
-      let template = null;
-      try {
-        template = await TemplateAssigner.fetchSystemTemplate();
-      } catch (_) {}
-      
-      return TicketGenerator.generateWithTemplate(ticket, {}, template, {});
+      return response.data?.data?.html || '<div>Ticket generation failed</div>';
     }
   }
 
@@ -739,19 +740,20 @@ export class MobileTicketUtils {
   }
 
   /**
-   * Create ticket image as blob using HTML2Canvas for template-aware generation
+   * Create ticket image as blob using HTML2Canvas with backend template
    */
   static async createTicketImageBlob(ticket, user, template = null) {
     try {
-      // Get the active system template if not provided
-      if (!template) {
-        const TemplateAssigner = (await import('./templateAssigner')).default;
-        template = await TemplateAssigner.fetchSystemTemplate();
-      }
+      // Fetch HTML from backend (Umatik template)
+      const api = (await import('./api')).default;
+      const response = await api.get('/ticket-templates/generate', {
+        params: {
+          ticketId: ticket.id || ticket.ticketNumber,
+          templateId: 'umatik-center'
+        }
+      });
       
-      // Generate ticket HTML using the assigned template (58mm optimized)
-      const TicketGenerator = (await import('./ticketGenerator')).default;
-      const ticketHtml = TicketGenerator.generateWithTemplate(ticket, user, template, {});
+      const ticketHtml = response.data?.data?.html || '';
       
       // Create a temporary container for the ticket HTML (58mm width)
       const tempContainer = document.createElement('div');

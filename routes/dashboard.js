@@ -217,13 +217,13 @@ router.get('/', requireAuth, async (req, res) => {
       ? ((dashboardData.todaySales - dashboardData.yesterdaySales) / dashboardData.yesterdaySales * 100)
       : 0;
 
-    // Get winning amounts from claim approval system
-    // Include both pending approvals and approved claims
+    // Get winning amounts from tickets
+    // Include both validated (pending payout) and paid tickets
     const claimData = await prisma.ticket.findMany({
       where: {
         ...whereClause,
         status: {
-          in: ['pending_approval', 'claimed']
+          in: ['validated', 'paid']
         }
       },
       include: {
@@ -247,24 +247,24 @@ router.get('/', requireAuth, async (req, res) => {
     let approvedAmount = 0;
     let winnersCount = 0;
     claimData.forEach(ticket => {
-      if (ticket.status === 'pending_approval' || ticket.status === 'claimed') {
+      if (ticket.status === 'validated' || ticket.status === 'paid') {
         const calculatedPrize = calculateTicketPrize(ticket);
         winnersCount++;
         
-        if (ticket.status === 'pending_approval') {
+        if (ticket.status === 'validated') {
           pendingAmount += calculatedPrize;
-        } else if (ticket.status === 'claimed') {
+        } else if (ticket.status === 'paid') {
           approvedAmount += calculatedPrize;
-          totalWinnings += calculatedPrize; // Only approved winnings count towards total
+          totalWinnings += calculatedPrize; // Only paid winnings count towards total
         }
       }
     });
 
-    dashboardData.winningAmount = totalWinnings; // Only approved winnings
+    dashboardData.winningAmount = totalWinnings; // Only paid winnings
     dashboardData.winnersToday = winnersCount;
     dashboardData.pendingWinnings = pendingAmount;
     dashboardData.approvedWinnings = approvedAmount;
-    dashboardData.netSales = dashboardData.grossSales - dashboardData.winningAmount; // Gross - Approved only
+    dashboardData.netSales = dashboardData.grossSales - dashboardData.winningAmount; // Gross - Paid only
 
     // Get per-draw sales breakdown
     const drawTimes = ['twoPM', 'fivePM', 'ninePM'];
@@ -497,10 +497,15 @@ async function getHierarchicalPerformanceData(userRole, user, today, tomorrow) {
         performanceData.summary.totalWinners += regionData.winners;
       }
     } else if (userRole === 'area_coordinator') {
-      // Get coordinators under this area coordinator
+      // Get coordinators under this area coordinator (same region)
+      if (!user.regionId) {
+        console.warn('⚠️ Area coordinator has no regionId set:', user.id, user.username);
+        return performanceData; // Return empty data if no region assigned
+      }
+      
       const coordinators = await prisma.user.findMany({
         where: { 
-          areaCoordinatorId: user.id, 
+          regionId: user.regionId, 
           role: 'coordinator', 
           status: 'active' 
         },
@@ -510,6 +515,8 @@ async function getHierarchicalPerformanceData(userRole, user, today, tomorrow) {
           username: true
         }
       });
+      
+      console.log('📊 Area coordinator coordinators found:', coordinators.length, 'in region:', user.regionId);
 
       for (const coordinator of coordinators) {
         const coordinatorData = await getCoordinatorPerformanceData(coordinator, today, tomorrow);
@@ -748,12 +755,12 @@ router.get('/live', requireAuth, async (req, res) => {
       }
     });
 
-    // Get live winnings data from claim approval system
+    // Get live winnings data from validated and paid tickets
     const liveClaimData = await prisma.ticket.findMany({
       where: {
         ...whereClause,
         status: {
-          in: ['pending_approval', 'claimed']
+          in: ['validated', 'paid']
         }
       },
       include: {
@@ -779,8 +786,8 @@ router.get('/live', requireAuth, async (req, res) => {
       const calculatedPrize = calculateTicketPrize(ticket);
       liveWinnersCount++;
       
-      // Only count approved/claimed winnings towards total
-      if (ticket.status === 'claimed') {
+      // Only count paid winnings towards total
+      if (ticket.status === 'paid') {
         liveWinningAmount += calculatedPrize;
       }
     });

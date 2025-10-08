@@ -23,12 +23,15 @@ const Header = ({ onMenuClick }) => {
     if (canViewBalance) {
       fetchUserBalance();
     }
+    // Re-enabled notifications after database fix
     if (user?.id) {
       fetchNotifications();
+      const notifInterval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(notifInterval);
     }
   }, [canViewBalance, user?.id]);
 
-  // Fetch notifications
+  // Fetch notifications - RE-ENABLED for agents
   const fetchNotifications = async () => {
     try {
       const response = await api.get('/notifications');
@@ -36,13 +39,22 @@ const Header = ({ onMenuClick }) => {
         const notificationsData = response.data.data || [];
         setNotifications(notificationsData);
         setNotificationCount(notificationsData.filter(n => !n.isRead).length);
+        
+        // Show popup for new winning notifications (agents only)
+        if (user?.role === 'agent') {
+          const newWinningNotifs = notificationsData.filter(n => 
+            !n.isRead && (n.type === 'win' || n.type === 'success')
+          );
+          if (newWinningNotifs.length > 0) {
+            // Will be handled by notification popup component
+          }
+        }
       }
     } catch (error) {
-      // Only log error if it's not an authentication issue
-      if (error.response?.status !== 401 && error.response?.status !== 403) {
-        // Silently handle notification errors to reduce console noise
+      // Silently handle errors for notifications
+      if (error.response?.status !== 401 && error.response?.status !== 403 && error.response?.status !== 500) {
+        console.error('Notification fetch error:', error);
       }
-      // Set empty state on error
       setNotifications([]);
       setNotificationCount(0);
     }

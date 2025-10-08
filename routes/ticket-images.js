@@ -86,11 +86,12 @@ router.get('/:ticketId/image', async (req, res) => {
       return res.status(500).json({ error: 'No active template found' });
     }
 
-    const template = activeTemplate[0];
-    
-    // Generate HTML using the same template system
-    const { generateTicketHTML } = require('../utils/ticketTemplateRenderer');
-    const ticketHTML = generateTicketHTML(ticketData, template);
+    // No more template system - use single Umatik template
+    const { generateUmatikCenterTicketHTML } = require('../utils/umatikTicketTemplate');
+    const ticketHTML = await generateUmatikCenterTicketHTML(ticketData, { 
+      username: ticketData.agentName,
+      id: ticketData.agentId 
+    });
 
     // Launch Puppeteer to generate image
     const browser = await puppeteer.launch({

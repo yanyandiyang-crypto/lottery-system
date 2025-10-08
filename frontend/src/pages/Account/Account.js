@@ -140,14 +140,9 @@ const Account = () => {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent-100/30 to-primary-100/30 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
       </div>
       
-      <div className="relative w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative w-full px-4 sm:px-6 lg:px-8 py-4">
         <PageHeader
           title="Account Settings"
-          subtitle="Manage your account information, security, and preferences"
-          breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Account Settings' }
-          ]}
         />
 
         {error && (
@@ -173,8 +168,8 @@ const Account = () => {
         )}
 
         {/* Modern Tab Navigation */}
-        <ModernCard className="mb-6 animate-fade-in" variant="glass">
-          <div className="px-4 sm:px-6 py-4">
+        <ModernCard className="mb-4 animate-fade-in" variant="glass">
+          <div className="px-3 sm:px-4 py-3">
             <nav className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 lg:space-x-8" aria-label="Tabs">
               {tabs.map((tab, index) => {
                 const Icon = tab.icon;

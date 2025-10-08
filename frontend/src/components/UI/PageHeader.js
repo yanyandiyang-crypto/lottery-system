@@ -46,7 +46,7 @@ const PageHeader = ({
       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <div className="flex-1 min-w-0">
           <h1 
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent animate-fade-in"
+            className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 bg-clip-text text-transparent animate-fade-in"
             style={{ animationDelay: '100ms' }}
           >
             {title}

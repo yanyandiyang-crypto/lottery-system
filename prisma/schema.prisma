@@ -11,8 +11,8 @@ model Region {
   id                Int      @id @default(autoincrement())
   name              String   @unique
   areaCoordinatorId Int?     @unique
-  createdAt         DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   areaCoordinator   User?    @relation("AreaCoordinator", fields: [areaCoordinatorId], references: [id])
   users             User[]   @relation("UserRegion")
 
@@ -30,20 +30,17 @@ model User {
   regionId              Int?                  @map("region_id")
   coordinatorId         Int?                  @map("coordinator_id")
   createdById           Int?                  @map("created_by")
-  createdAt             DateTime              @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime              @updatedAt @db.Timestamptz(6)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
   agentId               String?               @map("agent_id")
   role                  String
   status                String                @default("active")
   assignedTemplates     AgentTicketTemplate[]
-  auditLogs             AuditLog[]            @relation("UserAuditLogs")
   processedTransactions BalanceTransaction[]  @relation("TransactionProcessedBy")
   balanceTransactions   BalanceTransaction[]
   createdBetLimitTypes  BetLimit[]
-  claimsAuditActions    ClaimsAudit[]         @relation("ClaimsAuditPerformedBy")
   commissions           Commission[]
   inputDrawResults      DrawResult[]
-  loginAudits           LoginAudit[]          @relation("UserLoginAudits")
   notifications         Notification[]
   createdPrizeConfigs   PrizeConfiguration[]  @relation("PrizeConfigCreatedBy")
   updatedPrizeConfigs   PrizeConfiguration[]  @relation("PrizeConfigUpdatedBy")
@@ -55,16 +52,16 @@ model User {
   ticketReprints        TicketReprint[]
   createdTemplates      TicketTemplate[]
   agentTickets          Ticket[]              @relation("TicketAgent")
-  requestedTickets      Ticket[]              @relation("TicketRequestedBy")
-  approvedTickets       Ticket[]              @relation("TicketApprovedBy")
   tickets               Ticket[]
   balance               UserBalance?
-  user_bet_limits       user_bet_limits[]
   coordinator           User?                 @relation("UserCoordinator", fields: [coordinatorId], references: [id])
   agents                User[]                @relation("UserCoordinator")
   createdBy             User?                 @relation("UserCreatedBy", fields: [createdById], references: [id])
   createdUsers          User[]                @relation("UserCreatedBy")
   region                Region?               @relation("UserRegion", fields: [regionId], references: [id])
+  auditLogs            AuditLog[]           @relation("UserAuditLogs")
+  loginAudits          LoginAudit[]         @relation("UserLoginAudits")
+  createdBetLimits     BetLimitsPerDraw[]   @relation("BetLimitCreator")
 
   @@map("users")
 }
@@ -73,8 +70,8 @@ model UserBalance {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique @map("user_id")
   currentBalance Float    @default(0.00) @map("current_balance")
-  lastUpdated    DateTime @default(now()) @map("last_updated") @db.Timestamptz(6)
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  lastUpdated    DateTime @default(now()) @map("last_updated")
+  createdAt      DateTime @default(now())
   user           User     @relation(fields: [userId], references: [id])
 
   @@map("user_balances")
@@ -88,8 +85,7 @@ model BalanceTransaction {
   description     String?
   referenceId     String?  @map("reference_id")
   processedById   Int?     @map("processed_by")
-  createdAt       DateTime @default(now()) @db.Timestamptz(6)
-  status          String?  @default("completed") @db.VarChar(20)
+  createdAt       DateTime @default(now())
   processedBy     User?    @relation("TransactionProcessedBy", fields: [processedById], references: [id])
   user            User     @relation(fields: [userId], references: [id])
 
@@ -98,28 +94,30 @@ model BalanceTransaction {
 
 model BetLimitsPerDraw {
   id             Int      @id @default(autoincrement())
-  drawId         Int      @map("draw_id")
-  betCombination String   @map("bet_combination")
-  betType        BetType  @map("bet_type")
-  current_amount Float    @default(0.00)
-  limitAmount    Float    @map("limit_amount")
-  is_sold_out    Boolean  @default(false)
-  updatedAt      DateTime @db.Time(3)
   draw           Draw     @relation(fields: [drawId], references: [id])
+  drawId         Int      @map("draw_id")
+  betCombination String   @map("bet_combination") @db.VarChar(3)
+  betType        BetType  @map("bet_type")
+  limitAmount    Decimal  @map("limit_amount") @db.Decimal(12,2) @default(10000.00)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      User?    @relation("BetLimitCreator", fields: [createdById], references: [id])
+  createdById    Int?     @map("created_by")
 
-  @@unique([drawId, betCombination, betType])
+  @@index([drawId])
+  @@index([betCombination])
   @@map("bet_limits_per_draw")
 }
 
 model Draw {
   id               Int                @id @default(autoincrement())
-  drawDate         DateTime           @map("draw_date") @db.Timestamptz(6)
+  drawDate         DateTime           @map("draw_date")
   drawTime         DrawTime           @map("draw_time")
   winningNumber    String?            @map("winning_number")
   status           DrawStatus         @default(open)
-  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
-  cutoffTime       DateTime           @map("cutoff_time") @db.Timestamptz(6)
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  cutoffTime       DateTime           @map("cutoff_time")
   betLimitsPerDraw BetLimitsPerDraw[]
   commissions      Commission[]
   currentBetTotals CurrentBetTotal[]
@@ -127,7 +125,6 @@ model Draw {
   notifications    Notification[]
   sales            Sale[]
   tickets          Ticket[]
-  user_bet_limits  user_bet_limits[]
   winningTickets   WinningTicket[]
 
   @@unique([drawDate, drawTime])
@@ -135,40 +132,27 @@ model Draw {
 }
 
 model Ticket {
-  id                  Int             @id @default(autoincrement())
-  ticketNumber        String          @unique @map("ticket_number")
-  userId              Int             @map("user_id")
-  drawId              Int             @map("draw_id")
-  totalAmount         Float           @map("total_amount")
-  status              TicketStatus    @default(pending)
-  qrCode              String          @map("qr_code")
-  templateId          Int             @default(1) @map("template_id")
-  createdAt           DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt           DateTime        @updatedAt @db.Timestamptz(6)
-  agentId             Int             @map("agent_id")
-  betDate             DateTime        @map("bet_date") @db.Timestamptz(6)
-  reprintCount        Int             @default(0) @map("reprint_count")
-  sequenceNumber      String          @map("sequence_number")
-  claimedAt           DateTime?       @map("claimed_at") @db.Timestamp(6)
-  claimerName         String?         @map("claimer_name") @db.VarChar(255)
-  claimerPhone        String?         @map("claimer_phone") @db.VarChar(50)
-  claimerAddress      String?         @map("claimer_address")
-  approvalRequestedAt DateTime?       @map("approval_requested_at") @db.Timestamp(6)
-  approvalRequestedBy Int?            @map("approval_requested_by")
-  approved_at         DateTime?       @db.Timestamp(6)
-  approvedBy          Int?            @map("approved_by")
-  approvalNotes       String?         @map("approval_notes")
-  prizeAmount         Decimal?        @map("prize_amount") @db.Decimal(10, 2)
-  bets                Bet[]
-  claimsAudit         ClaimsAudit[]
-  notifications       Notification[]
-  reprints            TicketReprint[]
-  agent               User            @relation("TicketAgent", fields: [agentId], references: [id])
-  requestedByUser     User?           @relation("TicketRequestedBy", fields: [approvalRequestedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  approvedByUser      User?           @relation("TicketApprovedBy", fields: [approvedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  draw                Draw            @relation(fields: [drawId], references: [id])
-  user                User            @relation(fields: [userId], references: [id])
-  winningTickets      WinningTicket[]
+  id             Int             @id @default(autoincrement())
+  ticketNumber   String          @unique @map("ticket_number")
+  userId         Int             @map("user_id")
+  drawId         Int             @map("draw_id")
+  totalAmount    Float           @map("total_amount")
+  status         TicketStatus    @default(pending)
+  qrCode         String          @map("qr_code")
+  templateId     Int             @default(1) @map("template_id")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  agentId        Int             @map("agent_id")
+  betDate        DateTime        @map("bet_date")
+  reprintCount   Int             @default(0) @map("reprint_count")
+  sequenceNumber String          @map("sequence_number")
+  bets           Bet[]
+  notifications  Notification[]
+  reprints       TicketReprint[]
+  agent          User            @relation("TicketAgent", fields: [agentId], references: [id])
+  draw           Draw            @relation(fields: [drawId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  winningTickets WinningTicket[]
 
   @@map("tickets")
 }
@@ -179,8 +163,8 @@ model Bet {
   betType        BetType  @map("bet_type")
   betCombination String   @map("bet_combination")
   betAmount      Float    @map("bet_amount")
-  createdAt      DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   ticket         Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@map("bets")
@@ -193,7 +177,7 @@ model Sale {
   betType     BetType  @map("bet_type")
   totalAmount Float    @map("total_amount")
   ticketCount Int      @map("ticket_count")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  createdAt   DateTime @default(now())
   draw        Draw     @relation(fields: [drawId], references: [id])
   user        User     @relation(fields: [userId], references: [id])
 
@@ -207,7 +191,7 @@ model Commission {
   drawId           Int      @map("draw_id")
   commissionRate   Float    @map("commission_rate")
   commissionAmount Float    @map("commission_amount")
-  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+  createdAt        DateTime @default(now())
   draw             Draw     @relation(fields: [drawId], references: [id])
   user             User     @relation(fields: [userId], references: [id])
 
@@ -220,8 +204,8 @@ model WinningTicket {
   drawId      Int       @map("draw_id")
   prizeAmount Float     @map("prize_amount")
   isClaimed   Boolean   @default(false) @map("is_claimed")
-  claimedAt   DateTime? @map("claimed_at") @db.Timestamptz(6)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  claimedAt   DateTime? @map("claimed_at")
+  createdAt   DateTime  @default(now())
   draw        Draw      @relation(fields: [drawId], references: [id])
   ticket      Ticket    @relation(fields: [ticketId], references: [id])
 
@@ -237,7 +221,7 @@ model Notification {
   isRead          Boolean  @default(false) @map("is_read")
   relatedTicketId Int?     @map("related_ticket_id")
   relatedDrawId   Int?     @map("related_draw_id")
-  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  createdAt       DateTime @default(now())
   relatedDraw     Draw?    @relation(fields: [relatedDrawId], references: [id])
   relatedTicket   Ticket?  @relation(fields: [relatedTicketId], references: [id])
   user            User     @relation(fields: [userId], references: [id])
@@ -251,8 +235,8 @@ model BetLimit {
   limitAmount Float    @map("limit_amount")
   isActive    Boolean  @default(true) @map("is_active")
   createdById Int?     @map("created_by")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   createdBy   User?    @relation(fields: [createdById], references: [id])
 
   @@map("bet_limits")
@@ -265,7 +249,7 @@ model CurrentBetTotal {
   betType        BetType  @map("bet_type")
   totalAmount    Float    @default(0.00) @map("total_amount")
   ticketCount    Int      @default(0) @map("ticket_count")
-  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt
   draw           Draw     @relation(fields: [drawId], references: [id])
 
   @@unique([drawId, betCombination, betType])
@@ -278,7 +262,7 @@ model SystemSetting {
   settingValue String   @map("setting_value")
   description  String?
   updatedById  Int?     @map("updated_by")
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at")
   updatedBy    User?    @relation(fields: [updatedById], references: [id])
 
   @@map("system_settings")
@@ -290,8 +274,8 @@ model TicketTemplate {
   design         Json
   isActive       Boolean               @default(true) @map("is_active")
   createdById    Int?                  @map("created_by")
-  createdAt      DateTime              @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime              @updatedAt @db.Timestamptz(6)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
   assignedAgents AgentTicketTemplate[]
   createdBy      User?                 @relation(fields: [createdById], references: [id])
 
@@ -302,7 +286,7 @@ model AgentTicketTemplate {
   id         Int            @id @default(autoincrement())
   agentId    Int            @map("agent_id")
   templateId Int            @map("template_id")
-  assignedAt DateTime       @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  assignedAt DateTime       @default(now()) @map("assigned_at")
   agent      User           @relation(fields: [agentId], references: [id])
   template   TicketTemplate @relation(fields: [templateId], references: [id])
 
@@ -315,7 +299,7 @@ model DrawResult {
   drawId        Int      @unique @map("draw_id")
   winningNumber String   @map("winning_number")
   inputById     Int      @map("input_by")
-  inputAt       DateTime @default(now()) @map("input_at") @db.Timestamptz(6)
+  inputAt       DateTime @default(now()) @map("input_at")
   isOfficial    Boolean  @default(true) @map("is_official")
   draw          Draw     @relation(fields: [drawId], references: [id])
   inputBy       User     @relation(fields: [inputById], references: [id])
@@ -328,8 +312,8 @@ model WinningPrize {
   betType     BetType  @unique @map("bet_type")
   prizeAmount Float    @map("prize_amount")
   isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("winning_prizes")
 }
@@ -342,9 +326,9 @@ model PrizeConfiguration {
   basePrize   Float    @default(4500.0) @map("base_prize")
   description String?
   isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  createdAt   DateTime @default(now())
   createdById Int      @map("created_by_id")
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt
   updatedById Int?     @map("updated_by_id")
   createdBy   User     @relation("PrizeConfigCreatedBy", fields: [createdById], references: [id])
   updatedBy   User?    @relation("PrizeConfigUpdatedBy", fields: [updatedById], references: [id])
@@ -357,7 +341,7 @@ model TicketReprint {
   ticketId      Int      @map("ticket_id")
   reprintedById Int      @map("reprinted_by_id")
   reprintNumber Int      @map("reprint_number")
-  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  createdAt     DateTime @default(now())
   reprintedBy   User     @relation(fields: [reprintedById], references: [id])
   ticket        Ticket   @relation(fields: [ticketId], references: [id])
 
@@ -370,8 +354,8 @@ model SystemFunction {
   key             String                   @unique
   description     String?
   category        String?
-  createdAt       DateTime                 @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime                 @updatedAt @db.Timestamptz(6)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
   isActive        Boolean                  @default(true) @map("is_active")
   rolePermissions RoleFunctionPermission[]
 
@@ -381,8 +365,8 @@ model SystemFunction {
 model RoleFunctionPermission {
   id         Int            @id @default(autoincrement())
   role       String
-  createdAt  DateTime       @default(now()) @db.Timestamptz(6)
-  updatedAt  DateTime       @updatedAt @db.Timestamptz(6)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
   functionId Int            @map("function_id")
   isEnabled  Boolean        @default(true) @map("is_enabled")
   function   SystemFunction @relation(fields: [functionId], references: [id])
@@ -399,7 +383,7 @@ model SystemLog {
   details   String?
   ipAddress String   @map("ip_address")
   userAgent String   @map("user_agent")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at")
   user      User?    @relation(fields: [userId], references: [id])
 
   @@map("system_logs")
@@ -408,94 +392,10 @@ model SystemLog {
 model rate_limits {
   key        String    @id @db.VarChar(255)
   count      Int?      @default(1)
-  expires_at DateTime  @db.Timestamptz(6)
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
 
   @@index([expires_at], map: "idx_rate_limits_expires")
-}
-
-model LoginAudit {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  username  String
-  ipAddress String   @map("ip_address")
-  userAgent String   @map("user_agent")
-  reason    String?
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  status    String   @default("failed")
-  user      User     @relation("UserLoginAudits", fields: [userId], references: [id])
-
-  @@map("login_audit")
-}
-
-model AuditLog {
-  id         Int      @id @default(autoincrement())
-  userId     Int?     @map("user_id")
-  tableName  String   @map("table_name")
-  recordId   String?  @map("record_id")
-  details    Json?
-  ipAddress  String   @map("ip_address")
-  userAgent  String   @map("user_agent")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  operation  String?  @default("UPDATE") @db.VarChar(20)
-  new_values Json?
-  old_values Json?
-  action     String   @default("INSERT") @db.VarChar(20)
-  user       User?    @relation("UserAuditLogs", fields: [userId], references: [id])
-
-  @@map("audit_log")
-}
-
-model SecurityAudit {
-  id          Int      @id @default(autoincrement())
-  userId      Int?     @map("user_id")
-  ipAddress   String   @map("ip_address")
-  userAgent   String   @map("user_agent")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  description String?
-  eventType   String   @map("event_type")
-  user        User?    @relation("UserSecurityAudits", fields: [userId], references: [id])
-
-  @@map("security_audit")
-}
-
-model ClaimsAudit {
-  id              Int       @id @default(autoincrement())
-  ticketId        Int       @map("ticket_id")
-  action          String    @db.VarChar(50)
-  performedBy     Int       @map("performed_by")
-  notes           String?
-  oldStatus       String?   @map("old_status") @db.VarChar(20)
-  newStatus       String?   @map("new_status") @db.VarChar(20)
-  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  claimer_name    String?   @db.VarChar(255)
-  claimer_phone   String?   @db.VarChar(50)
-  claimer_address String?
-  prize_amount    Decimal?  @db.Decimal(10, 2)
-  performedByUser User      @relation("ClaimsAuditPerformedBy", fields: [performedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ticket          Ticket    @relation(fields: [ticketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([action], map: "idx_claims_audit_action")
-  @@index([createdAt], map: "idx_claims_audit_created_at")
-  @@index([performedBy], map: "idx_claims_audit_performed_by")
-  @@index([ticketId], map: "idx_claims_audit_ticket_id")
-  @@map("claims_audit")
-}
-
-model user_bet_limits {
-  id             Int       @id @default(autoincrement())
-  user_id        Int
-  draw_id        Int
-  bet_type       String    @db.VarChar(20)
-  max_amount     Decimal?  @default(1000.00) @db.Decimal(12, 2)
-  current_amount Decimal?  @default(0.00) @db.Decimal(12, 2)
-  created_at     DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime? @default(now()) @db.Timestamptz(6)
-  draws          Draw      @relation(fields: [draw_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_bet_limit_draw")
-  users          User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_bet_limit_user")
-
-  @@unique([user_id, draw_id, bet_type], map: "unique_user_draw_bet_limit")
-  @@index([user_id, draw_id], map: "idx_user_bet_limits_user_draw")
 }
 
 enum UserRole {
@@ -517,8 +417,6 @@ enum TicketStatus {
   validated
   paid
   cancelled
-  claimed
-  pending_approval
 }
 
 enum DrawStatus {
@@ -531,6 +429,49 @@ enum DrawTime {
   twoPM
   fivePM
   ninePM
+}
+
+// Audit models
+model LoginAudit {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  username    String
+  ipAddress   String   @map("ip_address")
+  userAgent   String   @map("user_agent")
+  status      String   @default("failed") // 'success' or 'failed'
+  reason      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation("UserLoginAudits", fields: [userId], references: [id])
+
+  @@map("login_audit")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  action      String
+  tableName   String   @map("table_name")
+  recordId    String?  @map("record_id")
+  details     Json?
+  ipAddress   String   @map("ip_address")
+  userAgent   String   @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User?    @relation("UserAuditLogs", fields: [userId], references: [id])
+
+  @@map("audit_log")
+}
+
+model SecurityAudit {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  eventType   String   @map("event_type")
+  description String?
+  ipAddress   String   @map("ip_address")
+  userAgent   String   @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User?    @relation("UserSecurityAudits", fields: [userId], references: [id])
+
+  @@map("security_audit")
 }
 
 enum AccountStatus {

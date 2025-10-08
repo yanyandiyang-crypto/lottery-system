@@ -171,13 +171,29 @@ router.post('/', requireAuth, requireAdmin, [
       createdById: req.user.id
     };
 
-    // Add hierarchical assignments based on role
+    // Add hierarchical assignments based on role and inherit regionId
     if (role === 'agent' && coordinatorId) {
       userData.coordinatorId = parseInt(coordinatorId);
+      // Get coordinator's regionId to inherit
+      const parentCoordinator = await prisma.user.findUnique({
+        where: { id: parseInt(coordinatorId) },
+        select: { regionId: true }
+      });
+      if (parentCoordinator?.regionId) {
+        userData.regionId = parentCoordinator.regionId;
+      }
     }
     
     if (role === 'coordinator' && areaCoordinatorId) {
       userData.coordinatorId = parseInt(areaCoordinatorId); // coordinators are assigned to area coordinators via coordinatorId
+      // Get area coordinator's regionId to inherit
+      const parentAreaCoordinator = await prisma.user.findUnique({
+        where: { id: parseInt(areaCoordinatorId) },
+        select: { regionId: true }
+      });
+      if (parentAreaCoordinator?.regionId) {
+        userData.regionId = parentAreaCoordinator.regionId;
+      }
     }
 
     // Create user in transaction
@@ -218,7 +234,8 @@ router.post('/', requireAuth, requireAdmin, [
             role: 'coordinator'
           },
           data: {
-            coordinatorId: newUser.id
+            coordinatorId: newUser.id,
+            regionId: userData.regionId || null // Propagate regionId to coordinators
           }
         });
       }
@@ -231,7 +248,8 @@ router.post('/', requireAuth, requireAdmin, [
             role: 'agent'
           },
           data: {
-            coordinatorId: newUser.id
+            coordinatorId: newUser.id,
+            regionId: userData.regionId || null // Propagate regionId to agents
           }
         });
       }
@@ -352,16 +370,36 @@ router.put('/:id', requireAuth, requireAdmin, [
       updateData.passwordHash = await bcrypt.hash(password, 12);
     }
 
-    // Handle hierarchical assignments
+    // Handle hierarchical assignments with regionId inheritance
     // Agent ⇄ Coordinator assignment via coordinatorId
-    if (coordinatorId !== undefined) {
+    if (coordinatorId !== undefined && existingUser.role === 'agent') {
       updateData.coordinatorId = coordinatorId ? parseInt(coordinatorId) : null;
+      // Inherit regionId from new coordinator
+      if (coordinatorId) {
+        const newCoordinator = await prisma.user.findUnique({
+          where: { id: parseInt(coordinatorId) },
+          select: { regionId: true }
+        });
+        updateData.regionId = newCoordinator?.regionId || null;
+      } else {
+        updateData.regionId = null; // Clear regionId when unassigning
+      }
     }
 
     // Coordinator ⇄ Area Coordinator assignment via areaCoordinatorId
     // We store area coordinator on the same coordinatorId field for coordinators
     if (areaCoordinatorId !== undefined && existingUser.role === 'coordinator') {
       updateData.coordinatorId = areaCoordinatorId ? parseInt(areaCoordinatorId) : null;
+      // Inherit regionId from new area coordinator
+      if (areaCoordinatorId) {
+        const newAreaCoordinator = await prisma.user.findUnique({
+          where: { id: parseInt(areaCoordinatorId) },
+          select: { regionId: true }
+        });
+        updateData.regionId = newAreaCoordinator?.regionId || null;
+      } else {
+        updateData.regionId = null; // Clear regionId when unassigning
+      }
     }
 
     // Update user in transaction
@@ -386,7 +424,8 @@ router.put('/:id', requireAuth, requireAdmin, [
             role: 'coordinator'
           },
           data: {
-            coordinatorId: null
+            coordinatorId: null,
+            regionId: null // Clear regionId when unassigning
           }
         });
 
@@ -398,7 +437,8 @@ router.put('/:id', requireAuth, requireAdmin, [
               role: 'coordinator'
             },
             data: {
-              coordinatorId: parseInt(id)
+              coordinatorId: parseInt(id),
+              regionId: updatedUser.regionId || null // Propagate regionId to coordinators
             }
           });
         }
@@ -409,7 +449,10 @@ router.put('/:id', requireAuth, requireAdmin, [
         // First, unassign this coordinator from all agents
         await tx.user.updateMany({
           where: { coordinatorId: parseInt(id), role: 'agent' },
-          data: { coordinatorId: null }
+          data: { 
+            coordinatorId: null,
+            regionId: null // Clear regionId when unassigning
+          }
         });
 
         // Then assign selected agents to this coordinator
@@ -419,7 +462,10 @@ router.put('/:id', requireAuth, requireAdmin, [
               id: { in: assignedAgents.map(aid => parseInt(aid)) },
               role: 'agent'
             },
-            data: { coordinatorId: parseInt(id) }
+            data: { 
+              coordinatorId: parseInt(id),
+              regionId: updatedUser.regionId || null // Propagate regionId to agents
+            }
           });
         }
       }

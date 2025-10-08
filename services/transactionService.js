@@ -61,7 +61,7 @@ class TransactionService {
       // 6. Insert ticket
       const ticketResult = await client.query(
         `INSERT INTO tickets 
-         (ticket_number, user_id, draw_id, total_amount, status, qr_code, template_id, agent_id, bet_date, sequence_number, updated_at)
+         (ticket_number, user_id, draw_id, total_amount, status, qr_code, template_id, agent_id, bet_date, sequence_number, "updatedAt")
          VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, NOW(), $8, NOW())
          RETURNING id, ticket_number`,
         [

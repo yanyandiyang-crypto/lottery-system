@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import Sidebar from './Sidebar';
+import SuperAdminSidebar from './SuperAdminSidebar';
+import AdminSidebar from './AdminSidebar';
+import AreaCoordinatorSidebar from './AreaCoordinatorSidebar';
+import CoordinatorSidebar from './CoordinatorSidebar';
+import AgentSidebar from './AgentSidebar';
 import Header from './Header';
-import MobileSidebar from './MobileSidebar';
+import RoleMobileSidebar from './RoleMobileSidebar';
 
 const Layout = ({ children }) => {
   const { user } = useAuth();
@@ -13,6 +17,26 @@ const Layout = ({ children }) => {
   
   // Check if user should have mobile navigation spacing
   const useMobileNav = ['agent', 'coordinator', 'area_coordinator'].includes(user?.role);
+
+  // Dynamic sidebar component based on user role
+  const getSidebarComponent = () => {
+    switch (user?.role) {
+      case 'superadmin':
+        return SuperAdminSidebar;
+      case 'admin':
+        return AdminSidebar;
+      case 'area_coordinator':
+        return AreaCoordinatorSidebar;
+      case 'coordinator':
+        return CoordinatorSidebar;
+      case 'agent':
+        return AgentSidebar;
+      default:
+        return SuperAdminSidebar; // Fallback
+    }
+  };
+
+  const SidebarComponent = getSidebarComponent();
 
   // Detect screen size changes for better responsive behavior
   useEffect(() => {
@@ -37,22 +61,26 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row relative">
       {/* Mobile sidebar overlay */}
-      <MobileSidebar 
+      <RoleMobileSidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
       
-      {/* Desktop sidebar - collapsible */}
-      <Sidebar 
-        isCollapsed={desktopSidebarCollapsed}
-        onToggleCollapse={() => setDesktopSidebarCollapsed(!desktopSidebarCollapsed)}
-      />
+      {/* Desktop sidebar - fixed positioning */}
+      <div className={`hidden lg:block fixed left-0 top-0 h-full z-30 transition-all duration-300 ${
+        desktopSidebarCollapsed ? 'w-16' : 'w-64'
+      }`}>
+        <SidebarComponent 
+          isCollapsed={desktopSidebarCollapsed}
+          onToggleCollapse={() => setDesktopSidebarCollapsed(!desktopSidebarCollapsed)}
+        />
+      </div>
       
       {/* Main content area - adjusts based on sidebar state */}
-      <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${
+      <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 relative z-10 ${
         desktopSidebarCollapsed 
-          ? 'lg:pl-16' 
-          : 'lg:pl-64 xl:pl-72 2xl:pl-80'
+          ? 'lg:ml-16' 
+          : 'lg:ml-64'
       }`}>
         {/* Header - responsive across all devices */}
         <Header onMenuClick={() => setSidebarOpen(true)} />

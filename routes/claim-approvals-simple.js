@@ -15,18 +15,66 @@ router.get('/test-auth', (req, res) => {
   });
 });
 
+// Helper function to check if a bet is winning
+const checkIfBetIsWinning = (betCombination, betType, winningNumber) => {
+  if (!betCombination || !winningNumber) return false;
+  
+  const cleanBet = betCombination.toString().replace(/\s+/g, '');
+  const cleanWinning = winningNumber.toString().replace(/\s+/g, '');
+  
+  if (betType === 'rambolito' || betType === 'rambol') {
+    // Rambolito: match in any order
+    const sortedBet = cleanBet.split('').sort().join('');
+    const sortedWinning = cleanWinning.split('').sort().join('');
+    return sortedBet === sortedWinning;
+  } else {
+    // Standard/Straight: exact match
+    return cleanBet === cleanWinning;
+  }
+};
+
 // @route   GET /api/v1/claim-approvals/pending
 // @desc    Get pending claim approvals (simplified version)
 // @access  Protected (SuperAdmin, Admin)
 router.get('/pending', async (req, res) => {
   try {
-    console.log('🔍 Fetching pending claims...');
+    console.log('🔍 Fetching pending claims (winning tickets claimed by agents)...');
     
-    // Check for tickets with pending_approval status
-    const pendingClaims = await prisma.ticket.findMany({
-      where: { 
-        status: 'pending_approval'
-      },
+    const { startDate, endDate } = req.query;
+    
+    // Build date filter
+    const dateFilter = {};
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      dateFilter.gte = start;
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.lte = end;
+    }
+    
+    // Build where clause
+    const whereClause = { 
+      status: 'validated',
+      draw: {
+        winningNumber: {
+          not: null
+        }
+      }
+    };
+    
+    // Add date filter if provided
+    if (Object.keys(dateFilter).length > 0) {
+      whereClause.createdAt = dateFilter;
+    }
+    
+    console.log('📅 Date filters:', { startDate, endDate, dateFilter });
+    
+    // Get all validated tickets with draw results
+    const validatedTickets = await prisma.ticket.findMany({
+      where: whereClause,
       include: {
         user: {
           select: {
@@ -46,14 +94,40 @@ router.get('/pending', async (req, res) => {
               }
             }
           }
-        }
+        },
+        winningTickets: true
       },
       orderBy: { createdAt: 'desc' }
     });
     
-    console.log(`📊 Found ${pendingClaims.length} pending claims`);
+    console.log(`📊 Found ${validatedTickets.length} validated tickets with draw results`);
+    
+    // Filter to only include actual winning tickets
+    const pendingClaims = validatedTickets.filter(ticket => {
+      const winningNumber = ticket.draw?.winningNumber || ticket.draw?.drawResult?.winningNumber;
+      
+      if (!winningNumber || !ticket.bets || ticket.bets.length === 0) {
+        return false;
+      }
+      
+      // Check if any bet is a winner
+      const hasWinningBet = ticket.bets.some(bet => 
+        checkIfBetIsWinning(bet.betCombination, bet.betType, winningNumber)
+      );
+      
+      // Also check if there's a WinningTicket record
+      const hasWinningTicketRecord = ticket.winningTickets && ticket.winningTickets.length > 0;
+      
+      return hasWinningBet || hasWinningTicketRecord;
+    });
+    
+    console.log(`🏆 Found ${pendingClaims.length} winning tickets pending claim approval`);
     if (pendingClaims.length > 0) {
-      console.log('🔍 Sample claim data:', JSON.stringify(pendingClaims[0], null, 2));
+      console.log('🔍 Sample winning claim:', {
+        ticketNumber: pendingClaims[0].ticketNumber,
+        winningNumber: pendingClaims[0].draw?.winningNumber,
+        betsCount: pendingClaims[0].bets?.length
+      });
     }
     
     res.json({
@@ -165,25 +239,22 @@ router.post('/:ticketId/approve', async (req, res) => {
       });
     }
     
-    if (ticket.status !== 'pending_approval') {
-      console.error('❌ Ticket status is not pending_approval:', ticket.status);
+    if (ticket.status !== 'validated') {
+      console.error('❌ Ticket status is not validated:', ticket.status);
       return res.status(400).json({
         success: false,
-        message: `Ticket status is ${ticket.status}, not pending_approval`
+        message: `Ticket status is ${ticket.status}, not validated (awaiting approval)`
       });
     }
 
-    console.log('✅ Ticket validation passed, updating status to claimed...');
+    console.log('✅ Ticket validation passed, updating status to paid...');
 
-    // Update ticket status to claimed
+    // Update ticket status to paid (claim approved and processed)
+    // Note: Schema doesn't have approvedAt, approvedBy, approvalNotes, prizeAmount fields yet
     const updatedTicket = await prisma.ticket.update({
       where: { id: ticketIdInt },
       data: {
-        status: 'claimed',
-        approved_at: new Date(), // Use snake_case as per database schema
-        approvedBy: approverId,
-        approvalNotes: notes || 'Claim approved via admin panel',
-        ...(prizeAmount && { prizeAmount: parseFloat(prizeAmount) })
+        status: 'paid'
       },
       include: {
         user: {
@@ -262,18 +333,19 @@ router.post('/:ticketId/reject', async (req, res) => {
       });
     }
     
-    if (ticket.status !== 'pending_approval') {
+    if (ticket.status !== 'validated') {
       return res.status(400).json({
         success: false,
-        message: `Ticket status is ${ticket.status}, not pending_approval`
+        message: `Ticket status is ${ticket.status}, not validated (awaiting approval)`
       });
     }
     
-    // Update ticket status back to validated (can be claimed again)
+    // Update ticket to cancelled (claim rejected)
+    // Note: Schema doesn't have approvalNotes field yet
     const updatedTicket = await prisma.ticket.update({
       where: { id: parseInt(ticketId) },
       data: {
-        status: 'validated' // Reset to validated so it can be claimed again
+        status: 'cancelled' // Mark as cancelled since claim was rejected
       },
       include: {
         user: {
@@ -336,27 +408,61 @@ router.get('/history', async (req, res) => {
 // @access  Protected (SuperAdmin, Admin)
 router.get('/stats', async (req, res) => {
   try {
-    // Get actual stats from database
-    const pendingCount = await prisma.ticket.count({
-      where: { status: 'pending_approval' }
+    // Get validated tickets with draw results to check for winners
+    const validatedTickets = await prisma.ticket.findMany({
+      where: { 
+        status: 'validated',
+        draw: {
+          winningNumber: {
+            not: null
+          }
+        }
+      },
+      include: {
+        bets: true,
+        draw: {
+          select: {
+            winningNumber: true
+          }
+        },
+        winningTickets: true
+      }
     });
 
+    // Filter to count only actual winning tickets
+    const pendingWinningTickets = validatedTickets.filter(ticket => {
+      const winningNumber = ticket.draw?.winningNumber;
+      if (!winningNumber || !ticket.bets || ticket.bets.length === 0) return false;
+      
+      const hasWinningBet = ticket.bets.some(bet => 
+        checkIfBetIsWinning(bet.betCombination, bet.betType, winningNumber)
+      );
+      const hasWinningTicketRecord = ticket.winningTickets && ticket.winningTickets.length > 0;
+      
+      return hasWinningBet || hasWinningTicketRecord;
+    });
+
+    const pendingCount = pendingWinningTickets.length;
+
+    // Approved claims = paid tickets (prizes paid out)
     const approvedCount = await prisma.ticket.count({
-      where: { status: 'claimed' }
+      where: { status: 'paid' }
     });
 
-    // For now, rejected count is 0 since we reset to validated
-    const rejectedCount = 0;
+    // Rejected claims = cancelled tickets (could be rejected claims or other cancellations)
+    const rejectedCount = await prisma.ticket.count({
+      where: { status: 'cancelled' }
+    });
 
     const stats = {
       pending: pendingCount,
       approved: approvedCount,
       rejected: rejectedCount,
-      averageApprovalTimeHours: 0, // TODO: Calculate based on approval timestamps
+      averageApprovalTimeHours: 0, // TODO: Calculate based on approval timestamps when schema supports it
       totalProcessed: approvedCount + rejectedCount
     };
 
-    console.log('📊 Approval stats:', stats);
+    console.log('📊 Approval stats (winning tickets only):', stats);
 
     res.json({
       success: true,
@@ -365,6 +471,7 @@ router.get('/stats', async (req, res) => {
 
   } catch (error) {
     console.error('Approval stats error:', error);
+    console.error('Full error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching approval stats',

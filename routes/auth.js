@@ -126,12 +126,13 @@ router.post('/login', [authLimiter, usernameLimiter], [
       });
     }
 
-    // Generate JWT token
+    // Generate JWT token with regionId for hierarchy filtering
     const token = jwt.sign(
       { 
         userId: user.id, 
         username: user.username, 
-        role: user.role 
+        role: user.role,
+        regionId: user.regionId // Include regionId for area coordinator/coordinator filtering
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
@@ -246,10 +247,12 @@ router.post('/register', requireAdmin, [
       }
     }
 
-    // Validate coordinator assignment for agents
-    if (role === 'agent' && coordinatorId) {
+    // Validate and get coordinator assignment with regionId propagation
+    let inheritedRegionId = null;
+    if ((role === 'coordinator' || role === 'agent') && coordinatorId) {
       const coordinator = await prisma.user.findUnique({
-        where: { id: coordinatorId, role: 'coordinator' }
+        where: { id: coordinatorId },
+        select: { id: true, role: true, regionId: true }
       });
 
       if (!coordinator) {
@@ -258,13 +261,16 @@ router.post('/register', requireAdmin, [
           message: 'Coordinator not found'
         });
       }
+
+      // Inherit regionId from coordinator/area_coordinator
+      inheritedRegionId = coordinator.regionId;
     }
 
     // Hash password
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Create user
+    // Create user with proper regionId propagation
     const newUser = await prisma.user.create({
       data: {
         username,
@@ -274,8 +280,8 @@ router.post('/register', requireAdmin, [
         phone,
         address,
         role,
-        regionId: role === 'area_coordinator' ? regionId : null,
-        coordinatorId: role === 'agent' ? coordinatorId : null,
+        regionId: role === 'area_coordinator' ? regionId : inheritedRegionId,
+        coordinatorId: (role === 'coordinator' || role === 'agent') ? coordinatorId : null,
         createdById: req.user.id
       },
       include: {

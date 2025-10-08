@@ -122,6 +122,7 @@ router.post('/create',
 
       // Generate ticket number and QR code (like the old system)
       const { generateTicketNumber } = require('../utils/ticketGenerator');
+      const QRCode = require('qrcode');
       const crypto = require('crypto');
       
       const ticketNumber = generateTicketNumber();
@@ -130,8 +131,7 @@ router.post('/create',
       const hashData = `${ticketNumber}:${totalAmount}:${drawId}:${userId}:${Date.now()}`;
       const hash = crypto.createHash('sha256').update(hashData).digest('hex').substring(0, 16);
       const qrCodeData = `${ticketNumber}|${hash}`;
-      // Store compact QR code data in DB to avoid exceeding column length
-      const qrCode = qrCodeData;
+      const qrCode = await QRCode.toDataURL(qrCodeData);
       
       // Prepare ticket data for atomic transaction
       const ticketData = {
@@ -188,33 +188,28 @@ router.post('/create',
         }
       });
 
-      // Generate and SAVE ticket image immediately (pre-generate)
+      // Generate and SAVE ticket HTML immediately (pre-generate) using Umatik template
       try {
-        console.log('🖼️ Pre-generating ticket image for:', completeTicket.ticketNumber);
+        console.log('🖼️ Pre-generating ticket HTML for:', completeTicket.ticketNumber);
         
-        // Generate HTML using same template system as print
-        const { generateTicketHTML } = require('../utils/ticketTemplateRenderer');
-        const activeTemplate = await prisma.ticketTemplate.findFirst({
-          where: { isActive: true }
+        // Use single Umatik template (no more template system)
+        const { generateUmatikCenterTicketHTML } = require('../utils/umatikTicketTemplate');
+        
+        const ticketHTML = await generateUmatikCenterTicketHTML(completeTicket, completeTicket.user);
+        
+        // Save HTML to database for instant access
+        await prisma.ticket.update({
+          where: { id: completeTicket.id },
+          data: { 
+            generatedHTML: ticketHTML,
+            imageGenerated: true,
+            imageGeneratedAt: new Date()
+          }
         });
         
-        if (activeTemplate) {
-          const ticketHTML = generateTicketHTML(completeTicket, activeTemplate);
-          
-          // Save HTML to database for instant access
-          await prisma.ticket.update({
-            where: { id: completeTicket.id },
-            data: { 
-              generatedHTML: ticketHTML,
-              imageGenerated: true,
-              imageGeneratedAt: new Date()
-            }
-          });
-          
-          console.log('✅ Ticket HTML pre-generated and saved');
-        }
+        console.log('✅ Ticket HTML pre-generated and saved');
       } catch (imageError) {
-        console.error('❌ Error pre-generating ticket image:', imageError);
+        console.error('❌ Error pre-generating ticket HTML:', imageError);
       }
 
       // Return response in the same format as the old route for frontend compatibility
