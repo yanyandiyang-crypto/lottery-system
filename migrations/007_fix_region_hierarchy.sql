@@ -67,3 +67,4 @@ SELECT
 FROM users
 WHERE role = 'agent' AND region_id IS NULL;
 
+
