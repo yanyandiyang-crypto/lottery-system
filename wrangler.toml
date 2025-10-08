@@ -1,0 +1,15 @@
+# Cloudflare Pages Configuration
+# This file is for reference - actual deployment done via Dashboard or CLI
+
+name = "lottery-frontend"
+compatibility_date = "2024-01-01"
+
+# Pages Configuration
+[site]
+bucket = "./frontend/build"
+
+# Environment Variables (set in Cloudflare Dashboard)
+# REACT_APP_API_URL = https://lottery-backend-l1k7.onrender.com
+# NODE_VERSION = 18
+# CI = false
+
