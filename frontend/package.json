@@ -39,7 +39,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "CI=false GENERATE_SOURCEMAP=false react-scripts build",
+    "build": "cross-env CI=false GENERATE_SOURCEMAP=false react-scripts build",
+    "build:windows": "set CI=false&& set GENERATE_SOURCEMAP=false&& react-scripts build",
     "build:analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -82,6 +83,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
+    "cross-env": "^10.1.0",
     "postcss": "^8.4.32"
   },
   "proxy": "http://localhost:3001",
