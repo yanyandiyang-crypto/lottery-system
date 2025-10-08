@@ -7,11 +7,14 @@ services:
     autoDeploy: true
     buildCommand: npm install && npx prisma generate
     startCommand: node server.js
+    healthCheckPath: /v1/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: postgresql://lottery:NOfMMQoXGSlSaMZVbpHMJWIPA4f3vmrZ@dpg-d3j4juc9c44c73b6m6c0-a.oregon-postgres.render.com/lottery_m6px
+        fromDatabase:
+          name: lottery_m6px
+          property: connectionString
       - key: CORS_ORIGIN
         value: https://lottery-frontend.onrender.com,https://lottery-system-gamma.vercel.app,http://localhost:3000,http://localhost:3002
       - key: PORT
@@ -20,9 +23,10 @@ services:
         value: your-super-secret-jwt-key-change-this-in-production
       - key: BCRYPT_ROUNDS
         value: 10
-      healthCheckPath: /v1/health
-      # Note: Frontend deployed to Cloudflare Pages for better performance
+    # Note: Frontend deployed to Cloudflare Pages for better performance
 
 databases:
   - name: lottery_m6px
     plan: free
+    databaseName: lottery_m6px
+    user: lottery
