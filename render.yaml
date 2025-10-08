@@ -11,7 +11,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: postgresql://lottery_db_k3w0_user:FvVBvl5N1R3Cz4LYnk0EwDg0oZXJDNk7@dpg-d3c016j7mgec73a3pdf0-a.oregon-postgres.render.com/lottery_db_k3w0
+        value: postgresql://lottery:NOfMMQoXGSlSaMZVbpHMJWIPA4f3vmrZ@dpg-d3j4juc9c44c73b6m6c0-a.oregon-postgres.render.com/lottery_m6px
       - key: CORS_ORIGIN
         value: https://lottery-frontend.onrender.com,https://lottery-system-gamma.vercel.app,http://localhost:3000,http://localhost:3002
       - key: PORT
@@ -24,5 +24,5 @@ services:
       # Note: Frontend deployed to Cloudflare Pages for better performance
 
 databases:
-  - name: lottery-db-k3w0
+  - name: lottery_m6px
     plan: free
